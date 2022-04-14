@@ -1,0 +1,14 @@
+{
+    "date": "Datum",
+    "hasInvoice": "Rechnung vorhanden",
+    "codeOnInvoice": "Kontrollnummer auf Rechnung",
+    "hasDeliveryNote": "Lieferschein vorhanden",
+    "codeOnDeliveryNote": "Kontrollnummer auf Lieferschein",
+    "codeOnBag": "Kontrollnummer auf Gebinde",
+    "certificateValid": "EU-Biozertifikat gültig",
+    "goodsMatchValidity": "Waren entsprechen dem Zertifizierungsbereich",
+    "damaged": "Optische Kontrolle: Beschädigt",
+    "pestInfection": "Optische Kontrolle: Schädlingsbefall",
+    "notes": "Notizen",
+    "approved": "Ware freigegeben"
+}

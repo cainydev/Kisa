@@ -1,0 +1,3 @@
+<x-logo.min {{
+            $attributes
+            }} />
