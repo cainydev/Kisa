@@ -31,7 +31,7 @@ use Tabuna\Breadcrumbs\Trail;
 */
 
 // Platform > Welcome
-Route::screen('main', WelcomeScreen::class)
+Route::screen('welcome', WelcomeScreen::class)
     ->name('platform.main')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
