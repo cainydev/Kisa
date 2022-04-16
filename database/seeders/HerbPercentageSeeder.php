@@ -49,6 +49,9 @@ class HerbPercentageSeeder extends Seeder
 
             foreach ($herb as $mischung => $percent) {
                 $product = Product::where('name', 'like', '%' . explode(' ', trim($mischung))[0] . '%')->first();
+                if (str($mischung)->contains('Ruth')) {
+                    $product = Product::where('name', 'like', '%' . explode(' ', '%' . trim($mischung))[1] . '%')->first();
+                }
                 $percentage = floatval($percent);
 
                 if ($product == null)
