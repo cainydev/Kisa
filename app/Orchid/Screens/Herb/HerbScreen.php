@@ -15,7 +15,7 @@ class HerbScreen extends Screen
     public function query(): iterable
     {
         return [
-            'herbs' => Herb::all()
+            'herbs' => Herb::paginate(20)
         ];
     }
 

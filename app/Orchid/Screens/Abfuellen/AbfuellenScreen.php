@@ -21,7 +21,7 @@ class AbfuellenScreen extends Screen
     public function query(): iterable
     {
         return [
-            'bottles' => Bottle::all(),
+            'bottles' => Bottle::paginate(20),
         ];
     }
 

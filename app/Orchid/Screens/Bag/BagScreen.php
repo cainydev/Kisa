@@ -18,7 +18,7 @@ class BagScreen extends Screen
     public function query(): iterable
     {
         return [
-            'bags' => Bag::all()
+            'bags' => Bag::paginate(20)
         ];
     }
 
