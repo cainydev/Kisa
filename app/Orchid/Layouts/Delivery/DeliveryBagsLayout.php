@@ -18,7 +18,7 @@ class DeliveryBagsLayout extends Rows
     {
         return [
             Relation::make('currentBag.herb_id')
-                ->fromModel(Herb::class, 'fullname')
+                ->fromModel(Herb::class, 'name')
                 ->title('Rohstoff auswählen'),
 
             Input::make('currentBag.specification')
