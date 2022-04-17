@@ -27,7 +27,7 @@ class AbfuellenListLayout extends Table
     protected function columns(): iterable
     {
         return [
-            TD::make('id', 'ID')->width('50px'),
+            TD::make('id', 'ID')->width('100px'),
             TD::make('user_id', 'Abfüller')
                 ->render(function ($bottle) {
                     return $bottle->user->name;

@@ -18,7 +18,7 @@ class DeliveryListLayout extends Table
     {
         return [
             TD::make('id', 'ID')
-                ->width('50px'),
+                ->width('100px'),
             TD::make('delivered_date', 'Lieferdatum'),
             TD::make('bio_inspection', 'Eingangskontrolle')
                 ->render(function ($delivery) {
