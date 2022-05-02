@@ -41,6 +41,10 @@ class VariantAdder extends Component
 
     public function delete(BottlePosition $position)
     {
+        foreach($position->ingredients as $i){
+            $i->delete();
+        }
+
         $position->delete();
     }
 
