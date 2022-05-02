@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+
+use App\Models\{Variant, Bottle, Product, BottlePosition};
+
+class VariantAdder extends Component
+{
+
+    public Bottle $bottle;
+
+    public Product $product;
+    public $query;
+
+    public Variant $variant;
+
+    public $count = 10;
+
+    protected $rules = [
+        'product' => 'required',
+        'variant' => 'required',
+        'count' => 'numeric|required|max:100|min:1'
+    ];
+
+    public function add()
+    {
+        $this->validate();
+
+        BottlePosition::create([
+            'bottle_id' => $this->bottle->id,
+            'variant_id' => $this->variant->id,
+            'count' => $this->count
+        ]);
+
+        $this->product = new Product;
+        $this->variant = new Variant;
+        $this->count = 10;
+    }
+
+    public function delete(BottlePosition $position){
+        $position->delete();
+    }
+
+    public function mount(Bottle $bottle)
+    {
+        $this->bottle = $bottle;
+    }
+
+    public function setVariant(Variant $variant)
+    {
+        $this->variant = $variant;
+    }
+
+    public function setProduct(Product $product)
+    {
+        if ($product->variants->count() < 1){
+            return;
+        }
+
+        $this->product = $product;
+        $this->variant = $product->variants->first();
+    }
+
+    public function render()
+    {
+        if(isset($this->product) && $this->product->exists){
+            $this->product = Product::find($this->product->id);
+        }
+
+        $this->bottle = Bottle::find($this->bottle->id);
+        return view('livewire.variant-adder');
+    }
+}

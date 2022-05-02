@@ -1,4 +1,7 @@
 @push('head')
+
+<wireui:scripts />
+
 {{-- Favicon --}}
 <link rel="apple-touch-icon"
       sizes="180x180"

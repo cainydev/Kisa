@@ -65,6 +65,7 @@ Route::screen('bottle', AbfuellenScreen::class)
             ->parent('platform.index')
             ->push('Abfüllungen');
     });
+
 Route::screen('bottle/edit/{bottle?}', AbfuellenEditScreen::class)
     ->name('platform.bottle.edit')
     ->breadcrumbs(function (Trail $trail) {

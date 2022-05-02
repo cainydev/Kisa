@@ -120,8 +120,7 @@ class AbfuellenEditScreen extends Screen
         return [
             AbfuellenGeneralLayout::class,
             Layout::columns([
-                VariantListener::class,
-                AbfuellenPositionsLayout::class
+                Layout::livewire('variant-adder'),
             ])
         ];
     }
@@ -132,6 +131,6 @@ class AbfuellenEditScreen extends Screen
 
         Alert::success('Abfüllung wurde gespeichert.');
 
-        return redirect()->route('platform.bottle');
+        return redirect()->route('platform.bottle.edit', $bottle);
     }
 }
