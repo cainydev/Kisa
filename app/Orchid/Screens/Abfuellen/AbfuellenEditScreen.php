@@ -20,18 +20,13 @@ class AbfuellenEditScreen extends Screen
     /**
      * @var Bottle
      */
-    public $bottle;
+    public Bottle $bottle;
 
     public $variant;
 
     public $count;
 
-    /**
-     * Query data.
-     *
-     * @return array
-     */
-    public function query(Bottle $bottle = null): iterable
+    public function query(Bottle $bottle): iterable
     {
         return [
             'bottle' => $bottle
@@ -46,6 +41,11 @@ class AbfuellenEditScreen extends Screen
     public function name(): ?string
     {
         return 'Abfüllung ' . ($this->bottle->exists ? 'bearbeiten' : 'erstellen');
+    }
+
+    public function description(): ?string
+    {
+        return 'Du musst die Abfüllung erstmal Speichern, bevor du Produkte hinzufügen kannst!';
     }
 
     /**
@@ -117,12 +117,13 @@ class AbfuellenEditScreen extends Screen
      */
     public function layout(): iterable
     {
-        return [
-            AbfuellenGeneralLayout::class,
-            Layout::columns([
-                Layout::livewire('variant-adder'),
-            ])
-        ];
+        $elems = [AbfuellenGeneralLayout::class];
+
+        if($this->bottle != null && $this->bottle->exists){
+            array_push($elems, Layout::livewire('variant-adder'));
+        }
+
+        return $elems;
     }
 
     public function createOrUpdate(Bottle $bottle, Request $request)

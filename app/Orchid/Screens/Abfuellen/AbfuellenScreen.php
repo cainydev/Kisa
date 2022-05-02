@@ -55,11 +55,19 @@ class AbfuellenScreen extends Screen
         ];
     }
 
-    /**
-     * Views.
-     *
-     * @return \Orchid\Screen\Layout[]|string[]
-     */
+    public function deleteBottle(Bottle $bottle)
+    {
+        foreach ($bottle->positions as $pos) {
+            foreach ($pos->ingredients as $i) {
+                $i->delete();
+            }
+            $pos->delete();
+        }
+
+        $bottle->delete();
+        Alert::success('Abfüllung wurde gelöscht.');
+    }
+
     public function layout(): iterable
     {
         return [

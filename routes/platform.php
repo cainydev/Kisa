@@ -78,7 +78,7 @@ Route::screen('bottle/recipe/{bottle?}', AbfuellenRecipeScreen::class)
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.bottle')
-            ->push('Rezept anschauen');
+            ->push('Rezept');
     });
 
 // Platform > Bestand > Lieferungen

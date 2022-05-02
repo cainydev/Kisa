@@ -39,7 +39,8 @@ class VariantAdder extends Component
         $this->count = 10;
     }
 
-    public function delete(BottlePosition $position){
+    public function delete(BottlePosition $position)
+    {
         $position->delete();
     }
 
@@ -55,7 +56,7 @@ class VariantAdder extends Component
 
     public function setProduct(Product $product)
     {
-        if ($product->variants->count() < 1){
+        if ($product->variants->count() < 1) {
             return;
         }
 
@@ -65,7 +66,7 @@ class VariantAdder extends Component
 
     public function render()
     {
-        if(isset($this->product) && $this->product->exists){
+        if (isset($this->product) && $this->product->exists) {
             $this->product = Product::find($this->product->id);
         }
 
