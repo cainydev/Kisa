@@ -8,7 +8,7 @@ use Livewire\Component;
 
 class InputSearch extends Component
 {
-    public Collection $c = new Collection();
+    public Collection $c;
     public String $event;
     public String $query;
     public String $attr;
