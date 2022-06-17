@@ -47,12 +47,15 @@ class BottlePosition extends Model
                 return $this->ingredients->first()->bag->charge;
             }
         } else {
-            $bottlePositionsInThisMonth =
+            $bottlePositionsToday =
                 BottlePosition::all()
-                ->whereBetween('bottle.date', [$this->bottle->date->startOfMonth(), $this->bottle->date->endOfMonth()]);
+                ->where('bottle.date', $this->bottle->date)
+                ->where(function($pos) {
+                    return $pos->variant->product->herbs->count() > 1;
+                });
 
             $index = 1;
-            foreach ($bottlePositionsInThisMonth as $pos) {
+            foreach ($bottlePositionsToday as $pos) {
                 if ($this->id == $pos->id) {
                     return $this->bottle->date->format('ymd') . $index;
                 }
