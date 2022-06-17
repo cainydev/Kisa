@@ -36,6 +36,8 @@ class BagListLayout extends Table
             ->render(function ($bag) {
                 return sprintf('%ug', $bag->getCurrentWithTrashed());
             }),
+            TD::make('bestbefore', 'Haltbar bis')
+              ->sort(),
             TD::make('Lieferung')
             ->render(function ($bag) {
                 if($bag->delivery != null){

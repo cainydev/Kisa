@@ -36,6 +36,7 @@ class Bag extends Model
         'charge',
         'bio',
         'size',
+        'bestbefore',
         'specification',
         'trashed',
     ];
