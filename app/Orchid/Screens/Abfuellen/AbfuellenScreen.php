@@ -22,7 +22,7 @@ class AbfuellenScreen extends Screen
     {
 
         return [
-            'bottles' => Bottle::orderByDesc('date'),
+            'bottles' => Bottle::orderByDesc('date')->get(),
         ];
     }
 
