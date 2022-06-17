@@ -22,7 +22,7 @@ class AbfuellenScreen extends Screen
     {
 
         return [
-            'bottles' => Bottle::orderByDesc('date')->paginate(config('kis.paginate')),
+            'bottles' => Bottle::orderByDesc('date'),
         ];
     }
 

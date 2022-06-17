@@ -13,9 +13,7 @@ class ProductScreen extends Screen
     public function query(): iterable
     {
         return [
-            'products' => Product::paginate(
-                config('kis.paginate')
-            )
+            'products' => Product::all()
         ];
     }
 

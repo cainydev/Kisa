@@ -15,7 +15,7 @@ class HerbScreen extends Screen
     public function query(): iterable
     {
         return [
-            'herbs' => Herb::paginate(config('kis.paginate'))
+            'herbs' => Herb::all()
         ];
     }
 

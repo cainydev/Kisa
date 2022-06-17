@@ -18,7 +18,7 @@ class BagScreen extends Screen
     public function query(): iterable
     {
         return [
-            'bags' => Bag::filters()->defaultSort('id')->paginate(config('kis.paginate'))
+            'bags' => Bag::filters()->defaultSort('id')
         ];
     }
 

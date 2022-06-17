@@ -23,7 +23,7 @@ class DeliveryScreen extends Screen
     public function query(): iterable
     {
         return [
-            'deliveries' => Delivery::paginate(config('kis.paginate'))
+            'deliveries' => Delivery::all()
         ];
     }
 
