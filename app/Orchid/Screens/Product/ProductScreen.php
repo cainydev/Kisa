@@ -13,7 +13,9 @@ class ProductScreen extends Screen
     public function query(): iterable
     {
         return [
-            'products' => Product::paginate(20)
+            'products' => Product::paginate(
+                config('kis.paginate')
+            )
         ];
     }
 
@@ -21,9 +23,9 @@ class ProductScreen extends Screen
     {
         return [
             Link::make('Hinzufügen')
-            ->icon('plus')
-            ->class('btn btn-success')
-            ->route('platform.products.edit')
+                ->icon('plus')
+                ->class('btn btn-success')
+                ->route('platform.products.edit')
         ];
     }
 
@@ -37,9 +39,9 @@ class ProductScreen extends Screen
         $canDelete = true;
         $message = "Produkt konnte nicht gelöscht werden: ";
         foreach ($product->variants as $variant) {
-            foreach($variant->positions as $position){
+            foreach ($variant->positions as $position) {
                 $canDelete = false;
-                $message .= "Die " .$variant->size. "g Variante dieses Produkts wird aktuell noch in der Abfüllung ID: " . $position->bottle->id . " verwendet. ";
+                $message .= "Die " . $variant->size . "g Variante dieses Produkts wird aktuell noch in der Abfüllung ID: " . $position->bottle->id . " verwendet. ";
             }
         }
 

@@ -7,6 +7,7 @@ use Orchid\Screen\TD;
 use App\Orchid\Fields\Group;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Fields\Input;
 
 class BagListLayout extends Table
 {
@@ -16,7 +17,8 @@ class BagListLayout extends Table
     {
         return [
             TD::make('id', 'ID')
-            ->width('100px'),
+            ->width('100px')
+            ->sort(),
             TD::make('Inhalt')
             ->render(function ($bag) {
                 return $bag->herb->name . ' ' . $bag->specification;

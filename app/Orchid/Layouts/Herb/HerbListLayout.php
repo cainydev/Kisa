@@ -22,12 +22,12 @@ class HerbListLayout extends Table
     {
         return [
             TD::make('id', 'ID')
-            ->width('100px'),
+                ->width('100px'),
             TD::make('name', 'Bezeichnung'),
             TD::make('supplier_id', 'Standardlieferant')
-            ->render(function ($herb) {
-                return $herb->standardSupplier->shortname;
-            }),
+                ->render(function ($herb) {
+                    return $herb->standardSupplier->shortname;
+                }),
             TD::make()
                 ->align(TD::ALIGN_RIGHT)
                 ->render(function ($herb) {
@@ -41,6 +41,10 @@ class HerbListLayout extends Table
                             ->icon('pencil')
                             ->class('btn btn-primary p-2')
                             ->route('platform.herbs.edit', $herb),
+                        Link::make()
+                            ->icon('bar-chart')
+                            ->class('btn p-2')
+                            ->route('platform.herbs.statistics', $herb),
                     ]);
                 }),
         ];

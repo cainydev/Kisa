@@ -20,8 +20,9 @@ class AbfuellenScreen extends Screen
      */
     public function query(): iterable
     {
+
         return [
-            'bottles' => Bottle::paginate(20),
+            'bottles' => Bottle::orderByDesc('date')->paginate(config('kis.paginate')),
         ];
     }
 

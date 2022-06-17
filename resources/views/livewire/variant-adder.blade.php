@@ -1,4 +1,4 @@
-<div class="my-16 grid lg:grid-cols-2 gap-8">
+<div class="grid gap-8 my-16 lg:grid-cols-2">
     <div>
         <legend class="text-black">Produkte hinzufügen</legend>
 
@@ -95,15 +95,15 @@
     <div>
         <legend class="text-black">Produkte dieser Abfüllung</legend>
 
-        <div class="p-4 flex flex-col bg-white rounded shadow-sm">
+        <div class="flex flex-col p-4 bg-white rounded shadow-sm">
 
             @forelse ($bottle->positions as $pos)
-            <div class="@if($loop->even) bg-gray-100 @endif w-full grid gap-3 items-center grid-cols-4 px-2 py-1">
+            <div class="@if($loop->even) bg-gray-100 @endif w-full justify-between flex space-x-3 items-center px-2 py-1">
                 <span class="col-span-3">{{ $pos->count }}x
                 {{ $pos->variant->product->name }}</span>
-                <span class="flex items-center justify-between">
+                <span class="flex items-center justify-between shrink-0">
                     @include('partials.variants', ['variants' => [$pos->variant]])
-                    <button class="w-9 h-9 group" title="Löschen" wire:click="delete({{ $pos->id }})">
+                    <button class="shrink-0 w-9 h-9 group" title="Löschen" wire:click="delete({{ $pos->id }})">
                         <x-icons.icon-x-solid class="fill-red-500 group-hover:fill-red-600" />
                     </button>
                 </span>

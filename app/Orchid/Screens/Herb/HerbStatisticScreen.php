@@ -1,30 +1,25 @@
 <?php
 
-namespace App\Orchid\Screens\Abfuellen;
+namespace App\Orchid\Screens\Herb;
 
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 
-use App\Models\Bottle;
-use Orchid\Screen\Actions\Link;
+use App\Models\Herb;
 
-class AbfuellenRecipeScreen extends Screen
+class HerbStatisticScreen extends Screen
 {
-
-    /**
-     * @var Bottle
-     */
-    public $bottle;
+    public Herb $herb;
 
     /**
      * Query data.
      *
      * @return array
      */
-    public function query(Bottle $bottle): iterable
+    public function query(Herb $herb): iterable
     {
         return [
-            'bottle' => $bottle
+            'herb' => $herb,
         ];
     }
 
@@ -35,7 +30,7 @@ class AbfuellenRecipeScreen extends Screen
      */
     public function name(): ?string
     {
-        return 'Rezepte';
+        return 'Auswertung ' . $this->herb->name;
     }
 
     /**
@@ -45,12 +40,7 @@ class AbfuellenRecipeScreen extends Screen
      */
     public function commandBar(): iterable
     {
-        return [
-            Link::make('Zurück')
-                ->icon('action-undo')
-                ->class('btn btn-link')
-                ->route('platform.bottle.edit', $this->bottle),
-        ];
+        return [];
     }
 
     /**
@@ -61,7 +51,7 @@ class AbfuellenRecipeScreen extends Screen
     public function layout(): iterable
     {
         return [
-            Layout::livewire('recipes')
+            Layout::livewire('herb-statistics')
         ];
     }
 }

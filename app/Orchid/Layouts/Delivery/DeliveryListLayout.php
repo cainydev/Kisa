@@ -24,6 +24,10 @@ class DeliveryListLayout extends Table
                 ->render(function ($delivery) {
                     return view('partials/inspection', ['inspection' => $delivery->bio_inspection]);
                 }),
+            TD::make('Säcke')
+            ->render(function ($delivery) {
+                return view('partials/bags', ['bags' => $delivery->bags]);
+            }),
             TD::make('user_id', 'Empfänger')
                 ->render(function ($delivery) {
                     return $delivery->user->name;

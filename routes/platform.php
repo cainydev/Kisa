@@ -13,7 +13,7 @@ use App\Orchid\Screens\Meta\{SupplierScreen, SupplierEditScreen, InspectorScreen
 use App\Orchid\Screens\Abfuellen\{AbfuellenScreen, AbfuellenEditScreen, AbfuellenRecipeScreen};
 use App\Orchid\Screens\Delivery\{DeliveryScreen, DeliveryEditScreen};
 use App\Orchid\Screens\Bag\{BagScreen, BagEditScreen};
-use App\Orchid\Screens\Herb\{HerbScreen, HerbEditScreen};
+use App\Orchid\Screens\Herb\{HerbScreen, HerbStatisticScreen, HerbEditScreen};
 use App\Orchid\Screens\Product\{ProductScreen, ProductEditScreen};
 
 use Illuminate\Support\Facades\Route;
@@ -127,6 +127,13 @@ Route::screen('herbs/edit/{herb?}', HerbEditScreen::class)
         return $trail
             ->parent('platform.herbs')
             ->push('Erstellen oder Bearbeiten');
+    });
+Route::screen('herbs/statistics/{herb}', HerbStatisticScreen::class)
+    ->name('platform.herbs.statistics')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.herbs')
+            ->push('Statistiken');
     });
 
 // Platform > Produkte > Endprodukte

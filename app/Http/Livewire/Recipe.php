@@ -9,17 +9,16 @@ use App\Models\{BottlePosition, Bag, Ingredient};
 class Recipe extends Component
 {
     public BottlePosition $position;
-    //public $amounts = [];
-    //public $herbAmounts = [];
 
-    public function mount(BottlePosition $position)
+    public $newCharge;
+
+    protected $rules = [
+        'newCharge' => 'required|min:3'
+    ];
+
+    public function mount()
     {
-        /*$this->position = $position;
-        foreach ($this->position->ingredients as $i) {
-            $this->amounts[$i->bag->id] = $i->amount;
-        }
-
-        $this->refreshHerbs();*/
+        $this->newCharge = $this->position->charge;
     }
 
     public function refreshHerbs()
@@ -27,6 +26,22 @@ class Recipe extends Component
         foreach ($this->position->variant->product->herbs as $herb) {
             $this->herbAmounts[$herb->id] = $this->position->getAmount($herb);
         }
+    }
+
+    public function setCharge()
+    {
+        $this->validateOnly('newCharge');
+        $this->position->charge = $this->newCharge;
+        $this->position->save();
+        $this->newCharge = $this->position->charge;
+        session()->flash('success', 'Charge wurde manuell angepasst.');
+    }
+    public function generateCharge()
+    {
+        $this->position->charge = $this->position->getCharge();
+        $this->position->save();
+        $this->newCharge = $this->position->charge;
+        session()->flash('success', 'Charge wurde automatisch generiert.');
     }
 
     public function setBag(Bag $bag)
@@ -41,6 +56,13 @@ class Recipe extends Component
             ]
         );
         session()->flash('success', $bag->herb->name .  ' ' . $bag->specification . ' wird jetzt verwendet.');
+    }
+
+    public function removeBag(Bag $bag)
+    {
+        Ingredient::where('bottle_position_id', $this->position->id)->where('herb_id', $bag->herb->id)->delete();
+
+        session()->flash('warning', $bag->herb->name .  ' ' . $bag->specification . ' wird nicht mehr verwendet.');
     }
 
     public function render()

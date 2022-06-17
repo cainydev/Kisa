@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 use Orchid\Screen\AsSource;
+use Orchid\Filters\Filterable;
 
 class Bag extends Model
 {
-    use HasFactory, AsSource;
+    use HasFactory, AsSource, Filterable;
 
     protected $guarded = [];
 
@@ -19,6 +20,24 @@ class Bag extends Model
     protected $casts = [
         'bestbefore' => 'date:Y-m-d',
         'steamed' => 'date:Y-m-d',
+    ];
+
+    protected $allowedFilters = [
+        'id',
+        'charge',
+        'bio',
+        'size',
+        'specification',
+        'trashed',
+    ];
+
+    protected $allowedSorts = [
+        'id',
+        'charge',
+        'bio',
+        'size',
+        'specification',
+        'trashed',
     ];
 
     public function herb()

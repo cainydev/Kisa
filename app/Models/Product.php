@@ -13,6 +13,15 @@ class Product extends Model
 
     protected $guarded = [];
 
+
+    public function getPercentage(Herb $herb){
+        if($this->herbs->contains($herb)){
+            return $this->herbs->find($herb)->pivot->percentage;
+        }else{
+            return 0.0;
+        }
+    }
+
     public function herbs()
     {
         return $this->belongsToMany(Herb::class)

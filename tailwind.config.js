@@ -62,7 +62,7 @@ module.exports = {
             pattern: /bg-(red|green|blue)-(300|400|500|600|700|800)/,
         },
         {
-            pattern: /'text-white'/,
+            pattern: /text-(white|black|green|red|yellow)/,
             variants: ['hover'],
         }
     ],

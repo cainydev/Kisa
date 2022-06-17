@@ -37,7 +37,14 @@ class AbfuellenListLayout extends Table
             ->render(function ($bottle) {
                 return view('partials/boolean', ['value' => $bottle->finished()]);
             })->width('50px'),
-            TD::make('note', 'Notiz'),
+            TD::make('Abgefüllt')
+                ->render(function($bottle) {
+                    $s = "";
+                    foreach($bottle->positions as $pos){
+                        $s .= $pos->variant->product->name . ', ';
+                    }
+                    return $s;
+                }),
             TD::make()
                 ->width('50px')
                 ->align(TD::ALIGN_RIGHT)

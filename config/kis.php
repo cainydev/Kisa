@@ -1,6 +1,7 @@
 <?php
  return array (
-  'billbee' => 
+  'paginate' => 1000,
+  'billbee' =>
   array (
     'everyXMinutes' => 10,
     'from' => '06:00',
