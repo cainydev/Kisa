@@ -45,7 +45,9 @@ class VariantMaker extends Component
 
     public function render()
     {
-        $this->product = Product::find($this->product->id);
+        if($this->product->exists) {
+            $this->product = Product::find($this->product->id);
+        }
         return view('livewire.variant-maker');
     }
 }

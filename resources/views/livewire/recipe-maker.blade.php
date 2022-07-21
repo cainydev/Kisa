@@ -2,6 +2,8 @@
     <div class="p-4 bg-white rounded shadow-sm">
         <p>Hier kannst das Rezept für dieses Produkt bearbeiten.</p>
 
+        @if($this->product->exists)
+
         {{-- Hinzufügen --}}
         <p class="mt-6 text-xl text-gray-800">Hinzufügen:</p>
         <div class="flex flex-col gap-2">
@@ -76,5 +78,8 @@
                     {{ $gesamt }}%</p>
             </span>
         </div>
+        @else
+        <p class="text-red-500">Bitte speichere das Produkt erst ab, bevor du Rezepte veränderst.</p>
+        @endif
     </div>
 </div>

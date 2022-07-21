@@ -25,6 +25,7 @@ class RecipeMaker extends Component
     public function add(){
         $this->validate();
 
+
         $this->product->herbs()->attach($this->herb, ['percentage' => $this->amount]);
 
         $this->herb = new Herb();
@@ -41,7 +42,9 @@ class RecipeMaker extends Component
 
     public function render()
     {
-        $this->product = Product::find($this->product->id);
+        if ($this->product->exists) {
+            $this->product = Product::find($this->product->id);
+        }
         return view('livewire.recipe-maker');
     }
 }
