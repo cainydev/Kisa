@@ -41,7 +41,8 @@
         @php
         $show = false;
         @endphp
-        @foreach($position->variant->product->herbs as $herb)
+
+        @forelse($position->variant->product->herbs as $herb)
         <div class="accordion-item" x-data>
             <h2 class="accordion-header" id="heading{{ $loop->index }}">
                 <button class="flex justify-between accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $loop->index }}" aria-expanded="false" aria-controls="collapse{{ $loop->index }}">
@@ -122,6 +123,13 @@
 
             </div>
         </div>
-        @endforeach
+        @empty
+        <div class="mt-2">
+            <p><span class="font-semibold text-red-500">Achtung:</span> Für dieses Produkt wurde noch kein Rezept hinterlegt.</p>
+            <a href="{{ route('platform.products.edit', $position->variant->product) }}">
+                <x-button class="mt-2 font-semibold">Produkt bearbeiten</x-button>
+            </a>
+        </div>
+        @endforelse
     </div>
 </div>
