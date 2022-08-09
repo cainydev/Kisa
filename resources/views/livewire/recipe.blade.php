@@ -87,7 +87,7 @@
                                 @if($bag->bio)
                                 <p class="text-green-500">BIO</p>
                                 @else
-                                <p class="text-red-500">BIO</p>
+                                <p class="text-red-500">NICHT BIO</p>
                                 @endif
 
                                 @if($position->isBagFor($bag, $herb))
