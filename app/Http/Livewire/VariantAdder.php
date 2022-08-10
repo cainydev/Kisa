@@ -28,6 +28,7 @@ class VariantAdder extends Component
     {
         $this->validate();
 
+
         BottlePosition::create([
             'bottle_id' => $this->bottle->id,
             'variant_id' => $this->variant->id,
@@ -58,6 +59,17 @@ class VariantAdder extends Component
     public function setVariant(Variant $variant)
     {
         $this->variant = $variant;
+
+        $bottles = Bottle::where('date', $this->bottle->date)->get();
+
+        foreach ($bottles as $bottle) {
+            foreach ($bottle->positions as $pos) {
+                if ($pos->variant->id == $this->variant->id) {
+                    session()->flash('warning', 'Du hast an diesem Tag bereits eine ähnliche Abfüllung gemacht. Bist du dir sicher?');
+                    return;
+                }
+            }
+        }
     }
 
     public function setProduct(Product $product)
@@ -67,7 +79,7 @@ class VariantAdder extends Component
         }
 
         $this->product = $product;
-        $this->variant = $product->variants->first();
+        $this->setVariant($product->variants->first());
     }
 
     public function render()
