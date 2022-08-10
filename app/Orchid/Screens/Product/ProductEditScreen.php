@@ -25,7 +25,7 @@ class ProductEditScreen extends Screen
 
     public function name(): ?string
     {
-        return 'Rohstoff ' . ($this->product->exists ? 'bearbeiten' : 'erstellen');
+        return 'Endprodukt ' . ($this->product->exists ? 'bearbeiten' : 'erstellen');
     }
 
     public function commandBar(): iterable
