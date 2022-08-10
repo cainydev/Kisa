@@ -37,6 +37,8 @@ class VariantAdder extends Component
         $this->product = new Product;
         $this->variant = new Variant;
         $this->count = 10;
+
+        return redirect(request()->header('Referer'));
     }
 
     public function delete(BottlePosition $position)
