@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Support\Facades\Http;
+
 use Orchid\Screen\AsSource;
 
 class Variant extends Model
@@ -14,6 +16,41 @@ class Variant extends Model
     protected $guarded = [];
 
     protected $with = ['product'];
+
+    public function getSKU(){
+        return $this->product->mainnumber . $this->ordernumber;
+    }
+
+    public function getStockFromBillbee(){
+        $user = env('BILLBEE_USER');
+        $pw = env('BILLBEE_PW');
+        $key = env('BILLBEE_KEY');
+        $host = env('BILLBEE_HOST');
+
+        $response = Http::acceptJson()
+            ->withBasicAuth($user, $pw)
+            ->withHeaders(['X-Billbee-Api-Key' => $key])
+            ->retry(2, 500)
+            ->get($host . 'products/' . $this->product->mainnumber . $this->ordernumber, [
+                'lookupBy' => 'sku'
+            ])->json();
+
+        if($response == null){
+            return false;
+        }
+
+        if($response['ErrorMessage'] != null || $response['ErrorCode'] != 0){
+            return false;
+        }
+
+        if($response['Data'] == null){
+            return false;
+        }
+
+        $this->stock = intval($response['Data']['StockCurrent']);
+        $this->save();
+        return true;
+    }
 
     public function product()
     {

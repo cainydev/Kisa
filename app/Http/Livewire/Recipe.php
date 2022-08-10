@@ -44,6 +44,24 @@ class Recipe extends Component
         session()->flash('success', 'Charge wurde automatisch generiert.');
     }
 
+    public function uploadToBillbee(){
+        if(!$this->position->hasAllBags()){
+            session()->flash('error', 'Bitte vervollständige erst die Abfüllung.');
+            return;
+        }
+
+        if($this->position->uploaded){
+            session()->flash('error', 'Diese Abfüllung wurde bereits eingelagert.');
+            return;
+        }
+
+        if($this->position->upload()){
+            session()->flash('success', 'Billbee Artikelbestand wurde erfolgreich aktualisiert!');
+        }else{
+            session()->flash('error', 'Beim aktualisieren des Artikelbestands in Billbee ist ein Fehler aufgetreten.');
+        }
+    }
+
     public function setBag(Bag $bag)
     {
         Ingredient::updateOrCreate(
@@ -55,6 +73,9 @@ class Recipe extends Component
                 'bag_id' => $bag->id,
             ]
         );
+
+        $this->generateCharge();
+
         session()->flash('success', $bag->herb->name .  ' ' . $bag->specification . ' wird jetzt verwendet.');
     }
 

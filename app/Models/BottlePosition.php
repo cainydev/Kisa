@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Http;
 
-use Carbon\Carbon;
 
 use App\Models\Ingredient;
 use Orchid\Screen\AsSource;
@@ -31,6 +31,41 @@ class BottlePosition extends Model
     public function ingredients()
     {
         return $this->hasMany(Ingredient::class);
+    }
+
+    /**
+     * Uploads this position to Billbee, therefore increasing the Stock in Billbee for this product.
+     */
+    public function upload(){
+        $this->variant->getStockFromBillbee();
+
+        $user = env('BILLBEE_USER');
+        $pw = env('BILLBEE_PW');
+        $key = env('BILLBEE_KEY');
+        $host = env('BILLBEE_HOST');
+
+        $body = [
+            "Sku" => $this->variant->getSKU(),
+            "Reason" => "Einlagerung " . $this->charge,
+            "OldQuantity" => $this->variant->stock,
+            "NewQuantity" => $this->variant->stock + $this->count,
+            "DeltaQuantity" => $this->count
+        ];
+
+        $response = Http::acceptJson()
+            ->withBasicAuth($user, $pw)
+            ->withHeaders(['X-Billbee-Api-Key' => $key])
+            ->withBody(json_encode($body), 'application/json')
+            ->retry(2, 500)
+            ->post($host . 'products/updatestock')
+            ->json();
+
+        if($response['ErrorCode'] === 0){
+            $this->update(['uploaded' => true]);
+            return true;
+        }
+
+        return false;
     }
 
     /**
