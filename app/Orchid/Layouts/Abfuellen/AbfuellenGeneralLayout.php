@@ -7,21 +7,12 @@ use Orchid\Screen\Layouts\Rows;
 use Orchid\Screen\Fields\{Input, Relation, DateTimer};
 
 use App\Models\User;
+use League\CommonMark\Extension\CommonMark\Node\Block\ThematicBreak;
 
 class AbfuellenGeneralLayout extends Rows
 {
-    /**
-     * Used to create the title of a group of form elements.
-     *
-     * @var string|null
-     */
     protected $title = 'Allgemein';
 
-    /**
-     * Get the fields elements to be displayed.
-     *
-     * @return Field[]
-     */
     protected function fields(): iterable
     {
         return [
@@ -29,6 +20,7 @@ class AbfuellenGeneralLayout extends Rows
                 ->title('Abfüller')
                 ->help('Derjenige, der abgefüllt hat. Das musst nicht zwingend du sein.')
                 ->required()
+                ->value($this->bottle->user_id ?? 2)
                 ->fromModel(User::class, 'name'),
             DateTimer::make('bottle.date')
                 ->title('Datum der Abfüllung')
