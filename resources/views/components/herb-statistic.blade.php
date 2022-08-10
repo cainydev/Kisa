@@ -10,7 +10,6 @@ $herb = $bag->herb;
     <p>Charge: {{ $bag->charge }}</p>
     <p>Wareneingang Menge: {{ $bag->size }}g</p>
     <p>Lieferant: {{ $bag->delivery->supplier->company }}</p>
-    <p>Mindestens Haltbar bis: {{ $bag->bestbefore->diffForHumans() }} ({{ $bag->bestbefore->format('d.m.Y') }})</p>
 </div>
 {{-- Abfüllungen --}}
 <div class="p-3 my-3 space-y-1 border rounded-md">
@@ -20,16 +19,11 @@ $herb = $bag->herb;
     <table class="table">
         <thead>
             <tr>
-                <th scope="col"
-                    class="font-semibold text-black">Datum</th>
-                <th scope="col"
-                    class="font-semibold text-black">Produkt</th>
-                <th scope="col"
-                    class="font-semibold text-black">Einheiten</th>
-                <th scope="col"
-                    class="font-semibold text-black">Verwendete Menge</th>
-                <th scope="col"
-                    class="font-semibold text-black">K&W Charge</th>
+                <th scope="col" class="font-semibold text-black">Datum</th>
+                <th scope="col" class="font-semibold text-black">Produkt</th>
+                <th scope="col" class="font-semibold text-black">Einheiten</th>
+                <th scope="col" class="font-semibold text-black">Verwendete Menge</th>
+                <th scope="col" class="font-semibold text-black">K&W Charge</th>
             </tr>
         </thead>
         <tbody>
