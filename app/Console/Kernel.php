@@ -17,8 +17,9 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('kuw:stock')
             ->description('Queries the stock from Billbee')
-            ->cron('*/' . config('kis.billbee.everyXMinutes', 10) . ' * * * *')
-            ->between(config('kis.billbee.from', '04:00'), config('kis.billbee.to', '23:00'));
+            ->cron('*/' . config('kis.billbee.everyXMinutes', 30) . ' * * * *')
+            ->between(config('kis.billbee.from', '04:00'), config('kis.billbee.to', '23:00'))
+            ->runInBackground();
     }
 
     /**
