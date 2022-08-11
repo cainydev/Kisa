@@ -5,6 +5,8 @@ namespace App\Orchid\Screens\Information;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 
+use App\Http\Controllers\ChartsController;
+
 class DashboardScreen extends Screen
 {
     public function query(): iterable
@@ -25,7 +27,12 @@ class DashboardScreen extends Screen
     public function layout(): iterable
     {
         return [
-            Layout::livewire('dashboard')
+            Layout::view('charts.bags', [
+                'bestbefore' => ChartsController::bagBestBefore(),
+                'bio' => ChartsController::bagIsBio(),
+                'soonSpoil' => ChartsController::bagIsSoonSpoiled(),
+            ]),
+            Layout::livewire('bag-usage')
         ];
     }
 }
