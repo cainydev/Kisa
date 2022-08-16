@@ -35,11 +35,8 @@ class Variant extends Model
                 'lookupBy' => 'sku'
             ])->json();
 
-        if($response == null){
-            return false;
-        }
-
-        if($response['ErrorMessage'] != null || $response['ErrorCode'] != 0){
+        if($response->failed()){
+            dd('Couldn\'t get stock from Billbee: ' . $response['ErrorMessage'] . ': ' . $response['ErrorDescription']);
             return false;
         }
 
