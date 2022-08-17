@@ -28,7 +28,8 @@ module.exports = {
             colors: {
                 'ksand': '#b8c672',
                 'kgreen': '#6b8e6d',
-                'kturq': '#7ec399'
+                'kturq': '#7ec399',
+                'billbee': '#06bf68'
             },
             transitionProperty: {
                 'height': 'height',

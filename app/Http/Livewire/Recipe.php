@@ -44,6 +44,14 @@ class Recipe extends Component
         session()->flash('success', 'Charge wurde automatisch generiert.');
     }
 
+    public function refreshStock(){
+        if($this->position->variant->getStockFromBillbee()){
+            session()->flash('success', 'Bestand wurde erfolgreich von Billbee abgerufen.');
+        }else{
+            session()->flash('error', 'Bestand konnte nicht von Billbee abgerufen werden.');
+        }
+    }
+
     public function uploadToBillbee(){
         if(!$this->position->hasAllBags()){
             session()->flash('error', 'Bitte vervollständige erst die Abfüllung.');

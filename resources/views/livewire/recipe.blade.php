@@ -6,12 +6,15 @@
             <p class="mb-2 font-bold tracking-wider uppercase">Abfüllung von</p>
             <x-recipe-title :position="$position" />
             {{-- Current stock display --}}
-            <div class="mt-12 border p-2 rounded-md w-fit">
-                <span class="flex items-center flex-row h-9 shadow w-min hover:-translate-y-1 transition-transform">
-                    <img class="rounded-l-md h-full" src="{{ asset('images/billbee.png') }}" alt="">
-                    <button class="bg-gray-200 font-semibold h-full rounded-r-md px-3" wire:click="refreshStock">Aktualisieren</button>
+            <div class="p-2 mt-12 border rounded-md w-fit">
+                <span class="flex flex-row items-center shadow h-9 w-min">
+                    <div class="h-full overflow-hidden rounded-l-md bg-billbee w-9">
+                        <img wire:loading.remove class="h-full " src="{{ asset('images/billbee.png') }}" alt="">
+                        <x-icons.icon-loading wire:loading.flex class="fill-white" />
+                    </div>
+                    <button class="h-full px-3 font-semibold bg-gray-200 rounded-r-md" wire:click="refreshStock">Aktualisieren</button>
                 </span>
-                <p class="text-lg mt-2">Aktueller Bestand in Billbee: {{ $position->variant->stock }} </p>
+                <p class="mt-2 text-lg">Aktueller Bestand in Billbee: {{ $position->variant->stock }} </p>
             </div>
 
         </div>
@@ -26,11 +29,14 @@
             </div>
 
             {{-- Upload to Billbee --}}
-            <div class="mt-3 flex flex-col">
+            <div class="flex flex-col mt-3">
                 <p class="form-label">Upload zu Billbee</p>
                 @if(!$position->uploaded)
                 @if($position->hasAllBags())
-                <button wire:click="uploadToBillbee" class="mr-3 btn btn-success whitespace-nowrap">Produkt einlagern in Billbee</button>
+                <button wire:click="uploadToBillbee" class="mr-3 btn btn-success whitespace-nowrap">
+                    <span wire:loading.remove >Produkt einlagern in Billbee</span>
+                    <x-icons.icon-loading wire:loading.flex class="w-8 h-8 mx-auto fill-white" />
+                </button>
                 @else
                 <div class="alert alert-warning" role="alert">
                     <p>Fülle zuerst das ganze Produkt ab bevor du es in Billbee einlagern kannst.</p>
