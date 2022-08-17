@@ -33,16 +33,15 @@ class Variant extends Model
             ->retry(2, 500)
             ->get($host . 'products/' . $this->product->mainnumber . $this->ordernumber, [
                 'lookupBy' => 'sku'
-            ])->json();
+            ]);
 
         if($response->failed()){
+            $response = $response->json();
             dd('Couldn\'t get stock from Billbee: ' . $response['ErrorMessage'] . ': ' . $response['ErrorDescription']);
             return false;
         }
 
-        if($response['Data'] == null){
-            return false;
-        }
+        $response = $response->json();
 
         $this->stock = intval($response['Data']['StockCurrent']);
         $this->save();

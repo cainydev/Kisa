@@ -57,10 +57,9 @@ class BottlePosition extends Model
             ->withHeaders(['X-Billbee-Api-Key' => $key])
             ->withBody(json_encode($body), 'application/json')
             ->retry(2, 500)
-            ->post($host . 'products/updatestock')
-            ->json();
+            ->post($host . 'products/updatestock');
 
-        if($response['ErrorCode'] === 0){
+        if($response->successful()){
             $this->update(['uploaded' => true]);
             return true;
         }
