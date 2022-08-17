@@ -25,8 +25,10 @@ class VariantMaker extends Component
     public function add(){
         $this->validate();
 
-        if(!str($this->sku)->startsWith('.')){
-            $this->sku = '.' . $this->sku;
+        if(!str($this->sku)->empty()){
+            if(!str($this->sku)->startsWith('.')){
+                $this->sku = '.' . $this->sku;
+            }
         }
 
         Variant::create([

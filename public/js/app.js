@@ -23462,7 +23462,6 @@ _dist_chart_mjs__WEBPACK_IMPORTED_MODULE_0__.Chart.register(..._dist_chart_mjs__
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "defaults": () => (/* reexport safe */ _chunks_helpers_segment_mjs__WEBPACK_IMPORTED_MODULE_0__.d),
 /* harmony export */   "Animation": () => (/* binding */ Animation),
 /* harmony export */   "Animations": () => (/* binding */ Animations),
 /* harmony export */   "ArcElement": () => (/* binding */ ArcElement),
@@ -23502,6 +23501,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "_detectPlatform": () => (/* binding */ _detectPlatform),
 /* harmony export */   "animator": () => (/* binding */ animator),
 /* harmony export */   "controllers": () => (/* binding */ controllers),
+/* harmony export */   "defaults": () => (/* reexport safe */ _chunks_helpers_segment_mjs__WEBPACK_IMPORTED_MODULE_0__.d),
 /* harmony export */   "elements": () => (/* binding */ elements),
 /* harmony export */   "layouts": () => (/* binding */ layouts),
 /* harmony export */   "plugins": () => (/* binding */ plugins),
