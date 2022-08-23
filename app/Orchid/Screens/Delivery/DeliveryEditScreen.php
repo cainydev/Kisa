@@ -89,7 +89,7 @@ class DeliveryEditScreen extends Screen
 
         $valid = true;
         foreach($bag->ingredients as $i){
-            $message .= "Gebinde wird bereits in Abfüllung (ID=" . $i->position->bottle->id . ") verwendet. ";
+            $message .= "Gebinde wird aktuell in Abfüllung (ID=" . $i->position->bottle->id . ") verwendet.";
             $valid = false;
         }
 
