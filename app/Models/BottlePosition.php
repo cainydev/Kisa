@@ -112,6 +112,11 @@ class BottlePosition extends Model
     {
         $i = $this->ingredients->where('herb_id', $herb->id)->first();
         if ($i == null) return false;
+        dd([
+            '$i' => $i,
+            '$i->bag' => $i->bag,
+            '$bag' => $bag
+        ]);
         return $i->bag->id == $bag->id;
     }
 
