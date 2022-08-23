@@ -10,7 +10,7 @@ use Orchid\Support\Facades\{Alert, Layout};
 
 use App\Orchid\Layouts\Delivery\{DeliveryEditLayout, DeliveryBioLayout, DeliveryBagsLayout, DeliveryListBagLayout};
 
-use App\Models\{Delivery, Bag};
+use App\Models\{Delivery, Bag, BottlePosition};
 
 class DeliveryEditScreen extends Screen
 {
@@ -83,8 +83,22 @@ class DeliveryEditScreen extends Screen
 
     public function deleteBag(Request $request)
     {
-        Bag::find($request->query->get('bag'))->delete();
-        Alert::success('Gebinde wurde entfernt.');
+        $bag = Bag::find($request->query->get('bag'));
+
+        $message = "Gebinde konnte nicht gelöscht werden: ";
+
+        $valid = true;
+        foreach($bag->ingredients as $i){
+            $message .= "Gebinde wird bereits in Abfüllung (ID=" . $i->position->bottle->id . ") verwendet. ";
+            $valid = false;
+        }
+
+        if ($valid){
+            $bag->delete();
+            Alert::success('Gebinde wurde entfernt.');
+        }else{
+            Alert::error($message);
+        }
     }
 
     public function createOrUpdate(Delivery $delivery, Request $request)

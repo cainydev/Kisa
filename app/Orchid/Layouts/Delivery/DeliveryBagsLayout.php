@@ -47,7 +47,7 @@ class DeliveryBagsLayout extends Rows
                 ->format('Y-m-d'),
 
             Button::make('Hinzufügen')
-                ->class('btn btn-success')
+    ->class('btn btn-success')
                 ->method('addBag')
         ];
     }
