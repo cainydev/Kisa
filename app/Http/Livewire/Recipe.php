@@ -82,7 +82,11 @@ class Recipe extends Component
             ]
         );
 
-        $this->generateCharge();
+        $this->emitUp('updateRecipes');
+
+        $this->position->charge = $this->position->getCharge();
+        $this->position->save();
+        $this->newCharge = $this->position->charge;
 
         session()->flash('success', $bag->herb->name .  ' ' . $bag->specification . ' wird jetzt verwendet.');
     }
@@ -92,6 +96,8 @@ class Recipe extends Component
         Ingredient::where('bottle_position_id', $this->position->id)->where('herb_id', $bag->herb->id)->delete();
 
         session()->flash('warning', $bag->herb->name .  ' ' . $bag->specification . ' wird nicht mehr verwendet.');
+
+        $this->emitUp('updateRecipes');
     }
 
     public function render()

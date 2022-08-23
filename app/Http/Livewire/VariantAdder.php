@@ -16,7 +16,7 @@ class VariantAdder extends Component
 
     public Variant $variant;
 
-    public $count = 10;
+    public $count = 1;
 
     protected $rules = [
         'product' => 'required',
