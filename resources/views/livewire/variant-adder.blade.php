@@ -24,9 +24,9 @@
 
         <div class="p-4 bg-white rounded shadow-sm">
             @if($bottle->exists)
-            <div x-data="{open:false}" x-on:click.away="open = false" x-on:keydown.esc.window="open = false" class="relative flex flex-col items-stretch w-full max-w-xs">
+            <div x-init="$focus.focus($el)" x-data="{open:false}" x-on:click.away="open = false" x-on:keydown.esc.window="open = false" class="relative flex flex-col items-stretch w-full max-w-xs">
                 <span>@error('product') {{ $message }} @enderror</span>
-                <button x-on:focusin="open = true; $focus.focus($refs.search)" x-on:click.prevent="open = true" class="flex items-center justify-between w-full px-3 py-2 bg-gray-100 border rounded-t">
+                <button x-ref="trigger" x-on:focusin="open = true; $focus.focus($refs.search)" x-on:click.prevent="open = true" class="flex items-center justify-between w-full px-3 py-2 bg-gray-100 border rounded-t">
                     @if($product != null && $product->exists)
                     {{ $product->name }}
                     <x-icons.icon-checkmark-solid class="w-5 h-5 fill-green-600" />
