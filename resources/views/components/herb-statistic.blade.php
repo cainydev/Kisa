@@ -9,7 +9,9 @@ $herb = $bag->herb;
     <p>Produkt: {{ $herb->name }}</p>
     <p>Charge: {{ $bag->charge }}</p>
     <p>Wareneingang Menge: {{ $bag->size }}g</p>
+    <p>Wareneingang Datum: {{ $bag->delivery->delivered_date->format('d.m.Y'); }}</p>
     <p>Lieferant: {{ $bag->delivery->supplier->company }}</p>
+    <a class="mt-3 text-blue-500 underline" href="{{ route('platform.deliveries.edit', $bag->delivery) }}">Link zur Lieferung</a>
 </div>
 {{-- Abfüllungen --}}
 <div class="p-3 my-3 space-y-1 border rounded-md">
