@@ -31,19 +31,22 @@ class AbfuellenListLayout extends Table
             TD::make('user_id', 'Abfüller')
                 ->render(function ($bottle) {
                     return $bottle->user->name;
-                })->width('150px'),
+                })->width('80px'),
             TD::make('date', 'Datum')->width('100px'),
             TD::make('Fertig abgefüllt')
-            ->render(function ($bottle) {
-                return view('partials/boolean', ['value' => $bottle->finished()]);
-            })->width('50px'),
+                ->render(function ($bottle) {
+                    return view('partials/boolean', ['value' => $bottle->finished()]);
+                })->width('50px'),
             TD::make('Abgefüllt')
-                ->render(function($bottle) {
+                ->render(function ($bottle) {
                     $s = "";
-                    foreach($bottle->positions as $pos){
+                    foreach ($bottle->positions as $pos) {
                         $s .= $pos->variant->product->name . ', ';
                     }
-                    return $s;
+                    if (strlen($s) > 120) {
+                        return substr(rtrim(trim($s), ','), 0, 120) . '...';
+                    }
+                    return rtrim(trim($s), ',');
                 }),
             TD::make()
                 ->width('50px')
