@@ -5,7 +5,10 @@
             <hr class="mb-3">
             <div>
                 @forelse($herb->bags as $availableBag)
-                <button class="btn btn-primary" wire:click="generateFor({{ $availableBag->id }})">Charge #{{ $availableBag->charge }}</button>
+                <button class="btn btn-primary" wire:click="generateFor({{ $availableBag->id }})">
+                    <span wire:loading.remove>Charge #{{ $availableBag->charge }}</span>
+                    <x-icons.icon-loading wire:loading.flex class="w-8 h-8 mx-auto fill-white" />
+                </button>
                 @empty
                 Keine Chargen vorhanden.
                 @endforelse
