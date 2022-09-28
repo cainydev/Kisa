@@ -74,7 +74,7 @@
             </div>
             @if($variant != null && $variant->exists)
             <div>
-                <input type="number" class="max-w-xs mt-3 form-control" placeholder="Anzahl" min="1" wire:model="count" max="100" name="" id="">
+                <input type="number" class="max-w-xs mt-3 form-control" placeholder="Anzahl" min="1" wire:model="count" max="1000" name="" id="">
             </div>
             <button wire:click="add" class="mt-3 btn btn-success">
                 Hinzufügen

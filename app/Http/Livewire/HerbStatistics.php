@@ -15,6 +15,20 @@ class HerbStatistics extends Component
 {
     public Herb $herb;
 
+    public Bag $bag;
+
+    public function mount(){
+        if(isset($this->herb)){
+            if($this->herb->bags->count() > 0){
+                $this->generateFor($this->herb->bags->first());
+            }
+        }
+    }
+
+    public function generateFor(Bag $bag){
+        $this->bag = $bag;
+    }
+
     public function printPDF(Bag $bag)
     {
         $name = str('auswertung ' . $bag->herb->name . ' charge ' . $bag->charge . ' ' . Carbon::now())->slug() . '.pdf';

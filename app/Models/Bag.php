@@ -50,12 +50,29 @@ class Bag extends Model
         return $this->belongsTo(Delivery::class);
     }
 
-    public function getCurrent(){
+    /**
+     * Returns all the Ingredients where this bag is used in an efficient manner. (Hopefully 1 query for all..)
+     * @return Collection
+     */
+    public function getIngredientsWithRelations()
+    {
+        return $this->ingredients()->with([
+            'position' => [
+                'variant' => [
+                    'product'
+                ],
+                'bottle',
+            ]
+        ])->get();
+    }
+
+    public function getCurrent()
+    {
         $sum = 0;
-        foreach($this->ingredients as $i){
+        foreach ($this->ingredients as $i) {
             $variant = $i->position->variant;
-            foreach($variant->product->herbs as $herb){
-                if($herb->id == $this->herb->id){
+            foreach ($variant->product->herbs as $herb) {
+                if ($herb->id == $this->herb->id) {
                     $sum += ($variant->size * $i->position->count) * ($herb->pivot->percentage / 100);
                 }
             }
@@ -63,23 +80,28 @@ class Bag extends Model
         return $this->size - $sum;
     }
 
-    public function getCurrentWithTrashed(){
+    public function getCurrentWithTrashed()
+    {
         return $this->getCurrent() - $this->trashed;
     }
 
-    public function getCurrentPercentage(){
+    public function getCurrentPercentage()
+    {
         return ($this->getCurrentWithTrashed() / $this->size) * 100;
     }
 
-    public function ingredients(){
+    public function ingredients()
+    {
         return $this->hasMany(Ingredient::class);
     }
 
-    public function getSizeInKilo(){
+    public function getSizeInKilo()
+    {
         return sprintf("%.1fkg", $this->size / 1000);
     }
 
-    public function getSizeInGramm(){
+    public function getSizeInGramm()
+    {
         return sprintf("%ug", $this->size);
     }
 }

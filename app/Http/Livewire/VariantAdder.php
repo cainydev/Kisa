@@ -21,7 +21,7 @@ class VariantAdder extends Component
     protected $rules = [
         'product' => 'required',
         'variant' => 'required',
-        'count' => 'numeric|required|max:100|min:1'
+        'count' => 'numeric|required|max:1000|min:1'
     ];
 
     public function add()

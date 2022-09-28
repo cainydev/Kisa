@@ -26,11 +26,11 @@ $herb = $bag->herb;
                     <th scope="col" class="font-semibold text-black">Produkt</th>
                     <th scope="col" class="font-semibold text-black">Einheiten</th>
                     <th scope="col" class="font-semibold text-black">Verwendete Menge</th>
-                    <th scope="col" class="font-semibold text-black">K&W Charge</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($bag->ingredients as $ing)
+                @foreach($bag->getIngredientsWithRelations() as $ing)
+
                 @php
                 $position = $ing->position;
                 $variant = $position->variant;
