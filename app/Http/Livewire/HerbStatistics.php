@@ -45,6 +45,7 @@ class HerbStatistics extends Component
 
     public function render()
     {
+        $this->herb = Herb::find($this->herb->id);
         return view('livewire.herb-statistics');
     }
 }
