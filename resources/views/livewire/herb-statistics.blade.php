@@ -16,16 +16,15 @@
         </div>
     </div>
     <div class="p-4 mt-3 bg-white rounded-md shadow">
-        <div class="tab-pane fade show" id="bag{{ $bag->id }}" role="tabpanel" aria-labelledby="{{ $bag->id }}-tab">
-            <div class="flex items-center justify-between p-3 mb-3 space-y-1 border rounded-md">
-                <p class="text-lg font-semibold">Statistik generiert für Charge #{{ $bag->charge}}</p>
-                <button class="btn btn-primary" wire:click="printPDF({{ $bag->id }})">PDF Drucken</button>
-            </div>
-            @if(isset($bag))
-            <x-herb-statistic :bag="$bag" />
-            @else
-            <p>Wähle aus, für welche Charge die Statistik generiert werden soll.</p>
-            @endif
+        @if(isset($bag))
+        <div class="flex items-center justify-between p-3 mb-3 space-y-1 border rounded-md">
+            <p class="text-lg font-semibold">Statistik generiert für Charge #{{ $bag->charge}}</p>
+            <button class="btn btn-primary" wire:click="printPDF({{ $bag->id }})">PDF Drucken</button>
         </div>
+
+        <x-herb-statistic :bag="$bag" />
+        @else
+        <p>Wähle aus, für welche Charge die Statistik generiert werden soll.</p>
+        @endif
     </div>
 </div>
