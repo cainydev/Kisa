@@ -33,16 +33,19 @@ $herb = $bag->herb;
 
                 @php
                 $position = $ing->position;
-                $variant = $position->variant;
                 $bottle = $position->bottle;
-                $percentage = $variant->product->getPercentage($herb);
+                $variant = $position->variant;
+                $product = $variant->product;
+
+                $percentage = $product->getPercentage($herb);
                 @endphp
+
                 <tr>
                     <td scope="row">{{ $bottle->date->format('d.m.Y') }}</td>
                     <td scope="row">{{ $variant->product->name }} {{ $variant->size }}g</td>
                     <td scope="row">{{ $position->count }}</td>
                     <td scope="row">{{ $position->count * $variant->size * $percentage / 100 }}g</td>
-                    <td scope="row">{{ $position->getCharge() }}</td>
+                    <td scope="row">{{ $position->charge }}</td>
                 </tr>
                 @endforeach
             </tbody>

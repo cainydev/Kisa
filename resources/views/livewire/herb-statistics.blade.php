@@ -16,7 +16,6 @@
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 <span class="visually-hidden">Wird generiert...</span>
             </button>
-
         </div>
     </div>
     <div class="p-4 mt-3 bg-white rounded-md shadow">

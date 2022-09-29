@@ -15,10 +15,6 @@ class Bottle extends Model
         'date' => 'datetime:d.m.Y',
     ];
 
-    protected $with = [
-        'positions'
-    ];
-
     protected $guarded = [];
 
     public function user()

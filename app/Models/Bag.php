@@ -58,9 +58,6 @@ class Bag extends Model
     {
         return $this->ingredients()->with([
             'position' => [
-                'variant' => [
-                    'product'
-                ],
                 'bottle',
             ]
         ])->get();
