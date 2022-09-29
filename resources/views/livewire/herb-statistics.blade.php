@@ -25,6 +25,7 @@
             <x-herb-statistic :bag="$bag" />
             @else
             <p>Wähle aus, für welche Charge die Statistik generiert werden soll.</p>
+            @endif
         </div>
     </div>
 </div>
