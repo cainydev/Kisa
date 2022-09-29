@@ -1321,9 +1321,6 @@ select {
 .max-w-6xl {
   max-width: 72rem;
 }
-.max-w-md {
-  max-width: 28rem;
-}
 .max-w-xs {
   max-width: 20rem;
 }
@@ -9087,6 +9084,12 @@ select {
 }
 .dark .peer:focus ~ .dark\:peer-focus\:ring-offset-secondary-800 {
   --tw-ring-offset-color: #1e293b;
+}
+@media print {
+
+  .print\:hidden {
+    display: none;
+  }
 }
 @media (min-width: 640px) {
 
