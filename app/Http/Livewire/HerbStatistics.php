@@ -18,11 +18,6 @@ class HerbStatistics extends Component
     public Bag $bag;
 
     public function mount(){
-        if(isset($this->herb)){
-            if($this->herb->bags->count() > 0){
-                $this->generateFor($this->herb->bags->first());
-            }
-        }
     }
 
     public function generateFor(Bag $bag){

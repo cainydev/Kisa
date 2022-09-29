@@ -21,7 +21,10 @@
                 <p class="text-lg font-semibold">Statistik generiert für Charge #{{ $bag->charge}}</p>
                 <button class="btn btn-primary" wire:click="printPDF({{ $bag->id }})">PDF Drucken</button>
             </div>
+            @if(isset($bag))
             <x-herb-statistic :bag="$bag" />
+            @else
+            <p>Wähle aus, für welche Charge die Statistik generiert werden soll.</p>
         </div>
     </div>
 </div>
