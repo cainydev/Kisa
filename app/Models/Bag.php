@@ -79,7 +79,7 @@ class Bag extends Model
             'position' => [
                 'bottle',
             ]
-        ])->get();
+        ])->orderBy('bottle.date')->get();
     }
 
     /**
