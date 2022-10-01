@@ -144,16 +144,14 @@
 
                         {{-- Verfügbare Säcke --}}
                         <div class="grid gap-6 mt-4 md:grid-cols-2 xl:grid-cols-3">
-                            @forelse($herb->bags->filter(fn($b) =>
-                            ($b->getCurrentWithTrashed() >= $gesamt || $position->ingredients->where('bag_id',
-                            $b->id)->count() == 1)
-                            )->sortBy('bestbefore') as
-                            $bag)
+                            @forelse($herb->bags->sortBy('bestbefore') as $bag)
                             {{-- Sack Card --}}
                             <div class="flex flex-col max-w-lg ring-green-600 rounded {{ $position->isBagFor($bag, $herb) ? 'ring-4' : 'ring-0' }}"
                                  wire:key="bag{{ $bag->id }}">
                                 <div class="flex items-center justify-between w-full p-3 bg-gray-100">
-                                    <p>{{ $bag->specification }}</p>
+                                    <p @if($bag->getCurrentWithTrashed() < $gesamt)
+                                          class="text-red-600"
+                                          @endif>{{ $bag->specification }}</p>
                                     @if($bag->bio)
                                     <p class="text-green-500">BIO</p>
                                     @else
@@ -180,15 +178,24 @@
                                             bald
                                             ab! @endif</p>
                                 </div>
-                                <div class="flex flex-col items-stretch justify-between p-3">
-                                    <p class="mb-2">Charge: {{ $bag->charge }}</p>
-                                    <p class="text-sm">Füllstand: {{ $bag->getCurrentWithTrashed() }}g / {{ $bag->size
-                                        }}g</p>
-                                    <span class="w-full mt-1 border rounded">
-                                        <span class="block h-3"
-                                              style="width:{{ ($bag->getCurrentWithTrashed() / $bag->size) * 100 }}%; background: hsl({{ ($bag->getCurrentWithTrashed() / $bag->size)*120 }}, 80%, 40%)"></span>
-                                    </span>
-                                </div>
+                                @if ($bag->getCurrentWithTrashed() < $gesamt)
+                                  <p
+                                  class="pl-4 text-red-500">Achtung! Dieser Sack hat nicht die ausreichende
+                                    Menge!
+                                    </p>
+                                    @endif
+                                    <div class="flex flex-col items-stretch justify-between p-3">
+                                        <p class="mb-2">Charge: {{ $bag->charge }}</p>
+                                        <p
+                                           class="text-sm {{ $bag->getCurrentWithTrashed() < $gesamt ? 'text-red-600' : '' }}">
+                                            Füllstand: {{ $bag->getCurrentWithTrashed() }}g / {{
+                                            $bag->size
+                                            }}g</p>
+                                        <span class="w-full mt-1 border rounded">
+                                            <span class="block h-3"
+                                                  style="width:{{ ($bag->getCurrentWithTrashed() / $bag->size) * 100 }}%; background: hsl({{ ($bag->getCurrentWithTrashed() / $bag->size)*120 }}, 80%, 40%)"></span>
+                                        </span>
+                                    </div>
                             </div>
                             @empty
                             <p class="mt-4 col-span-full alert alert-danger">Es sind momentan keine Säcke {{ $herb->name
