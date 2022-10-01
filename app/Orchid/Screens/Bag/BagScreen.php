@@ -18,7 +18,8 @@ class BagScreen extends Screen
     public function query(): iterable
     {
         return [
-            'bags' => Bag::filters()
+            'bags' => Bag::with('delivery')
+                ->filters()
                 ->defaultSort('id')
                 ->get()
         ];

@@ -17,34 +17,36 @@ class BagListLayout extends Table
     {
         return [
             TD::make('id', 'ID')
-            ->width('100px')
-            ->sort(),
+                ->width('100px')
+                ->sort(),
             TD::make('Inhalt')
-            ->render(function ($bag) {
-                return $bag->herb->name . ' ' . $bag->specification;
-            }),
+                ->render(function ($bag) {
+                    return $bag->herb->name . ' ' . $bag->specification;
+                }),
             TD::make('charge', 'Charge'),
             TD::make('bio', 'Bio')
-            ->render(function ($bag) {
-                return view('partials/boolean', ['value' => $bag->bio]);
-            }),
+                ->render(function ($bag) {
+                    return view('partials/boolean', ['value' => $bag->bio]);
+                }),
             TD::make('size', 'Gebinde')
-            ->render(function ($bag) {
-                return $bag->getSizeInKilo();
-            }),
+                ->render(function ($bag) {
+                    return $bag->getSizeInKilo();
+                }),
+            /* verbraucht zuviel zeit
             TD::make('Aktuelles Gewicht')
-            ->render(function ($bag) {
-                return sprintf('%ug', $bag->getCurrentWithTrashed());
-            }),
+                ->render(function ($bag) {
+                    return sprintf('%ug', $bag->getCurrentWithTrashed());
+                }),
+                */
             TD::make('bestbefore', 'Haltbar bis')
-              ->sort(),
+                ->sort(),
             TD::make('Lieferung')
-            ->render(function ($bag) {
-                if($bag->delivery != null){
-                    return $bag->delivery->supplier->shortname . ', ' . $bag->delivery->delivered_date->format('d.m.y');
-                }
-                return '<span style="color:red;">gelöscht</span>';
-            }),
+                ->render(function ($bag) {
+                    if ($bag->delivery != null) {
+                        return $bag->delivery->supplier->shortname . ', ' . $bag->delivery->delivered_date->format('d.m.y');
+                    }
+                    return '<span style="color:red;">gelöscht</span>';
+                }),
             TD::make()
                 ->align(TD::ALIGN_RIGHT)
                 ->render(function ($bag) {

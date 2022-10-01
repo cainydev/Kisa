@@ -22,8 +22,8 @@ class DeliveryBagsLayout extends Rows
                 ->title('Rohstoff auswählen'),
 
             Input::make('currentBag.specification')
-            ->title('Spezifikation')
-            ->help('z.B. ägypt. BIO geschnitten'),
+                ->title('Spezifikation')
+                ->help('z.B. ägypt. BIO geschnitten'),
 
             Input::make('currentBag.charge')
                 ->title('Chargennummer des Herstellers'),
@@ -47,7 +47,7 @@ class DeliveryBagsLayout extends Rows
                 ->format('Y-m-d'),
 
             Button::make('Hinzufügen')
-    ->class('btn btn-success')
+                ->class('btn btn-success')
                 ->method('addBag')
         ];
     }
