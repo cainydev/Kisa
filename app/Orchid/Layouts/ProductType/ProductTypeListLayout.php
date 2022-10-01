@@ -33,6 +33,11 @@ class ProductTypeListLayout extends Table
 
             TD::make('name', 'Name'),
 
+            TD::make('compound', 'Verbundmischung')
+                ->render(function ($type) {
+                    return view('partials/boolean', ['value' => $type->compound]);
+                }),
+
             TD::make()
                 ->align(TD::ALIGN_RIGHT)
                 ->render(function ($type) {

@@ -12,6 +12,7 @@ use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Alert;
 
 use App\Models\ProductType;
+use Orchid\Screen\Fields\CheckBox;
 
 class ProductTypeEditScreen extends Screen
 {
@@ -72,7 +73,10 @@ class ProductTypeEditScreen extends Screen
             Layout::rows([
                 Input::make('type.name')
                     ->title('Name der Gruppe')
-                    ->required()
+                    ->required(),
+                CheckBox::make('type.compound')
+                    ->title('Ist Verbundmischung?')
+                    ->sendTrueOrFalse()
             ])->title('Allgemein')
         ];
     }

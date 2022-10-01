@@ -79,7 +79,7 @@ class Bag extends Model
             'position' => [
                 'bottle',
             ]
-        ])->get()->sortBy('bottle.date');
+        ])->get()->sortBy(['position.bottle.date', 'position.variant.product.name']);
     }
 
     /**
@@ -98,6 +98,45 @@ class Bag extends Model
             }
         }
         return $this->size - $sum;
+    }
+
+    /**
+     * Returns the current amount used by compound products
+     * @return void
+     */
+    public function getCompoundUsage()
+    {
+        $sum = 0;
+        foreach ($this->ingredients as $i) {
+            $variant = $i->position->variant;
+            if (!$variant->product->type->compound) continue;
+            foreach ($variant->product->herbs as $herb) {
+                if ($herb->id == $this->herb->id) {
+                    $sum += ($variant->size * $i->position->count) * ($herb->pivot->percentage / 100);
+                }
+            }
+        }
+        return $sum;
+    }
+
+    /**
+     * Returns the current amount used by non-compound products
+     * @return void
+     */
+    public function getNonCompoundUsage()
+
+    {
+        $sum = 0;
+        foreach ($this->ingredients as $i) {
+            $variant = $i->position->variant;
+            if ($variant->product->type->compound) continue;
+            foreach ($variant->product->herbs as $herb) {
+                if ($herb->id == $this->herb->id) {
+                    $sum += ($variant->size * $i->position->count) * ($herb->pivot->percentage / 100);
+                }
+            }
+        }
+        return $sum;
     }
 
     /**
