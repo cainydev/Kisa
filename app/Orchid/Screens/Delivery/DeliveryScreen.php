@@ -23,7 +23,7 @@ class DeliveryScreen extends Screen
     public function query(): iterable
     {
         return [
-            'deliveries' => Delivery::orderByDesc('delivered_date')->get()
+            'deliveries' => Delivery::with(['supplier', 'user'])->orderByDesc('delivered_date')->get()
         ];
     }
 

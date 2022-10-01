@@ -13,7 +13,7 @@ class ProductScreen extends Screen
     public function query(): iterable
     {
         return [
-            'products' => Product::all()
+            'products' => Product::with('variants')->get()
         ];
     }
 

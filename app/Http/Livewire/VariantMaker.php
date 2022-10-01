@@ -15,21 +15,32 @@ class VariantMaker extends Component
 
     protected $rules = [
         'size' => 'numeric|min:1|max:100000|required',
-        'sku' => '',
+        'sku' => 'sometimes|starts_with:.',
+        'product.variants.*.size' => 'numeric|min:1|max:100000|required',
+        'product.variants.*.ordernumber' => 'sometimes|starts_with:.'
     ];
 
-    public function mount(Product $product) {
+    protected $messages = [
+        'sku.starts_with' => 'Die ordernumber muss mit einem Punkt beginnen!',
+        'product.variants.*.ordernumber.starts_with' => 'Die ordernumber muss mit einem Punkt beginnen!'
+    ];
+
+    public function mount(Product $product)
+    {
         $this->product = $product;
     }
 
-    public function add(){
+    public function updated()
+    {
         $this->validate();
+        $this->product->variants->each->save();
 
-        if(!str($this->sku)->isEmpty()){
-            if(!str($this->sku)->startsWith('.')){
-                $this->sku = '.' . $this->sku;
-            }
-        }
+        session()->flash('success', 'Varianten wurden gespeichert.');
+    }
+
+    public function add()
+    {
+        $this->validate();
 
         Variant::create([
             'size' => $this->size,
@@ -37,17 +48,33 @@ class VariantMaker extends Component
             'product_id' => $this->product->id,
         ]);
 
-        $this->size = null;
+        $this->size = 100;
         $this->sku = null;
+
+        session()->flash('message', 'Variante wurde erfolgreich erstellt.');
     }
 
-    public function remove(Variant $variant){
-        $variant->delete();
+    public function remove(Variant $variant)
+    {
+        $message = "Variante konnte nicht entfernt werden:<br/>";
+        $canDelete = true;
+
+        foreach ($variant->positions as $pos) {
+            $canDelete = false;
+            $message .= "Die Variante wird aktuell in der <a class='underline' href='" . route('platform.bottle.edit', $pos->bottle->id) . "'>" . "Abfüllung [ID " . $pos->bottle->id . "]</a> verwendet.<br/>";
+        }
+
+        if ($canDelete) {
+            $variant->delete();
+            session()->flash('success', 'Variante wurde erfolgreich entfernt.');
+        } else {
+            session()->flash('error', $message);
+        }
     }
 
     public function render()
     {
-        if($this->product->exists) {
+        if ($this->product->exists) {
             $this->product = Product::find($this->product->id);
         }
         return view('livewire.variant-maker');

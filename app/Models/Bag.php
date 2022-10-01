@@ -4,7 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Orchid\Screen\AsSource;
 use Orchid\Filters\Filterable;
 
@@ -40,18 +41,36 @@ class Bag extends Model
         'trashed',
     ];
 
+    /**
+     * Returns the herb that this bag contains
+     * @return BelongsTo
+     */
     public function herb()
     {
         return $this->belongsTo(Herb::class);
     }
 
+    /**
+     * Returns the delivery this bag was delivered in
+     * @return BelongsTo
+     */
     public function delivery()
     {
         return $this->belongsTo(Delivery::class);
     }
 
     /**
-     * Returns all the Ingredients where this bag is used in an efficient manner. (Hopefully 1 query for all..)
+     * Returns the relation with all the Ingredients where this bag is used
+     * @return HasMany
+     */
+    public function ingredients()
+    {
+        return $this->hasMany(Ingredient::class);
+    }
+
+    /**
+     * Returns all the Ingredients where this bag is used in an efficient manner.
+     * (Hopefully 1 query for all.. not..)
      * @return Collection
      */
     public function getIngredientsWithRelations()
@@ -63,6 +82,10 @@ class Bag extends Model
         ])->get();
     }
 
+    /**
+     * Returns the current amount in this bag in g
+     * @return int|float
+     */
     public function getCurrent()
     {
         $sum = 0;
@@ -77,26 +100,38 @@ class Bag extends Model
         return $this->size - $sum;
     }
 
+    /**
+     * Returns the current amount in this bag in g,
+     * taking also the trashed amount into account.
+     * @return int|float
+     */
     public function getCurrentWithTrashed()
     {
         return $this->getCurrent() - $this->trashed;
     }
 
+    /**
+     * Returns the current amount (With trashed) in percent
+     * @return int|float
+     */
     public function getCurrentPercentage()
     {
         return ($this->getCurrentWithTrashed() / $this->size) * 100;
     }
 
-    public function ingredients()
-    {
-        return $this->hasMany(Ingredient::class);
-    }
-
+    /**
+     * Returns the size formatted in kg
+     * @return string
+     */
     public function getSizeInKilo()
     {
         return sprintf("%.1fkg", $this->size / 1000);
     }
 
+    /**
+     * Returns the size formatted in g
+     * @return string
+     */
     public function getSizeInGramm()
     {
         return sprintf("%ug", $this->size);
