@@ -2,16 +2,13 @@
 
 namespace App\Orchid\Screens\Abfuellen;
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\{Alert, Layout};
 use Orchid\Screen\Actions\{Button, Link};
 
-use App\Orchid\Layouts\VariantListener;
-use App\Orchid\Layouts\Abfuellen\{AbfuellenGeneralLayout, AbfuellenPositionsLayout};
+use App\Orchid\Layouts\Abfuellen\{AbfuellenGeneralLayout};
 
 use App\Models\{Bottle, BottlePosition, Product, Variant};
 
@@ -117,13 +114,10 @@ class AbfuellenEditScreen extends Screen
      */
     public function layout(): iterable
     {
-        $elems = [AbfuellenGeneralLayout::class];
-
-        if($this->bottle != null && $this->bottle->exists){
-            array_push($elems, Layout::livewire('variant-adder'));
-        }
-
-        return $elems;
+        return [Layout::columns([
+            AbfuellenGeneralLayout::class,
+            Layout::livewire('variant-adder')
+        ])];
     }
 
     public function createOrUpdate(Bottle $bottle, Request $request)

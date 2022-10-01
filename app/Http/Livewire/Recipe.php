@@ -34,6 +34,7 @@ class Recipe extends Component
         $this->position->charge = $this->newCharge;
         $this->position->save();
         $this->newCharge = $this->position->charge;
+        $this->emitUp('updateRecipes');
         session()->flash('success', 'Charge wurde manuell angepasst.');
     }
     public function generateCharge()
@@ -41,31 +42,34 @@ class Recipe extends Component
         $this->position->charge = $this->position->getCharge();
         $this->position->save();
         $this->newCharge = $this->position->charge;
+        $this->emitUp('updateRecipes');
         session()->flash('success', 'Charge wurde automatisch generiert.');
     }
 
-    public function refreshStock(){
-        if($this->position->variant->getStockFromBillbee()){
+    public function refreshStock()
+    {
+        if ($this->position->variant->getStockFromBillbee()) {
             session()->flash('success', 'Bestand wurde erfolgreich von Billbee abgerufen.');
-        }else{
+        } else {
             session()->flash('error', 'Bestand konnte nicht von Billbee abgerufen werden.');
         }
     }
 
-    public function uploadToBillbee(){
-        if(!$this->position->hasAllBags()){
+    public function uploadToBillbee()
+    {
+        if (!$this->position->hasAllBags()) {
             session()->flash('error', 'Bitte vervollständige erst die Abfüllung.');
             return;
         }
 
-        if($this->position->uploaded){
+        if ($this->position->uploaded) {
             session()->flash('error', 'Diese Abfüllung wurde bereits eingelagert.');
             return;
         }
 
-        if($this->position->upload()){
+        if ($this->position->upload()) {
             session()->flash('success', 'Billbee Artikelbestand wurde erfolgreich aktualisiert!');
-        }else{
+        } else {
             session()->flash('error', 'Beim aktualisieren des Artikelbestands in Billbee ist ein Fehler aufgetreten.');
         }
     }

@@ -44,7 +44,7 @@ class VariantAdder extends Component
 
     public function delete(BottlePosition $position)
     {
-        foreach($position->ingredients as $i){
+        foreach ($position->ingredients as $i) {
             $i->delete();
         }
 
@@ -53,6 +53,10 @@ class VariantAdder extends Component
 
     public function mount(Bottle $bottle)
     {
+        if ($bottle === null) {
+            $this->bottle = new Bottle;
+            return;
+        }
         $this->bottle = $bottle;
     }
 
@@ -88,7 +92,9 @@ class VariantAdder extends Component
             $this->product = Product::find($this->product->id);
         }
 
-        $this->bottle = Bottle::find($this->bottle->id);
+        if ($this->bottle->exists) {
+            $this->bottle = Bottle::find($this->bottle->id);
+        }
         return view('livewire.variant-adder');
     }
 }

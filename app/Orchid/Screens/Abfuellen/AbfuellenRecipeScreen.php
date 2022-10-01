@@ -35,7 +35,7 @@ class AbfuellenRecipeScreen extends Screen
      */
     public function name(): ?string
     {
-        return 'Rezepte';
+        return 'Rezepte vom ' . $this->bottle->date->format('d.m.Y');
     }
 
     /**
@@ -50,6 +50,9 @@ class AbfuellenRecipeScreen extends Screen
                 ->icon('action-undo')
                 ->class('btn btn-link')
                 ->route('platform.bottle.edit', $this->bottle),
+            Link::make('Neue Abfüllung')
+                ->class('btn btn-success hover:text-white')
+                ->route('platform.bottle.edit', null)
         ];
     }
 
