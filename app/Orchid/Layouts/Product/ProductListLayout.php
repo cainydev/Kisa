@@ -17,17 +17,17 @@ class ProductListLayout extends Table
     {
         return [
             TD::make('id', 'ID')
-            ->width('100px'),
+                ->width('100px'),
             TD::make('name', 'Name'),
             TD::make('mainnumber', 'SKU'),
             TD::make('Produkttyp')
-            ->render(function($product){
-                return $product->type->name;
-            }),
+                ->render(function ($product) {
+                    return $product->type->name;
+                }),
             TD::make('Varianten')
-            ->render(function($product){
-                return view('partials/variants', ['variants' => $product->variants]);
-            }),
+                ->render(function ($product) {
+                    return view('partials/variants', ['variants' => $product->variants]);
+                }),
             TD::make()
                 ->align(TD::ALIGN_RIGHT)
                 ->render(function ($product) {
@@ -41,6 +41,10 @@ class ProductListLayout extends Table
                             ->icon('pencil')
                             ->class('btn btn-primary p-2')
                             ->route('platform.products.edit', $product),
+                        Link::make()
+                            ->icon('bar-chart')
+                            ->class('btn p-2')
+                            ->route('platform.products.statistics', $product),
                     ]);
                 })->width('100px'),
         ];

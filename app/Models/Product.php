@@ -14,10 +14,11 @@ class Product extends Model
     protected $guarded = [];
 
 
-    public function getPercentage(Herb $herb){
-        if($this->herbs->contains($herb)){
+    public function getPercentage(Herb $herb)
+    {
+        if ($this->herbs->contains($herb)) {
             return $this->herbs->find($herb)->pivot->percentage;
-        }else{
+        } else {
             return 0.0;
         }
     }
@@ -25,7 +26,7 @@ class Product extends Model
     public function herbs()
     {
         return $this->belongsToMany(Herb::class)
-        ->withPivot('percentage');
+            ->withPivot('percentage');
     }
 
     public function type()

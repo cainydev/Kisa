@@ -14,8 +14,8 @@ use App\Orchid\Screens\Abfuellen\{AbfuellenScreen, AbfuellenEditScreen, Abfuelle
 use App\Orchid\Screens\Delivery\{DeliveryScreen, DeliveryEditScreen};
 use App\Orchid\Screens\Bag\{BagScreen, BagEditScreen};
 use App\Orchid\Screens\Herb\{HerbScreen, HerbStatisticScreen, HerbEditScreen};
-use App\Orchid\Screens\Product\{ProductScreen, ProductEditScreen};
-
+use App\Orchid\Screens\Product\{ProductScreen, ProductEditScreen, ProductStatisticsScreen};
+use App\Orchid\Screens\Products\ProductStatisticsScreen as ProductsProductStatisticsScreen;
 use Illuminate\Support\Facades\Route;
 use Tabuna\Breadcrumbs\Trail;
 
@@ -65,7 +65,6 @@ Route::screen('bottle', AbfuellenScreen::class)
             ->parent('platform.index')
             ->push('Abfüllungen');
     });
-
 Route::screen('bottle/edit/{bottle?}', AbfuellenEditScreen::class)
     ->name('platform.bottle.edit')
     ->breadcrumbs(function (Trail $trail) {
@@ -150,6 +149,13 @@ Route::screen('products/edit/{product?}', ProductEditScreen::class)
         return $trail
             ->parent('platform.products')
             ->push('Erstellen oder Bearbeiten');
+    });
+Route::screen('products/statistics/{product}', ProductStatisticsScreen::class)
+    ->name('platform.products.statistics')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.products')
+            ->push('Statistiken');
     });
 
 // Platform > Meta > ProductType

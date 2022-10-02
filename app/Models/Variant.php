@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Exception;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,25 +19,32 @@ class Variant extends Model
 
     protected $with = ['product'];
 
-    public function getSKU(){
+    public function getSKU()
+    {
         return $this->product->mainnumber . $this->ordernumber;
     }
 
-    public function getStockFromBillbee(){
+    public function getStockFromBillbee()
+    {
         $user = env('BILLBEE_USER');
         $pw = env('BILLBEE_PW');
         $key = env('BILLBEE_KEY');
         $host = env('BILLBEE_HOST');
 
-        $response = Http::acceptJson()
-            ->withBasicAuth($user, $pw)
-            ->withHeaders(['X-Billbee-Api-Key' => $key])
-            ->retry(2, 500)
-            ->get($host . 'products/' . $this->product->mainnumber . $this->ordernumber, [
-                'lookupBy' => 'sku'
-            ]);
+        try {
+            $response = Http::acceptJson()
+                ->withBasicAuth($user, $pw)
+                ->withHeaders(['X-Billbee-Api-Key' => $key])
+                ->retry(2, 500, function ($ex) {
+                })
+                ->get($host . 'products/' . $this->product->mainnumber . $this->ordernumber, [
+                    'lookupBy' => 'sku'
+                ]);
+        } catch (Exception $e) {
+            return false;
+        }
 
-        if($response->failed()){
+        if ($response->failed()) {
             $response = $response->json();
             dd('Couldn\'t get stock from Billbee: ' . $response['ErrorMessage'] . ': ' . $response['ErrorDescription']);
             return false;
@@ -58,7 +67,8 @@ class Variant extends Model
         return $this->belongsToMany(Bottle::class);
     }
 
-    public function positions(){
+    public function positions()
+    {
         return $this->hasMany(BottlePosition::class);
     }
 }

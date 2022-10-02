@@ -9,27 +9,23 @@ use Illuminate\Support\Facades\Storage;
 
 use Livewire\Component;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\{Herb, Bag};
+use App\Models\Product;
 
-class HerbStatistics extends Component
+class ProductStatistics extends Component
 {
-    public Herb $herb;
-
-    public Bag $bag;
+    public Product $product;
 
     public function mount()
     {
+        foreach ($this->product->variants as $v) {
+            $v->getStockFromBillbee();
+        }
     }
 
-    public function generateFor(Bag $bag)
+    public function printPDF()
     {
-        $this->bag = $bag;
-    }
-
-    public function printPDF(Bag $bag)
-    {
-        $name = str('auswertung ' . $bag->herb->name . ' charge ' . $bag->charge . ' ' . Carbon::now())->slug() . '.pdf';
-        $pdf = PDF::loadHTML(Blade::render('<x-herb-statistic :bag="$bag"/>', ['bag' => $bag]));
+        $name = str('auswertung_' . $this->product->name . '_' . Carbon::now())->slug() . '.pdf';
+        $pdf = PDF::loadHTML(Blade::render('<x-product-statistic :product="$product"/>', ['product' => $this->product]));
 
         Storage::put('stats/' . $name, $pdf->output());
 
@@ -42,7 +38,7 @@ class HerbStatistics extends Component
 
     public function render()
     {
-        $this->herb = Herb::find($this->herb->id);
-        return view('livewire.herb-statistics');
+        $this->product = Product::find($this->product->id);
+        return view('livewire.product-statistics');
     }
 }
