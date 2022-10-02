@@ -2,10 +2,38 @@
 
 namespace App\Models;
 
+use App\Orchid\Presenters\UserPresenter;
+use Laravel\Scout\Searchable;
 use Orchid\Platform\Models\User as Authenticatable;
 
 class User extends Authenticatable
 {
+    use Searchable;
+
+    /**
+     * Get the presenter for the model.
+     *
+     * @return UserPresenter
+     */
+    public function presenter()
+    {
+        return new UserPresenter($this);
+    }
+
+    /**
+     * Get the indexable data array for the model.
+     *
+     * @return array
+     */
+    public function toSearchableArray()
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+        ];
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -63,4 +91,9 @@ class User extends Authenticatable
         'updated_at',
         'created_at',
     ];
+
+    public function bottles()
+    {
+        return $this->hasMany(Bottle::class);
+    }
 }

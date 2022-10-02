@@ -8,6 +8,7 @@ use App\Orchid\Fields\Group;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Fields\Input;
+use Orchid\Support\Facades\Layout;
 
 class BagListLayout extends Table
 {
@@ -43,7 +44,8 @@ class BagListLayout extends Table
             TD::make('Lieferung')
                 ->render(function ($bag) {
                     if ($bag->delivery != null) {
-                        return $bag->delivery->supplier->shortname . ', ' . $bag->delivery->delivered_date->format('d.m.y');
+                        return Link::make($bag->delivery->supplier->shortname . ', ' . $bag->delivery->delivered_date->format('d.m.y'))
+                            ->route('platform.deliveries.edit', $bag->delivery);
                     }
                     return '<span style="color:red;">gelöscht</span>';
                 }),

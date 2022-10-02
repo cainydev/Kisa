@@ -1,22 +1,19 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Orchid\Presenters;
 
 use Laravel\Scout\Builder;
-use Orchid\Screen\Contracts\Personable;
 use Orchid\Screen\Contracts\Searchable;
 use Orchid\Support\Presenter;
 
-class UserPresenter extends Presenter implements Searchable, Personable
+class BagPresenter extends Presenter implements Searchable
 {
     /**
      * @return string
      */
     public function label(): string
     {
-        return 'Benutzer';
+        return 'Säcke';
     }
 
     /**
@@ -24,7 +21,7 @@ class UserPresenter extends Presenter implements Searchable, Personable
      */
     public function title(): string
     {
-        return $this->entity->name;
+        return $this->entity->herb->name . ' ' . $this->entity->specification;
     }
 
     /**
@@ -32,11 +29,13 @@ class UserPresenter extends Presenter implements Searchable, Personable
      */
     public function subTitle(): string
     {
-        $roles = $this->entity->roles->pluck('name')->implode(' / ');
+        $bottles = '';
+        foreach ($this->entity->ingredients as $ing) {
+            $bottles .= 'Abfüllung vom ' . $ing->position->bottle->date->format('d.m.Y') . ', ';
+        }
+        $bottles = substr($bottles, 0, strlen($bottles) - 2);
 
-        return empty($roles)
-            ? __('Regular user')
-            : $roles;
+        return 'Charge ' . $this->entity->charge . ' verwendet in: ' . $bottles;
     }
 
     /**
@@ -44,7 +43,7 @@ class UserPresenter extends Presenter implements Searchable, Personable
      */
     public function url(): string
     {
-        return route('platform.systems.users.edit', $this->entity);
+        return route('platform.herbs.edit', $this->entity);
     }
 
     /**
@@ -52,9 +51,7 @@ class UserPresenter extends Presenter implements Searchable, Personable
      */
     public function image(): ?string
     {
-        $hash = md5(strtolower(trim($this->entity->email)));
-
-        return "https://www.gravatar.com/avatar/$hash?d=mp";
+        return null; // TODO
     }
 
     /**

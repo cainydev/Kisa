@@ -190,7 +190,11 @@ return [
     */
 
     'search' => [
-        // \App\Models\User::class
+        \App\Models\User::class,
+        \App\Models\Herb::class,
+        \App\Models\Bottle::class,
+        \App\Models\Bag::class,
+        \App\Models\Delivery::class,
     ],
 
     /*

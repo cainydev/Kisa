@@ -25,16 +25,18 @@ class DeliveryListLayout extends Table
                     return view('partials/inspection', ['inspection' => $delivery->bio_inspection]);
                 }),
             TD::make('Säcke')
-            ->render(function ($delivery) {
-                return view('partials/bags', ['bags' => $delivery->bags]);
-            }),
+                ->render(function ($delivery) {
+                    return view('partials/bags', ['bags' => $delivery->bags]);
+                }),
             TD::make('user_id', 'Empfänger')
                 ->render(function ($delivery) {
-                    return $delivery->user->name;
+                    return Link::make($delivery->user->name)
+                        ->route('platform.systems.users.edit', $delivery->user);
                 }),
             TD::make('supplier_id', 'Lieferant')
                 ->render(function ($delivery) {
-                    return $delivery->supplier->shortname;
+                    return Link::make($delivery->supplier->shortname)
+                        ->route('platform.meta.supplier.edit', $delivery->supplier);
                 }),
             TD::make()
                 ->align(TD::ALIGN_RIGHT)

@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Orchid\Presenters\BagPresenter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Scout\Searchable;
 use Orchid\Screen\AsSource;
 use Orchid\Filters\Filterable;
 
 class Bag extends Model
 {
-    use HasFactory, AsSource, Filterable;
+    use HasFactory, AsSource, Filterable, Searchable;
 
     protected $guarded = [];
 
@@ -40,6 +42,30 @@ class Bag extends Model
         'specification',
         'trashed',
     ];
+
+    public function presenter()
+    {
+        return new BagPresenter($this);
+    }
+
+    public function toSearchableArray()
+    {
+        $bottles = '';
+        foreach ($this->ingredients as $ing) {
+            $bottles .= 'Abfüllung vom ' . $ing->position->bottle->date->format('d.m.Y') . ', ';
+        }
+        $bottles = substr($bottles, 0, strlen($bottles) - 2);
+
+        return [
+            'id' => $this->id,
+            'charge' => $this->charge,
+            'size' => $this->size,
+            'herb' => $this->herb->fullname,
+            'date' => $this->delivery->delivered_date->format('d.m.Y') . ' or ' . $this->delivery->delivered_date->format('d.m.y'),
+            'specification' => $this->specification,
+            'bottles' => $bottles,
+        ];
+    }
 
     /**
      * Returns the herb that this bag contains
