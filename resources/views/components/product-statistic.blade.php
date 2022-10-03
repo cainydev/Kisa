@@ -23,6 +23,11 @@
         background: #D0E4F5;
     }
 
+    table.puretable .sum {
+        border-top: 2px solid black;
+        background-color: white !important;
+    }
+
     table.puretable .highlight {
         background: #1C6EA4;
         background: -moz-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
@@ -48,40 +53,82 @@
         <p>SKU (shopware): {{ $product->mainnumber }}</p>
         <p>Produkttyp: {{ $product->type->name }}</p>
         <p>Varianten: @foreach($product->variants as $v) {{ $v->size . 'g' . ($loop->last ? '' : ', ')}} @endforeach</p>
-        <a class="mt-3 text-blue-500 underline print:hidden"
-           href="{{ route('platform.products.edit', $product) }}">Link zum Produkt</a>
+        <a class="mt-3 text-blue-500 underline print:hidden" href="{{ route('platform.products.edit', $product) }}">Link zum Produkt</a>
     </div>
     {{-- Abfüllungen per variant --}}
     <div class="p-3 my-3 space-y-1 border rounded-md">
         <h2 class="text-lg font-semibold">Abfüllungen pro Variante</h2>
         <hr class="mb-3">
+        @php
+        $sumAnzahlGesamt = 0;
+        $sumMengeGesamt = 0;
+        @endphp
+
         @forelse($product->variants as $variant)
         <h3 class="text-lg">{{ $variant->size }}g Variante</h3>
         <table class="puretable">
             <tbody>
                 <tr>
                     <th class="highlight">Datum</th>
+                    <th class="highlight">Charge</th>
                     <th class="highlight">Anzahl</th>
                     <th class="highlight">Verwendete Menge</th>
                 </tr>
+
+                @php
+                $sumAnzahl = 0;
+                $sumMenge = 0;
+                @endphp
+
                 @foreach($variant->positions as $position)
 
                 @php
                 $bottle = $position->bottle;
+
+                $sumAnzahl += $position->count;
+                $sumMenge += $position->count * $variant->size;
+
+                $sumAnzahlGesamt += $sumAnzahl;
+                $sumMengeGesamt += $sumMenge;
+
                 @endphp
 
                 <tr>
-                    <td class="underline"><a href="{{ route('platform.bottle.edit', $bottle) }}">Abfüllung vom {{
-                            $bottle->date->format('d.m.Y') }}</a></td>
+                    <td class="underline">
+                        <a href="{{ route('platform.bottle.edit', $bottle) }}">
+                            Abfüllung vom {{ $bottle->date->format('d.m.Y') }}
+                        </a>
+                    </td>
+                    <td>{{ $position->charge }}</td>
                     <td>{{ $position->count }}</td>
                     <td>{{ $position->count * $variant->size}}g</td>
                 </tr>
                 @endforeach
+                <tr class="sum">
+                    <td></td>
+                    <td></td>
+                    <td>{{ $sumAnzahl }}</td>
+                    <td>{{ $sumMenge }}g</td>
+                </tr>
             </tbody>
         </table>
         @empty
         <p>Keine Varianten gefunden.</p>
         @endforelse
+
+        <h3 class="text-lg">Gesamt</h3>
+        <table class="puretable">
+            <tbody>
+                <tr>
+                    <th class="highlight">Anzahl</th>
+                    <th class="highlight">Verwendete Menge</th>
+                </tr>
+                <tr>
+                    <td>{{ $sumAnzahlGesamt }}</td>
+                    <td>{{ $sumMengeGesamt }}g</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     {{-- Übersicht
@@ -93,27 +140,27 @@
             <tr>
                 <td style="font-weight:bold">Anfangsbestand:</td>
                 <td>{{ $bag->size }}g</td>
-            </tr>
-            <tr>
-                <td style="font-weight:bold">Verbrauch Mischungen:</td>
-                <td>{{ $bag->getCompoundUsage() }}g</td>
-            </tr>
-            <tr>
-                <td style="font-weight:bold">Verbrauch Einzel:</td>
-                <td>{{ $bag->getNonCompoundUsage() }}g</td>
-            </tr>
-            <tr>
-                <td style="font-weight:bold">Verbrauch Gesamt:</td>
-                <td>{{ $bag->size - $bag->getCurrent() }}g</td>
-            </tr>
-            <tr>
-                <td style="font-weight:bold">Ausschuss:</td>
-                <td>{{ $bag->trashed }}g</td>
-            </tr>
-            <tr>
-                <td style="font-weight:bold">Verbleibende Restmenge:</td>
-                <td>{{ $bag->getCurrentWithTrashed() }}g</td>
-            </tr>
-        </table>
-    </div>--}}
+    </tr>
+    <tr>
+        <td style="font-weight:bold">Verbrauch Mischungen:</td>
+        <td>{{ $bag->getCompoundUsage() }}g</td>
+    </tr>
+    <tr>
+        <td style="font-weight:bold">Verbrauch Einzel:</td>
+        <td>{{ $bag->getNonCompoundUsage() }}g</td>
+    </tr>
+    <tr>
+        <td style="font-weight:bold">Verbrauch Gesamt:</td>
+        <td>{{ $bag->size - $bag->getCurrent() }}g</td>
+    </tr>
+    <tr>
+        <td style="font-weight:bold">Ausschuss:</td>
+        <td>{{ $bag->trashed }}g</td>
+    </tr>
+    <tr>
+        <td style="font-weight:bold">Verbleibende Restmenge:</td>
+        <td>{{ $bag->getCurrentWithTrashed() }}g</td>
+    </tr>
+    </table>
+</div>--}}
 </div>
