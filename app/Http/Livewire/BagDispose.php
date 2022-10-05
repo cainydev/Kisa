@@ -11,7 +11,7 @@ class BagDispose extends Component
 {
     protected function rules() {
         return [
-            'bag.trashed' => 'required|numeric|min:0|max:'.$this->bag->getCurrent()
+            'bag.trashed' => 'required|numeric|max:'.$this->bag->getCurrent()
         ];
     }
 
