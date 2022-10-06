@@ -6,7 +6,7 @@
         <p>Hier kannst du die Menge (in g) an Ausschuss einstellen die bei diesem Sack vorliegt.</p>
 
         <div class="flex items-center mt-3 space-x-4">
-            <input type="number" wire:model="bag.trashed" class="form-control" />
+            <input type="number" wire:model.lazy="bag.trashed" class="form-control" />
         </div>
         <div class="flex items-center mt-3 space-x-4">
             <button @if($bag->getCurrentWithTrashed() == 0) disabled @endif wire:click="all" class="form-control">Alles</button>

@@ -18,6 +18,9 @@ class HerbEditLayout extends Rows
             Input::make('herb.name')
             ->title('Bezeichnung')
             ->required(),
+            Input::make('herb.fullname')
+            ->title('Vollständige Bezeichnung')
+            ->required(),
             Relation::make('herb.supplier_id')
             ->fromModel(Supplier::class, 'shortname')
             ->title('Standardlieferant')
