@@ -107,14 +107,17 @@ class DeliveryEditScreen extends Screen
 
         Alert::success('Lieferung wurde gespeichert.');
 
-        return redirect()->route('platform.deliveries');
+        return redirect()->route('platform.deliveries.edit', $delivery);
     }
 
     public function layout(): iterable
     {
         return [
             Layout::tabs([
-                'Allgemein' => DeliveryEditLayout::class,
+                'Allgemein' => [
+                    DeliveryEditLayout::class,
+                    Layout::view('partials.delivery-documents')
+                ],
                 'Eingangskontrolle' => DeliveryBioLayout::class,
                 'Gebinde' => [
                     DeliveryBagsLayout::class,

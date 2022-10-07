@@ -19,6 +19,7 @@
         "orchid/crud": "^3.6",
         "orchid/platform": "^12.2",
         "spatie/laravel-medialibrary": "^10.0.0",
+        "spatie/pdf-to-image": "^1.2",
         "wireui/wireui": "^1.0"
     },
     "require-dev": {

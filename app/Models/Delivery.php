@@ -10,6 +10,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 use Orchid\Screen\AsSource;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Delivery extends Model implements HasMedia
 {
@@ -23,6 +24,28 @@ class Delivery extends Model implements HasMedia
         'delivered_date' => 'date:Y-m-d',
         'bio_inspection' => 'array',
     ];
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('invoice')
+            ->acceptsMimeTypes(['application/pdf'])
+            ->singleFile();
+
+        $this->addMediaCollection('deliveryNote')
+            ->acceptsMimeTypes(['application/pdf'])
+            ->singleFile();
+
+        $this->addMediaCollection('certificate')
+            ->acceptsMimeTypes(['application/pdf'])
+            ->singleFile();
+    }
+
+    public function registerMediaConversions(Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(368)
+            ->height(232);
+    }
 
     public function presenter()
     {
