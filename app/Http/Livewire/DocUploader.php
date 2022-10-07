@@ -28,8 +28,6 @@ class DocUploader extends Component
 
     public function render()
     {
-
-        phpinfo();
         return view('livewire.doc-uploader');
     }
 }
