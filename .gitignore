@@ -1,6 +1,7 @@
 /node_modules
 /public
 /storage/*.key
+/storage/media-library/temp
 /vendor
 .env
 .htaccess
