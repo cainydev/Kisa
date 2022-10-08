@@ -42,9 +42,13 @@ class Delivery extends Model implements HasMedia
 
     public function registerMediaConversions(Media $media = null): void
     {
-        $this->addMediaConversion('thumb')
-            ->width(368*2)
-            ->height(232*2)
+        $this->addMediaConversion('small')
+            ->width(595)
+            ->height(842)
+            ->performOnCollections();
+        $this->addMediaConversion('big')
+            ->width(1240)
+            ->height(1754)
             ->performOnCollections();
     }
 
