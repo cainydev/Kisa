@@ -44,7 +44,8 @@ class Delivery extends Model implements HasMedia
     {
         $this->addMediaConversion('thumb')
             ->width(368)
-            ->height(232);
+            ->height(232)
+            ->performOnCollections();
     }
 
     public function presenter()
