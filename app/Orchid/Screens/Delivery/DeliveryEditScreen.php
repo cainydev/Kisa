@@ -114,10 +114,8 @@ class DeliveryEditScreen extends Screen
     {
         return [
             Layout::tabs([
-                'Allgemein' => [
-                    DeliveryEditLayout::class,
-                    Layout::view('partials.delivery-documents')
-                ],
+                'Allgemein' => DeliveryEditLayout::class,
+                'Dokumente' => Layout::view('partials.delivery-documents'),
                 'Eingangskontrolle' => DeliveryBioLayout::class,
                 'Gebinde' => [
                     DeliveryBagsLayout::class,
