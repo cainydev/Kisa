@@ -25,9 +25,9 @@
         @if($entity->getFirstMedia($collection)->hasGeneratedConversion('thumb'))
         <div x-data="{open: false, url: '{{ $entity->getFirstMediaUrl($collection, 'big'); }}'}" x-on:click="open = true">
             <img src="{{ $entity->getFirstMediaUrl($collection, 'small'); }}" alt="Vorschau {{ $title }}">
-            <template x-if="open">
-                <img x-bind:src="url" class="fixed" alt="{{ $title }} in Groß">
-            </template>
+            <span x-show="open" x-transition class="fixed inset-0">
+                <img x-bind:src="open ? url : ''" class="fixed w-full h-full" alt="{{ $title }} in Groß">
+            </span>
         </div>
         @else
         <p>Es konnte keine Vorschau für die Datei erstellt werden.</p>
