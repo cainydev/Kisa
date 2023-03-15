@@ -30,18 +30,20 @@ $batch = Bus::findBatch($batch_uuid);
             </tr>
         </thead>
         <tbody>
-            @foreach(Herb::with('bags')->get()->sortBy(function($herb) {
+            @foreach(Herb::with('bags')->get()->filter(function($herb){
+            return Redis::get('herb:' . $herb->id . ':per.day') > 0;
+            })->sortBy(function($herb) {
             return Redis::get('herb:' . $herb->id . ':remaining');
             }) as $herb)
             <tr class="odd:bg-gray-200">
                 <td class="p-2">{{ $herb->name }}</td>
-                <td class="p-2">{{ Redis::get('herb:' . $herb->id . ':per.day') }}g</td>
-                <td class="p-2">{{ Redis::get('herb:' . $herb->id . ':per.month') }}g</td>
-                <td class="p-2">{{ Redis::get('herb:' . $herb->id . ':per.year') }}g</td>
+                <td class="p-2">{{ round(Redis::get('herb:' . $herb->id . ':per.day'), 2) }}g</td>
+                <td class="p-2">{{ round(Redis::get('herb:' . $herb->id . ':per.month'), 2) }}g</td>
+                <td class="p-2">{{ round(Redis::get('herb:' . $herb->id . ':per.year'), 2) }}g</td>
                 <td class="p-2">
-                    {{ Redis::get('herb:' . $herb->id . ':remaining') }}
+                    {{ round(Redis::get('herb:' . $herb->id . ':remaining'), 2) }}
                     /
-                    {{ Redis::get('herb:' . $herb->id . ':bought') }}g</td>
+                    {{ round(Redis::get('herb:' . $herb->id . ':bought'), 2) }}g</td>
             </tr>
             @endforeach
         </tbody>
