@@ -16,6 +16,7 @@ use App\Orchid\Screens\Bag\{BagScreen, BagEditScreen};
 use App\Orchid\Screens\Herb\{HerbScreen, HerbStatisticScreen, HerbEditScreen};
 use App\Orchid\Screens\Product\{ProductScreen, ProductEditScreen, ProductStatisticsScreen};
 use App\Orchid\Screens\Products\ProductStatisticsScreen as ProductsProductStatisticsScreen;
+use App\Orchid\Screens\Restock\RestockScreen;
 use Illuminate\Support\Facades\Route;
 use Tabuna\Breadcrumbs\Trail;
 
@@ -110,6 +111,15 @@ Route::screen('bags/edit/{bag?}', BagEditScreen::class)
         return $trail
             ->parent('platform.bags')
             ->push('Erstellen oder Bearbeiten');
+    });
+
+// Platform > Bestand > Restock
+Route::screen('bags.restock', RestockScreen::class)
+    ->name('platform.bags.restock')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Nachbestellen');
     });
 
 // Platform > Produkte > Rohstoffe
