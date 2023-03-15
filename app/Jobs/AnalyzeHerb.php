@@ -36,13 +36,14 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
             $this->herb->setRedisAveragePerYear(0);
             $this->herb->setRedisBought(0);
             $this->herb->setRedisUsed(0);
-            $this->herb->setRedisRemaining(0);
+            $this->herb->setRedisGrammRemaining(0);
+            $this->herb->setRedisDaysRemaining(0);
             return;
         }
 
         $firstBought = now();
         $bought = 0;
-        $remaining = 0;
+        $gramm_remaining = 0;
 
         foreach ($bags as $bag) {
             if ($bag->delivery != null)
@@ -51,7 +52,7 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
 
             $bought += $bag->size;
             $current = $bag->getCurrentWithTrashed();
-            $remaining += $current;
+            $gramm_remaining += $current;
 
             $bag->setRedisCurrent($current);
         }
@@ -59,13 +60,14 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
         $daysSinceBought = $firstBought->floatDiffInDays(now());
         $monthsSinceBought = $firstBought->floatDiffInMonths(now());
         $yearsSinceBought = $firstBought->floatDiffInYears(now());
-        $used = $bought - $remaining;
+        $used = $bought - $gramm_remaining;
 
         $this->herb->setRedisAveragePerDay($used / $daysSinceBought);
         $this->herb->setRedisAveragePerMonth($used / $monthsSinceBought);
         $this->herb->setRedisAveragePerYear($used / $yearsSinceBought);
         $this->herb->setRedisBought($bought);
         $this->herb->setRedisUsed($used);
-        $this->herb->setRedisRemaining($remaining);
+        $this->herb->setRedisGrammRemaining($gramm_remaining);
+        $this->herb->setRedisDaysRemaining($gramm_remaining / ($used / $daysSinceBought));
     }
 }
