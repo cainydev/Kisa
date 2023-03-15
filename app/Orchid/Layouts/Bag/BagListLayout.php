@@ -21,6 +21,8 @@ class BagListLayout extends Table
                 ->sort(),
             TD::make('Inhalt')
                 ->render(function (Bag $bag) {
+                    if (500 > $bag->getRedisCurrent())
+                        return '<span style="color:red">' . $bag->herb->name . ' ' . $bag->specification . '</span>';
                     return $bag->herb->name . ' ' . $bag->specification;
                 }),
             TD::make('charge', 'Charge'),
