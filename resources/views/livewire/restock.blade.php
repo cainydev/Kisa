@@ -7,7 +7,7 @@ $batch = Bus::findBatch($batch_uuid);
 @endphp
 
 <div class="space-y-3"
-     @unless($batch->finished()) wire:poll.1000ms @endunless>
+     @unless($batch->finished()) wire:poll.300ms @endunless>
     @unless($batch->finished())
 
 
