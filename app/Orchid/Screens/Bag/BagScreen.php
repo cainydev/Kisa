@@ -22,10 +22,10 @@ class BagScreen extends Screen
             'bags' => Bag::with(['delivery'])
                 ->filters()
                 ->get()
-                ->sortBy('herb.name')
-                ->sortByDesc(function ($bag) {
-                    return $bag->getRedisCurrent();
-                })
+                ->sortBy([
+                    ['herb.name', 'asc'],
+                    [fn ($bag) => $bag->getRedisCurrent(), 'desc']
+                ])
         ];
     }
 

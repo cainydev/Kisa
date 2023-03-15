@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\AnalyzeHerb;
 use App\Orchid\Presenters\BagPresenter;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -45,6 +46,12 @@ class Bag extends Model
         'trashed',
     ];
 
+    protected static function booted(): void
+    {
+        static::updated(function (Bag $bag) {
+            AnalyzeHerb::dispatch($bag->herb);
+        });
+    }
 
     public function getRedisCurrent()
     {
