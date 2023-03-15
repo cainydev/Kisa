@@ -6,6 +6,7 @@ use Orchid\Screen\Screen;
 
 use App\Orchid\Layouts\Bag\BagListLayout;
 use App\Models\Bag;
+use Illuminate\Support\Facades\Redis;
 use Orchid\Support\Facades\Alert;
 
 class BagScreen extends Screen
@@ -22,6 +23,9 @@ class BagScreen extends Screen
                 ->filters()
                 ->get()
                 ->sortBy('herb.name')
+                ->sortByDesc(function ($bag) {
+                    return $bag->getRedisCurrent();
+                })
         ];
     }
 

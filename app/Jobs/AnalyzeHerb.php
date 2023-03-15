@@ -10,7 +10,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Redis;
 
 class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
 {
@@ -32,12 +31,12 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
         $bags = $this->herb->bags;
 
         if ($bags->count() == 0) {
-            Redis::set('herb:' . $this->herb->id . ':per.day', 0);
-            Redis::set('herb:' . $this->herb->id . ':per.month', 0);
-            Redis::set('herb:' . $this->herb->id . ':per.year', 0);
-            Redis::set('herb:' . $this->herb->id . ':bought', 0);
-            Redis::set('herb:' . $this->herb->id . ':used', 0);
-            Redis::set('herb:' . $this->herb->id . ':remaining', 0);
+            $this->herb->setRedisAveragePerDay(0);
+            $this->herb->setRedisAveragePerMonth(0);
+            $this->herb->setRedisAveragePerYear(0);
+            $this->herb->setRedisBought(0);
+            $this->herb->setRedisUsed(0);
+            $this->herb->setRedisRemaining(0);
             return;
         }
 
@@ -54,7 +53,7 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
             $current = $bag->getCurrent();
             $remaining += $current;
 
-            Redis::set('bag:' . $bag->id . ':remaining', $current);
+            $bag->setRedisCurrent($current);
         }
 
         $daysSinceBought = $firstBought->floatDiffInDays(now());
@@ -62,11 +61,11 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
         $yearsSinceBought = $firstBought->floatDiffInYears(now());
         $used = $bought - $remaining;
 
-        Redis::set('herb:' . $this->herb->id . ':per.day', $used / $daysSinceBought);
-        Redis::set('herb:' . $this->herb->id . ':per.month', $used / $monthsSinceBought);
-        Redis::set('herb:' . $this->herb->id . ':per.year', $used / $yearsSinceBought);
-        Redis::set('herb:' . $this->herb->id . ':bought', $bought);
-        Redis::set('herb:' . $this->herb->id . ':used', $used);
-        Redis::set('herb:' . $this->herb->id . ':remaining', $remaining);
+        $this->herb->setRedisAveragePerDay($used / $daysSinceBought);
+        $this->herb->setRedisAveragePerMonth($used / $monthsSinceBought);
+        $this->herb->setRedisAveragePerYear($used / $yearsSinceBought);
+        $this->herb->setRedisBought($bought);
+        $this->herb->setRedisUsed($used);
+        $this->herb->setRedisRemaining($remaining);
     }
 }

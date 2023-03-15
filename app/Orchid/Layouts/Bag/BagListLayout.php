@@ -2,13 +2,12 @@
 
 namespace App\Orchid\Layouts\Bag;
 
+use App\Models\Bag;
 use Orchid\Screen\Layouts\Table;
 use Orchid\Screen\TD;
 use App\Orchid\Fields\Group;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
-use Orchid\Screen\Fields\Input;
-use Orchid\Support\Facades\Layout;
 
 class BagListLayout extends Table
 {
@@ -21,28 +20,26 @@ class BagListLayout extends Table
                 ->width('100px')
                 ->sort(),
             TD::make('Inhalt')
-                ->render(function ($bag) {
+                ->render(function (Bag $bag) {
                     return $bag->herb->name . ' ' . $bag->specification;
                 }),
             TD::make('charge', 'Charge'),
             TD::make('bio', 'Bio')
-                ->render(function ($bag) {
+                ->render(function (Bag $bag) {
                     return view('partials/boolean', ['value' => $bag->bio]);
                 }),
             TD::make('size', 'Gebinde')
-                ->render(function ($bag) {
+                ->render(function (Bag $bag) {
                     return $bag->getSizeInKilo();
                 }),
-            /* verbraucht zuviel zeit
             TD::make('Aktuelles Gewicht')
-                ->render(function ($bag) {
-                    return sprintf('%ug', $bag->getCurrentWithTrashed());
+                ->render(function (Bag $bag) {
+                    return $bag->getRedisCurrent();
                 }),
-                */
             TD::make('bestbefore', 'Haltbar bis')
                 ->sort(),
             TD::make('Lieferung')
-                ->render(function ($bag) {
+                ->render(function (Bag $bag) {
                     if ($bag->delivery != null) {
                         return Link::make($bag->delivery->supplier->shortname . ', ' . $bag->delivery->delivered_date->format('d.m.y'))
                             ->route('platform.deliveries.edit', $bag->delivery);
@@ -51,7 +48,7 @@ class BagListLayout extends Table
                 }),
             TD::make()
                 ->align(TD::ALIGN_RIGHT)
-                ->render(function ($bag) {
+                ->render(function (Bag $bag) {
                     return Group::make([
                         Button::make()
                             ->class('btn btn-danger p-2')

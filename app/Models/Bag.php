@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Orchid\Presenters\BagPresenter;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Redis;
 use Laravel\Scout\Searchable;
 use Orchid\Screen\AsSource;
 use Orchid\Filters\Filterable;
@@ -42,6 +44,17 @@ class Bag extends Model
         'specification',
         'trashed',
     ];
+
+
+    public function getRedisCurrent()
+    {
+        return Redis::get('bag:' . $this->id . ':remaining');
+    }
+
+    public function setRedisCurrent(float $value)
+    {
+        return Redis::set('bag:' . $this->id . ':remaining', $value);
+    }
 
     public function presenter()
     {

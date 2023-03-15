@@ -19,7 +19,7 @@ $batch = Bus::findBatch($batch_uuid);
     @endunless
 
     @if($batch->finished())
-    <table class="w-full border border-collapse border-black table-auto">
+    <table class="w-full bg-white border border-collapse border-black table-auto">
         <thead>
             <tr>
                 <th class="p-2">Kraut</th>
