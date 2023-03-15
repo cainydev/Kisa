@@ -51,9 +51,9 @@ class PlatformProvider extends OrchidServiceProvider
                 ->icon('dropbox')
                 ->route('platform.bags'),
 
-            Menu::make('Nachbestellen')
+            /*Menu::make('Nachbestellen')
                 ->icon('euro')
-                ->route('platform.bags.restock'),
+                ->route('platform.bags.restock'),*/
 
             // Produkte
             Menu::make('Rohstoffe')
