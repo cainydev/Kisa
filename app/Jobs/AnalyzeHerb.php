@@ -50,7 +50,7 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
                     $firstBought = $bag->delivery->delivered_date;
 
             $bought += $bag->size;
-            $current = $bag->getCurrent();
+            $current = $bag->getCurrentWithTrashed();
             $remaining += $current;
 
             $bag->setRedisCurrent($current);
