@@ -24,7 +24,7 @@ class BagScreen extends Screen
                 ->get()
                 ->sortBy([
                     ['herb.name', 'asc'],
-                    [fn ($bag) => $bag->getRedisCurrent(), 'desc']
+                    [fn (Bag $bag) => $bag->getRedisCurrent(), 'desc']
                 ])
         ];
     }
