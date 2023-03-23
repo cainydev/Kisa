@@ -43,7 +43,7 @@
     </div>
 
 
-    @if($batch && !$batch->finished())
+    @if(($batch && !$batch->finished()) || ($batch && $batch->cancelled()))
     <p>Analysiere Rohstoffe...</p>
     <span class="flex items-center space-x-2">
         <label for="batch">{{ $batch->processedJobs(); }} / {{ $batch->totalJobs; }}</label>
@@ -56,13 +56,14 @@
                  aria-valuemax="100"></div>
         </div>
         <button class="btn btn-danger"
+                disabled="{{ $batch->cancelled() }}"
                 wire:click="abort">
             Abbrechen
         </button>
     </span>
     @endif
 
-    @if($batch && $batch->finished())
+    @if(($batch && $batch->finished()) || ($batch && $batch->cancelled()))
     <table class="w-full bg-white border border-collapse border-black table-auto">
         <thead>
             <tr>
