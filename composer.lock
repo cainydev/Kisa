@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4836ea75d7f1ea900033ff84f33b8552",
+    "content-hash": "e5eed86e238d07e712d1c3bc730e2784",
     "packages": [
         {
             "name": "alexsabur/orchid-livewire",
@@ -3300,25 +3300,21 @@
         },
         {
             "name": "orchid/blade-icons",
-            "version": "3.0.0",
+            "version": "2.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/orchidsoftware/blade-icons.git",
-                "reference": "1d4f92de038c5b93c26a497fb98414056aae01c4"
+                "reference": "b067f77a831d259976f7761dbef985475804c57b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/orchidsoftware/blade-icons/zipball/1d4f92de038c5b93c26a497fb98414056aae01c4",
-                "reference": "1d4f92de038c5b93c26a497fb98414056aae01c4",
+                "url": "https://api.github.com/repos/orchidsoftware/blade-icons/zipball/b067f77a831d259976f7761dbef985475804c57b",
+                "reference": "b067f77a831d259976f7761dbef985475804c57b",
                 "shasum": ""
             },
             "require": {
                 "ext-dom": "*",
-                "laravel/framework": "^9.36"
-            },
-            "conflict": {
-                "laravel/framework": "<9.36.1",
-                "orchestra/testbench": "<7.11"
+                "laravel/framework": "^9.0"
             },
             "require-dev": {
                 "orchestra/testbench": "^7.0",
@@ -3350,7 +3346,7 @@
             "description": "An easy way inline SVG images in your Blade templates.",
             "support": {
                 "issues": "https://github.com/orchidsoftware/blade-icons/issues",
-                "source": "https://github.com/orchidsoftware/blade-icons/tree/3.0.0"
+                "source": "https://github.com/orchidsoftware/blade-icons/tree/2.1.0"
             },
             "funding": [
                 {
@@ -3358,30 +3354,27 @@
                     "type": "open_collective"
                 }
             ],
-            "time": "2022-10-21T19:46:19+00:00"
+            "time": "2022-07-09T12:15:44+00:00"
         },
         {
             "name": "orchid/crud",
-            "version": "3.9.0",
+            "version": "3.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/orchidsoftware/crud.git",
-                "reference": "d30faa14a82ace5493f7beaee1f2dbc81c83101e"
+                "reference": "4c88a4f8e0d119adecb9805ea9217d5f7641a8f1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/orchidsoftware/crud/zipball/d30faa14a82ace5493f7beaee1f2dbc81c83101e",
-                "reference": "d30faa14a82ace5493f7beaee1f2dbc81c83101e",
+                "url": "https://api.github.com/repos/orchidsoftware/crud/zipball/4c88a4f8e0d119adecb9805ea9217d5f7641a8f1",
+                "reference": "4c88a4f8e0d119adecb9805ea9217d5f7641a8f1",
                 "shasum": ""
             },
             "require": {
-                "orchid/platform": "^13.0"
-            },
-            "conflict": {
-                "laravel/framework": "<9.2.0"
+                "orchid/platform": "^12.0"
             },
             "require-dev": {
-                "orchestra/testbench": "^7.0",
+                "orchestra/testbench": "^70",
                 "phpunit/phpunit": "^9.3"
             },
             "type": "library",
@@ -3416,7 +3409,7 @@
             ],
             "support": {
                 "issues": "https://github.com/orchidsoftware/crud/issues",
-                "source": "https://github.com/orchidsoftware/crud/tree/3.9.0"
+                "source": "https://github.com/orchidsoftware/crud/tree/3.7.0"
             },
             "funding": [
                 {
@@ -3424,7 +3417,7 @@
                     "type": "open_collective"
                 }
             ],
-            "time": "2022-12-15T20:17:35+00:00"
+            "time": "2022-05-22T08:53:33+00:00"
         },
         {
             "name": "orchid/icons",
@@ -3484,43 +3477,38 @@
         },
         {
             "name": "orchid/platform",
-            "version": "13.10.0",
+            "version": "12.6.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/orchidsoftware/platform.git",
-                "reference": "de88aea6f430ef0ed9a5ca737a58b387a073d373"
+                "reference": "9f27ed69d9a18120bc43582b0cb8bb40116822dc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/orchidsoftware/platform/zipball/de88aea6f430ef0ed9a5ca737a58b387a073d373",
-                "reference": "de88aea6f430ef0ed9a5ca737a58b387a073d373",
+                "url": "https://api.github.com/repos/orchidsoftware/platform/zipball/9f27ed69d9a18120bc43582b0cb8bb40116822dc",
+                "reference": "9f27ed69d9a18120bc43582b0cb8bb40116822dc",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "laravel/framework": "^9.21",
+                "laravel/framework": "^9.0",
                 "laravel/scout": "^9.0",
                 "myclabs/php-enum": "^1.7",
-                "orchid/blade-icons": "^2.0|^3.0",
+                "orchid/blade-icons": "^2.0",
                 "orchid/icons": "^2.0",
                 "tabuna/breadcrumbs": "^3.0",
                 "watson/active": "^6.0"
             },
-            "conflict": {
-                "laravel/framework": "<9.32.0",
-                "nesbot/carbon": "<2.66.0"
-            },
             "require-dev": {
-                "doctrine/dbal": "^2.10 || ^3.0",
+                "doctrine/dbal": "^2.10",
                 "fakerphp/faker": "^1.9.1",
-                "laravel/pint": "^1.2",
                 "mockery/mockery": "~1.0",
                 "orchestra/testbench-core": "^7.0",
                 "orchestra/testbench-dusk": "^7.0",
                 "phpunit/php-code-coverage": "^9.0",
                 "phpunit/phpunit": "^9.0",
                 "sti3bas/laravel-scout-array-driver": "^3.2",
-                "vimeo/psalm": "^4.3 || ^5.0"
+                "vimeo/psalm": "^4.3"
             },
             "suggest": {
                 "orchid/crud": "Automated CRUD based on your files resources.",
@@ -3590,7 +3578,7 @@
                     "type": "opencollective"
                 }
             ],
-            "time": "2023-02-13T21:20:58+00:00"
+            "time": "2022-06-15T23:46:14+00:00"
         },
         {
             "name": "phenx/php-font-lib",
@@ -4759,24 +4747,24 @@
         },
         {
             "name": "spatie/pdf-to-image",
-            "version": "1.4.0",
+            "version": "1.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/pdf-to-image.git",
-                "reference": "8deb3d899ecbef7e8e1dad16e3e7b57997582abc"
+                "reference": "9a5cb264a99e87e010c65d4ece03b51f821d55bd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/pdf-to-image/zipball/8deb3d899ecbef7e8e1dad16e3e7b57997582abc",
-                "reference": "8deb3d899ecbef7e8e1dad16e3e7b57997582abc",
+                "url": "https://api.github.com/repos/spatie/pdf-to-image/zipball/9a5cb264a99e87e010c65d4ece03b51f821d55bd",
+                "reference": "9a5cb264a99e87e010c65d4ece03b51f821d55bd",
                 "shasum": ""
             },
             "require": {
-                "ext-imagick": "*",
                 "php": ">=5.5.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "^6.2"
+                "phpunit/phpunit": "4.*",
+                "scrutinizer/ocular": "~1.1"
             },
             "type": "library",
             "autoload": {
@@ -4809,7 +4797,7 @@
                 "issues": "https://github.com/spatie/pdf-to-image/issues",
                 "source": "https://github.com/spatie/pdf-to-image/tree/master"
             },
-            "time": "2017-06-15T18:15:09+00:00"
+            "time": "2016-12-14T15:37:00+00:00"
         },
         {
             "name": "spatie/temporary-directory",
@@ -5813,6 +5801,89 @@
             ],
             "support": {
                 "source": "https://github.com/symfony/polyfill-ctype/tree/v1.27.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2022-11-03T14:55:06+00:00"
+        },
+        {
+            "name": "symfony/polyfill-iconv",
+            "version": "v1.27.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-iconv.git",
+                "reference": "927013f3aac555983a5059aada98e1907d842695"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-iconv/zipball/927013f3aac555983a5059aada98e1907d842695",
+                "reference": "927013f3aac555983a5059aada98e1907d842695",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1"
+            },
+            "provide": {
+                "ext-iconv": "*"
+            },
+            "suggest": {
+                "ext-iconv": "For best performance"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "1.27-dev"
+                },
+                "thanks": {
+                    "name": "symfony/polyfill",
+                    "url": "https://github.com/symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Iconv\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill for the Iconv extension",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "iconv",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-iconv/tree/v1.27.0"
             },
             "funding": [
                 {

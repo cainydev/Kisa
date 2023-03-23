@@ -34,7 +34,7 @@ class AbfuellenEditScreen extends Screen
      */
     public function name(): ?string
     {
-        return 'Abfüllung '.($this->bottle->exists ? 'bearbeiten' : 'erstellen');
+        return 'Abfüllung ' . ($this->bottle->exists ? 'bearbeiten' : 'erstellen');
     }
 
     public function description(): ?string
@@ -110,10 +110,12 @@ class AbfuellenEditScreen extends Screen
      */
     public function layout(): iterable
     {
-        return [Layout::columns([
-            AbfuellenGeneralLayout::class,
-            Layout::livewire('variant-adder'),
-        ])];
+        return [
+            Layout::columns([
+                AbfuellenGeneralLayout::class,
+                Layout::livewire('variant-adder'),
+            ])
+        ];
     }
 
     public function createOrUpdate(Bottle $bottle, Request $request)

@@ -20,7 +20,7 @@
         "laravel/tinker": "^2.7",
         "livewire/livewire": "^2.10",
         "orchid/crud": "^3.6",
-        "orchid/platform": "^13.0",
+        "orchid/platform": "^12.2",
         "spatie/laravel-medialibrary": "^10.0.0",
         "spatie/pdf-to-image": "^1.2",
         "wireui/wireui": "^1.0"
