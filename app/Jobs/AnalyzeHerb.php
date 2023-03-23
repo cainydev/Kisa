@@ -59,18 +59,15 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
                 }
             }
 
-            $current = $bag->getCurrent();
+            $current = $bag->getCurrentWithTrashed();
             $percentTrashed = ($bag->trashed / $bag->size) * 100;
 
-            if ($percentTrashed > $this->trashGate) {
-                $bought += $bag->size - $bag->trashed;
-                $gramm_remaining += $current;
-            } else {
-                $bought += $bag->size;
-                $gramm_remaining += $bag->getCurrentWithTrashed();
-            }
+            if ($percentTrashed > $this->trashGate) $bought += $bag->size - $bag->trashed;
+            else $bought += $bag->size;
 
-            $bag->setRedisCurrent($bag->getCurrentWithTrashed());
+            $gramm_remaining += $current;
+
+            $bag->setRedisCurrent($current);
         }
 
         $daysSinceBought = $firstBought->floatDiffInDays(now());
