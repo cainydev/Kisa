@@ -43,7 +43,7 @@ class Restock extends Component
     public function abort()
     {
         if ($this->batch_uuid != null && !Bus::findBatch($this->batch_uuid)->finished()) {
-            Bus::find($this->batch_uuid)->cancel();
+            Bus::findBatch($this->batch_uuid)->cancel();
         }
     }
 
