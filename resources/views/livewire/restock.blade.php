@@ -43,12 +43,12 @@
     </div>
 
 
-    @if(($batch && !$batch->finished()) || ($batch && $batch->cancelled()))
+    @if($batch && !$batch->finished())
     <p>Analysiere Rohstoffe...</p>
     <span class="flex items-center space-x-2">
         <label for="batch">{{ $batch->processedJobs(); }} / {{ $batch->totalJobs; }}</label>
         <div class="w-full progress bg-slate-200">
-            <div class="progress-bar progress-bar-striped {{ $batch->cancelled() ? 'bg-danger' : 'bg-success progress-bar-animated' }}"
+            <div class="progress-bar progress-bar-striped bg-success progress-bar-animated"
                  role="progressbar"
                  style="width: {{ $batch->progress() }}%"
                  aria-valuenow="{{ $batch->progress() }}"
@@ -56,14 +56,13 @@
                  aria-valuemax="100"></div>
         </div>
         <button class="btn btn-danger"
-                disabled="{{ $batch->cancelled() }}"
                 wire:click="abort">
             Abbrechen
         </button>
     </span>
     @endif
 
-    @if(($batch && $batch->finished()) || ($batch && $batch->cancelled()))
+    @if(!$batch || $batch && $batch->finished())
     <table class="w-full bg-white border border-collapse border-black table-auto">
         <thead>
             <tr>
