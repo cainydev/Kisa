@@ -61,7 +61,7 @@ class Restock extends Component
     public function updated()
     {
         $sorts = [
-            'name' => 'herb.name',
+            'name' => fn (Herb $herb) => $herb->name,
             'use' => fn (Herb $herb) => $herb->getRedisAveragePerMonth(),
             'grammremaining' => fn (Herb $herb) => $herb->getRedisGrammRemaining(),
             'daysremaining' => fn (Herb $herb) => $herb->getRedisDaysRemaining()
