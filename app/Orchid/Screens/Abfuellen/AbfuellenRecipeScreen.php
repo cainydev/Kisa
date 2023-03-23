@@ -2,15 +2,13 @@
 
 namespace App\Orchid\Screens\Abfuellen;
 
+use App\Models\Bottle;
+use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 
-use App\Models\Bottle;
-use Orchid\Screen\Actions\Link;
-
 class AbfuellenRecipeScreen extends Screen
 {
-
     /**
      * @var Bottle
      */
@@ -24,18 +22,16 @@ class AbfuellenRecipeScreen extends Screen
     public function query(Bottle $bottle): iterable
     {
         return [
-            'bottle' => $bottle
+            'bottle' => $bottle,
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
-        return 'Rezepte vom ' . $this->bottle->date->format('d.m.Y');
+        return 'Rezepte vom '.$this->bottle->date->format('d.m.Y');
     }
 
     /**
@@ -52,7 +48,7 @@ class AbfuellenRecipeScreen extends Screen
                 ->route('platform.bottle.edit', $this->bottle),
             Link::make('Neue Abfüllung')
                 ->class('btn btn-success hover:text-white')
-                ->route('platform.bottle.edit', null)
+                ->route('platform.bottle.edit', null),
         ];
     }
 
@@ -64,7 +60,7 @@ class AbfuellenRecipeScreen extends Screen
     public function layout(): iterable
     {
         return [
-            Layout::livewire('recipes')
+            Layout::livewire('recipes'),
         ];
     }
 }

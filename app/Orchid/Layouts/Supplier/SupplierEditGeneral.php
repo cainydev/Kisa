@@ -2,10 +2,8 @@
 
 namespace App\Orchid\Layouts\Supplier;
 
-use Orchid\Screen\Field;
-use Orchid\Screen\Layouts\Rows;
-
 use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Layouts\Rows;
 
 class SupplierEditGeneral extends Rows
 {
@@ -20,7 +18,7 @@ class SupplierEditGeneral extends Rows
             Input::make('supplier.shortname')
                 ->title('Kurzname')
                 ->help('Kurzer Name zur Identifikation im System')
-                ->required()
+                ->required(),
         ];
     }
 }

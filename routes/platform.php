@@ -2,21 +2,34 @@
 
 declare(strict_types=1);
 
+use App\Orchid\Screens\Abfuellen\AbfuellenEditScreen;
+use App\Orchid\Screens\Abfuellen\AbfuellenRecipeScreen;
+use App\Orchid\Screens\Abfuellen\AbfuellenScreen;
+use App\Orchid\Screens\Bag\BagEditScreen;
+use App\Orchid\Screens\Bag\BagScreen;
+use App\Orchid\Screens\Delivery\DeliveryEditScreen;
+use App\Orchid\Screens\Delivery\DeliveryScreen;
+use App\Orchid\Screens\Herb\HerbEditScreen;
+use App\Orchid\Screens\Herb\HerbScreen;
+use App\Orchid\Screens\Herb\HerbStatisticScreen;
+use App\Orchid\Screens\Information\DashboardScreen;
+use App\Orchid\Screens\Information\SettingsScreen;
+use App\Orchid\Screens\Information\WelcomeScreen;
+use App\Orchid\Screens\Meta\InspectorEditScreen;
+use App\Orchid\Screens\Meta\InspectorScreen;
+use App\Orchid\Screens\Meta\ProductTypeEditScreen;
+use App\Orchid\Screens\Meta\ProductTypeScreen;
+use App\Orchid\Screens\Meta\SupplierEditScreen;
+use App\Orchid\Screens\Meta\SupplierScreen;
+use App\Orchid\Screens\Product\ProductEditScreen;
+use App\Orchid\Screens\Product\ProductScreen;
+use App\Orchid\Screens\Product\ProductStatisticsScreen;
+use App\Orchid\Screens\Restock\RestockScreen;
 use App\Orchid\Screens\Role\RoleEditScreen;
 use App\Orchid\Screens\Role\RoleListScreen;
 use App\Orchid\Screens\User\UserEditScreen;
 use App\Orchid\Screens\User\UserListScreen;
 use App\Orchid\Screens\User\UserProfileScreen;
-
-use App\Orchid\Screens\Information\{WelcomeScreen, DashboardScreen, SettingsScreen};
-use App\Orchid\Screens\Meta\{SupplierScreen, SupplierEditScreen, InspectorScreen, InspectorEditScreen, ProductTypeScreen, ProductTypeEditScreen};
-use App\Orchid\Screens\Abfuellen\{AbfuellenScreen, AbfuellenEditScreen, AbfuellenRecipeScreen};
-use App\Orchid\Screens\Delivery\{DeliveryScreen, DeliveryEditScreen};
-use App\Orchid\Screens\Bag\{BagScreen, BagEditScreen};
-use App\Orchid\Screens\Herb\{HerbScreen, HerbStatisticScreen, HerbEditScreen};
-use App\Orchid\Screens\Product\{ProductScreen, ProductEditScreen, ProductStatisticsScreen};
-use App\Orchid\Screens\Products\ProductStatisticsScreen as ProductsProductStatisticsScreen;
-use App\Orchid\Screens\Restock\RestockScreen;
 use Illuminate\Support\Facades\Route;
 use Tabuna\Breadcrumbs\Trail;
 

@@ -2,11 +2,10 @@
 
 namespace App\Orchid\Layouts\Herb;
 
-use Orchid\Screen\Field;
-use Orchid\Screen\Layouts\Rows;
-use Orchid\Screen\Fields\{Input, Relation};
-
 use App\Models\Supplier;
+use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Fields\Relation;
+use Orchid\Screen\Layouts\Rows;
 
 class HerbEditLayout extends Rows
 {
@@ -24,7 +23,7 @@ class HerbEditLayout extends Rows
             Relation::make('herb.supplier_id')
             ->fromModel(Supplier::class, 'shortname')
             ->title('Standardlieferant')
-            ->required()
+            ->required(),
         ];
     }
 }

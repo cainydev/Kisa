@@ -2,15 +2,12 @@
 
 namespace App\Orchid\Layouts\Supplier;
 
-use Orchid\Screen\Layouts\Table;
-use Orchid\Screen\Actions\Link;
-use Orchid\Screen\Actions\Button;
-use Orchid\Screen\Actions\ModalToggle;
-use Orchid\Screen\TD;
-
-use App\Orchid\Fields\Group;
-
 use App\Models\BioInspector;
+use App\Orchid\Fields\Group;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Actions\ModalToggle;
+use Orchid\Screen\Layouts\Table;
+use Orchid\Screen\TD;
 
 class SupplierListLayout extends Table
 {
@@ -39,13 +36,13 @@ class SupplierListLayout extends Table
             TD::make('email', 'Email')
                 ->render(function ($supplier) {
                     return Link::make($supplier->email)
-                        ->href('mailto:' . $supplier->email);
+                        ->href('mailto:'.$supplier->email);
                 }),
             TD::make('phone', 'Telefon'),
             TD::make('website', 'Webseite')
                 ->render(function ($supplier) {
                     return Link::make($supplier->website)
-                        ->href('https://' . $supplier->website);
+                        ->href('https://'.$supplier->website);
                 }),
             TD::make('bio_inspector_id', 'Kontrollstelle')
                 ->render(function ($supplier) {
@@ -53,7 +50,7 @@ class SupplierListLayout extends Table
                     if (isset($inspector)) {
                         return Link::make($inspector->label)->route('platform.meta.inspector');
                     } else {
-                        return "Keine Zuordnung";
+                        return 'Keine Zuordnung';
                     }
                 }),
             TD::make()

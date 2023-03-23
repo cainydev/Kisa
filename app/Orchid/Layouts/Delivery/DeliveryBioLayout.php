@@ -2,7 +2,9 @@
 
 namespace App\Orchid\Layouts\Delivery;
 
-use Orchid\Screen\Fields\{DateTimer, CheckBox, Input, Upload};
+use Orchid\Screen\Fields\CheckBox;
+use Orchid\Screen\Fields\DateTimer;
+use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Layouts\Rows;
 
 class DeliveryBioLayout extends Rows

@@ -30,7 +30,6 @@ class UserEditScreen extends Screen
     /**
      * Query data.
      *
-     * @param User $user
      *
      * @return array
      */
@@ -39,15 +38,13 @@ class UserEditScreen extends Screen
         $user->load(['roles']);
 
         return [
-            'user'       => $user,
+            'user' => $user,
             'permission' => $user->getStatusPermission(),
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -56,17 +53,12 @@ class UserEditScreen extends Screen
 
     /**
      * Display header description.
-     *
-     * @return string|null
      */
     public function description(): ?string
     {
         return 'Details such as name, email and password';
     }
 
-    /**
-     * @return iterable|null
-     */
     public function permission(): ?iterable
     {
         return [
@@ -155,9 +147,6 @@ class UserEditScreen extends Screen
     }
 
     /**
-     * @param User    $user
-     * @param Request $request
-     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function save(User $user, Request $request)
@@ -199,12 +188,9 @@ class UserEditScreen extends Screen
     }
 
     /**
-     * @param User $user
-     *
-     * @throws \Exception
-     *
      * @return \Illuminate\Http\RedirectResponse
      *
+     * @throws \Exception
      */
     public function remove(User $user)
     {
@@ -216,8 +202,6 @@ class UserEditScreen extends Screen
     }
 
     /**
-     * @param User $user
-     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function loginAs(User $user)

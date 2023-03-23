@@ -2,19 +2,23 @@
 
 namespace App\Orchid\Screens\Delivery;
 
+use App\Models\Bag;
+use App\Models\Delivery;
+use App\Orchid\Layouts\Delivery\DeliveryBagsLayout;
+use App\Orchid\Layouts\Delivery\DeliveryBioLayout;
+use App\Orchid\Layouts\Delivery\DeliveryEditLayout;
+use App\Orchid\Layouts\Delivery\DeliveryListBagLayout;
 use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
-use Orchid\Screen\Actions\{Button, Link};
-use Orchid\Support\Facades\{Alert, Layout};
-
-
-use App\Orchid\Layouts\Delivery\{DeliveryEditLayout, DeliveryBioLayout, DeliveryBagsLayout, DeliveryListBagLayout};
-
-use App\Models\{Delivery, Bag, BottlePosition};
+use Orchid\Support\Facades\Alert;
+use Orchid\Support\Facades\Layout;
 
 class DeliveryEditScreen extends Screen
 {
     public Delivery $delivery;
+
     public Bag $currentBag;
 
     /**
@@ -26,18 +30,16 @@ class DeliveryEditScreen extends Screen
     {
         return [
             'delivery' => $delivery,
-            'currentBag' => $currentBag
+            'currentBag' => $currentBag,
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
-        return 'Lieferung ' . ($this->delivery->exists ? 'bearbeiten' : 'erstellen');
+        return 'Lieferung '.($this->delivery->exists ? 'bearbeiten' : 'erstellen');
     }
 
     /**
@@ -73,30 +75,29 @@ class DeliveryEditScreen extends Screen
             $bag = (new Bag())->fill(($request->get('currentBag')));
             $bag->delivery_id = $delivery->id;
             $bag->save();
+
             return redirect()->route('platform.deliveries.edit', ['delivery' => $delivery]);
-        }else{
+        } else {
             Alert::error('Bitte fülle alle Felder aus um einen neuen Sack hinzuzufügen.');
         }
-
-
     }
 
     public function deleteBag(Request $request)
     {
         $bag = Bag::find($request->query->get('bag'));
 
-        $message = "Gebinde konnte nicht gelöscht werden: ";
+        $message = 'Gebinde konnte nicht gelöscht werden: ';
 
         $valid = true;
-        foreach($bag->ingredients as $i){
-            $message .= "Gebinde wird aktuell in Abfüllung (ID=" . $i->position->bottle->id . ") verwendet.";
+        foreach ($bag->ingredients as $i) {
+            $message .= 'Gebinde wird aktuell in Abfüllung (ID='.$i->position->bottle->id.') verwendet.';
             $valid = false;
         }
 
-        if ($valid){
+        if ($valid) {
             $bag->delete();
             Alert::success('Gebinde wurde entfernt.');
-        }else{
+        } else {
             Alert::error($message);
         }
     }
@@ -120,8 +121,8 @@ class DeliveryEditScreen extends Screen
                 'Gebinde' => [
                     DeliveryBagsLayout::class,
                     DeliveryListBagLayout::class,
-                ]
-            ])->activeTab($this->delivery->exists ? 'Gebinde' : 'Allgemein')
+                ],
+            ])->activeTab($this->delivery->exists ? 'Gebinde' : 'Allgemein'),
         ];
     }
 }

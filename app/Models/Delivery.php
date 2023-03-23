@@ -6,10 +6,9 @@ use App\Orchid\Presenters\DeliveryPresenter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Searchable;
+use Orchid\Screen\AsSource;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-
-use Orchid\Screen\AsSource;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Delivery extends Model implements HasMedia
@@ -61,7 +60,7 @@ class Delivery extends Model implements HasMedia
     {
         $bags = '';
         foreach ($this->bags as $bag) {
-            $bags .= $bag->herb->name . '-' . $bag->getSizeInKilo() . ', ';
+            $bags .= $bag->herb->name.'-'.$bag->getSizeInKilo().', ';
         }
         $bags = substr($bags, 0, strlen($bags) - 2);
 

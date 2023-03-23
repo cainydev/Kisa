@@ -2,9 +2,10 @@
 
 namespace App\Http\Livewire;
 
+use App\Models\Bag;
+use App\Models\BottlePosition;
+use App\Models\Ingredient;
 use Livewire\Component;
-
-use App\Models\{BottlePosition, Bag, Ingredient};
 
 class Recipe extends Component
 {
@@ -13,7 +14,7 @@ class Recipe extends Component
     public $newCharge;
 
     protected $rules = [
-        'newCharge' => 'required|min:3'
+        'newCharge' => 'required|min:3',
     ];
 
     public function mount()
@@ -37,6 +38,7 @@ class Recipe extends Component
         $this->emitUp('updateRecipes');
         session()->flash('success', 'Charge wurde manuell angepasst.');
     }
+
     public function generateCharge()
     {
         $this->position->charge = $this->position->getCharge();
@@ -57,13 +59,15 @@ class Recipe extends Component
 
     public function uploadToBillbee()
     {
-        if (!$this->position->hasAllBags()) {
+        if (! $this->position->hasAllBags()) {
             session()->flash('error', 'Bitte vervollständige erst die Abfüllung.');
+
             return;
         }
 
         if ($this->position->uploaded) {
             session()->flash('error', 'Diese Abfüllung wurde bereits eingelagert.');
+
             return;
         }
 
@@ -92,14 +96,14 @@ class Recipe extends Component
         $this->position->save();
         $this->newCharge = $this->position->charge;
 
-        session()->flash('success', $bag->herb->name .  ' ' . $bag->specification . ' wird jetzt verwendet.');
+        session()->flash('success', $bag->herb->name.' '.$bag->specification.' wird jetzt verwendet.');
     }
 
     public function removeBag(Bag $bag)
     {
         Ingredient::where('bottle_position_id', $this->position->id)->where('herb_id', $bag->herb->id)->delete();
 
-        session()->flash('warning', $bag->herb->name .  ' ' . $bag->specification . ' wird nicht mehr verwendet.');
+        session()->flash('warning', $bag->herb->name.' '.$bag->specification.' wird nicht mehr verwendet.');
 
         $this->emitUp('updateRecipes');
     }
@@ -107,6 +111,7 @@ class Recipe extends Component
     public function render()
     {
         $this->position = BottlePosition::find($this->position->id);
+
         return view('livewire.recipe');
     }
 }

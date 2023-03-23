@@ -2,11 +2,13 @@
 
 namespace App\Orchid\Layouts\Bag;
 
+use App\Models\Herb;
 use Orchid\Screen\Field;
+use Orchid\Screen\Fields\CheckBox;
+use Orchid\Screen\Fields\DateTimer;
+use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Fields\Relation;
 use Orchid\Screen\Layouts\Rows;
-use Orchid\Screen\Fields\{Input, CheckBox, DateTimer, Relation};
-
-use App\Models\{Herb, Bag};
 
 class BagEditLayout extends Rows
 {
@@ -24,7 +26,6 @@ class BagEditLayout extends Rows
      */
     protected function fields(): iterable
     {
-
         return [
             Relation::make('bag.herb_id')
                 ->fromModel(Herb::class, 'fullname')

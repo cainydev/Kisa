@@ -2,14 +2,13 @@
 
 namespace App\Orchid\Screens\Meta;
 
-use Orchid\Screen\Screen;
-use Orchid\Screen\Actions\Link;
-use Orchid\Support\Facades\Layout;
-use Orchid\Support\Facades\Alert;
-use Orchid\Support\Color;
-
-use App\Models\{BioInspector, Supplier};
+use App\Models\BioInspector;
 use App\Orchid\Layouts\Inspectors\InspectorListLayout;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Screen;
+use Orchid\Support\Color;
+use Orchid\Support\Facades\Alert;
+use Orchid\Support\Facades\Layout;
 
 class InspectorScreen extends Screen
 {
@@ -21,14 +20,12 @@ class InspectorScreen extends Screen
     public function query(): iterable
     {
         return [
-            'inspectors' => BioInspector::paginate()
+            'inspectors' => BioInspector::paginate(),
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -46,7 +43,7 @@ class InspectorScreen extends Screen
             Link::make('Hinzufügen')
                 ->icon('plus')
                 ->class('btn btn-success')
-                ->route('platform.meta.inspector.edit')
+                ->route('platform.meta.inspector.edit'),
         ];
     }
 
@@ -59,12 +56,12 @@ class InspectorScreen extends Screen
     {
         return [
             Layout::modal('deleteInspector', [
-                Layout::view('modals.delete')
+                Layout::view('modals.delete'),
             ])
                 ->title('Wirklich löschen?')
                 ->applyButton('Löschen')
                 ->closeButton('Abbrechen'),
-            InspectorListLayout::class
+            InspectorListLayout::class,
         ];
     }
 
@@ -79,7 +76,7 @@ class InspectorScreen extends Screen
             Alert::view('toasts.deleteFailed', Color::ERROR(), ['objectName' => 'Kontrollstelle', 'errors' => ['Lieferant' => $countOfSuppliers]]);
         } else {
             $inspector->delete();
-            Alert::success('Kontrollstelle ' . $inspectorName . ' wurde erfolgreich gelöscht.');
+            Alert::success('Kontrollstelle '.$inspectorName.' wurde erfolgreich gelöscht.');
         }
     }
 }

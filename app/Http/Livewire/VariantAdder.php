@@ -2,16 +2,18 @@
 
 namespace App\Http\Livewire;
 
+use App\Models\Bottle;
+use App\Models\BottlePosition;
+use App\Models\Product;
+use App\Models\Variant;
 use Livewire\Component;
-
-use App\Models\{Variant, Bottle, Product, BottlePosition};
 
 class VariantAdder extends Component
 {
-
     public Bottle $bottle;
 
     public Product $product;
+
     public $query;
 
     public Variant $variant;
@@ -21,18 +23,17 @@ class VariantAdder extends Component
     protected $rules = [
         'product' => 'required',
         'variant' => 'required',
-        'count' => 'numeric|required|max:1000|min:1'
+        'count' => 'numeric|required|max:1000|min:1',
     ];
 
     public function add()
     {
         $this->validate();
 
-
         BottlePosition::create([
             'bottle_id' => $this->bottle->id,
             'variant_id' => $this->variant->id,
-            'count' => $this->count
+            'count' => $this->count,
         ]);
 
         $this->product = new Product;
@@ -55,6 +56,7 @@ class VariantAdder extends Component
     {
         if ($bottle === null) {
             $this->bottle = new Bottle;
+
             return;
         }
         $this->bottle = $bottle;
@@ -70,6 +72,7 @@ class VariantAdder extends Component
             foreach ($bottle->positions as $pos) {
                 if ($pos->variant->id == $this->variant->id) {
                     session()->flash('warning', 'Du hast an diesem Tag bereits eine ähnliche Abfüllung gemacht. Bist du dir sicher?');
+
                     return;
                 }
             }
@@ -95,6 +98,7 @@ class VariantAdder extends Component
         if ($this->bottle->exists) {
             $this->bottle = Bottle::find($this->bottle->id);
         }
+
         return view('livewire.variant-adder');
     }
 }

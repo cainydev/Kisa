@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c710439fda923f74ede0062401d686ae",
+    "content-hash": "4836ea75d7f1ea900033ff84f33b8552",
     "packages": [
         {
             "name": "alexsabur/orchid-livewire",
@@ -3300,21 +3300,25 @@
         },
         {
             "name": "orchid/blade-icons",
-            "version": "2.1.0",
+            "version": "3.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/orchidsoftware/blade-icons.git",
-                "reference": "b067f77a831d259976f7761dbef985475804c57b"
+                "reference": "1d4f92de038c5b93c26a497fb98414056aae01c4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/orchidsoftware/blade-icons/zipball/b067f77a831d259976f7761dbef985475804c57b",
-                "reference": "b067f77a831d259976f7761dbef985475804c57b",
+                "url": "https://api.github.com/repos/orchidsoftware/blade-icons/zipball/1d4f92de038c5b93c26a497fb98414056aae01c4",
+                "reference": "1d4f92de038c5b93c26a497fb98414056aae01c4",
                 "shasum": ""
             },
             "require": {
                 "ext-dom": "*",
-                "laravel/framework": "^9.0"
+                "laravel/framework": "^9.36"
+            },
+            "conflict": {
+                "laravel/framework": "<9.36.1",
+                "orchestra/testbench": "<7.11"
             },
             "require-dev": {
                 "orchestra/testbench": "^7.0",
@@ -3346,7 +3350,7 @@
             "description": "An easy way inline SVG images in your Blade templates.",
             "support": {
                 "issues": "https://github.com/orchidsoftware/blade-icons/issues",
-                "source": "https://github.com/orchidsoftware/blade-icons/tree/2.1.0"
+                "source": "https://github.com/orchidsoftware/blade-icons/tree/3.0.0"
             },
             "funding": [
                 {
@@ -3354,27 +3358,30 @@
                     "type": "open_collective"
                 }
             ],
-            "time": "2022-07-09T12:15:44+00:00"
+            "time": "2022-10-21T19:46:19+00:00"
         },
         {
             "name": "orchid/crud",
-            "version": "3.7.0",
+            "version": "3.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/orchidsoftware/crud.git",
-                "reference": "4c88a4f8e0d119adecb9805ea9217d5f7641a8f1"
+                "reference": "d30faa14a82ace5493f7beaee1f2dbc81c83101e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/orchidsoftware/crud/zipball/4c88a4f8e0d119adecb9805ea9217d5f7641a8f1",
-                "reference": "4c88a4f8e0d119adecb9805ea9217d5f7641a8f1",
+                "url": "https://api.github.com/repos/orchidsoftware/crud/zipball/d30faa14a82ace5493f7beaee1f2dbc81c83101e",
+                "reference": "d30faa14a82ace5493f7beaee1f2dbc81c83101e",
                 "shasum": ""
             },
             "require": {
-                "orchid/platform": "^12.0"
+                "orchid/platform": "^13.0"
+            },
+            "conflict": {
+                "laravel/framework": "<9.2.0"
             },
             "require-dev": {
-                "orchestra/testbench": "^70",
+                "orchestra/testbench": "^7.0",
                 "phpunit/phpunit": "^9.3"
             },
             "type": "library",
@@ -3409,7 +3416,7 @@
             ],
             "support": {
                 "issues": "https://github.com/orchidsoftware/crud/issues",
-                "source": "https://github.com/orchidsoftware/crud/tree/3.7.0"
+                "source": "https://github.com/orchidsoftware/crud/tree/3.9.0"
             },
             "funding": [
                 {
@@ -3417,7 +3424,7 @@
                     "type": "open_collective"
                 }
             ],
-            "time": "2022-05-22T08:53:33+00:00"
+            "time": "2022-12-15T20:17:35+00:00"
         },
         {
             "name": "orchid/icons",
@@ -3477,38 +3484,43 @@
         },
         {
             "name": "orchid/platform",
-            "version": "12.6.2",
+            "version": "13.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/orchidsoftware/platform.git",
-                "reference": "9f27ed69d9a18120bc43582b0cb8bb40116822dc"
+                "reference": "de88aea6f430ef0ed9a5ca737a58b387a073d373"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/orchidsoftware/platform/zipball/9f27ed69d9a18120bc43582b0cb8bb40116822dc",
-                "reference": "9f27ed69d9a18120bc43582b0cb8bb40116822dc",
+                "url": "https://api.github.com/repos/orchidsoftware/platform/zipball/de88aea6f430ef0ed9a5ca737a58b387a073d373",
+                "reference": "de88aea6f430ef0ed9a5ca737a58b387a073d373",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "laravel/framework": "^9.0",
+                "laravel/framework": "^9.21",
                 "laravel/scout": "^9.0",
                 "myclabs/php-enum": "^1.7",
-                "orchid/blade-icons": "^2.0",
+                "orchid/blade-icons": "^2.0|^3.0",
                 "orchid/icons": "^2.0",
                 "tabuna/breadcrumbs": "^3.0",
                 "watson/active": "^6.0"
             },
+            "conflict": {
+                "laravel/framework": "<9.32.0",
+                "nesbot/carbon": "<2.66.0"
+            },
             "require-dev": {
-                "doctrine/dbal": "^2.10",
+                "doctrine/dbal": "^2.10 || ^3.0",
                 "fakerphp/faker": "^1.9.1",
+                "laravel/pint": "^1.2",
                 "mockery/mockery": "~1.0",
                 "orchestra/testbench-core": "^7.0",
                 "orchestra/testbench-dusk": "^7.0",
                 "phpunit/php-code-coverage": "^9.0",
                 "phpunit/phpunit": "^9.0",
                 "sti3bas/laravel-scout-array-driver": "^3.2",
-                "vimeo/psalm": "^4.3"
+                "vimeo/psalm": "^4.3 || ^5.0"
             },
             "suggest": {
                 "orchid/crud": "Automated CRUD based on your files resources.",
@@ -3578,7 +3590,7 @@
                     "type": "opencollective"
                 }
             ],
-            "time": "2022-06-15T23:46:14+00:00"
+            "time": "2023-02-13T21:20:58+00:00"
         },
         {
             "name": "phenx/php-font-lib",
@@ -4160,16 +4172,16 @@
         },
         {
             "name": "psy/psysh",
-            "version": "v0.11.12",
+            "version": "v0.11.13",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bobthecow/psysh.git",
-                "reference": "52cb7c47d403c31c0adc9bf7710fc355f93c20f7"
+                "reference": "722317c9f5627e588788e340f29b923e58f92f54"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bobthecow/psysh/zipball/52cb7c47d403c31c0adc9bf7710fc355f93c20f7",
-                "reference": "52cb7c47d403c31c0adc9bf7710fc355f93c20f7",
+                "url": "https://api.github.com/repos/bobthecow/psysh/zipball/722317c9f5627e588788e340f29b923e58f92f54",
+                "reference": "722317c9f5627e588788e340f29b923e58f92f54",
                 "shasum": ""
             },
             "require": {
@@ -4230,9 +4242,9 @@
             ],
             "support": {
                 "issues": "https://github.com/bobthecow/psysh/issues",
-                "source": "https://github.com/bobthecow/psysh/tree/v0.11.12"
+                "source": "https://github.com/bobthecow/psysh/tree/v0.11.13"
             },
-            "time": "2023-01-29T21:24:40+00:00"
+            "time": "2023-03-21T14:22:44+00:00"
         },
         {
             "name": "ralouphie/getallheaders",
@@ -7945,6 +7957,72 @@
                 "source": "https://github.com/laravel/breeze"
             },
             "time": "2023-02-18T20:55:43+00:00"
+        },
+        {
+            "name": "laravel/pint",
+            "version": "v1.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/pint.git",
+                "reference": "d55381c73b7308e1b8a124084e804193a179092e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/pint/zipball/d55381c73b7308e1b8a124084e804193a179092e",
+                "reference": "d55381c73b7308e1b8a124084e804193a179092e",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "ext-tokenizer": "*",
+                "ext-xml": "*",
+                "php": "^8.1.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.14.4",
+                "illuminate/view": "^10.0.0",
+                "laravel-zero/framework": "^10.0.0",
+                "mockery/mockery": "^1.5.1",
+                "nunomaduro/larastan": "^2.4.0",
+                "nunomaduro/termwind": "^1.15.1",
+                "pestphp/pest": "^1.22.4"
+            },
+            "bin": [
+                "builds/pint"
+            ],
+            "type": "project",
+            "autoload": {
+                "psr-4": {
+                    "App\\": "app/",
+                    "Database\\Seeders\\": "database/seeders/",
+                    "Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nuno Maduro",
+                    "email": "enunomaduro@gmail.com"
+                }
+            ],
+            "description": "An opinionated code formatter for PHP.",
+            "homepage": "https://laravel.com",
+            "keywords": [
+                "format",
+                "formatter",
+                "lint",
+                "linter",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/laravel/pint/issues",
+                "source": "https://github.com/laravel/pint"
+            },
+            "time": "2023-03-21T10:55:35+00:00"
         },
         {
             "name": "laravel/sail",

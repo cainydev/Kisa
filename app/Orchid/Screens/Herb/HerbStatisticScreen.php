@@ -2,10 +2,9 @@
 
 namespace App\Orchid\Screens\Herb;
 
+use App\Models\Herb;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
-
-use App\Models\Herb;
 
 class HerbStatisticScreen extends Screen
 {
@@ -25,12 +24,10 @@ class HerbStatisticScreen extends Screen
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
-        return 'Auswertung ' . $this->herb->name;
+        return 'Auswertung '.$this->herb->name;
     }
 
     /**
@@ -51,7 +48,7 @@ class HerbStatisticScreen extends Screen
     public function layout(): iterable
     {
         return [
-            Layout::livewire('herb-statistics')
+            Layout::livewire('herb-statistics'),
         ];
     }
 }

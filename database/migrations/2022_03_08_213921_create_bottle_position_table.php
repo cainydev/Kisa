@@ -1,10 +1,10 @@
 <?php
 
+use App\Models\Bottle;
+use App\Models\Variant;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-
-use App\Models\{Bottle, Variant};
 
 return new class extends Migration
 {
@@ -25,7 +25,6 @@ return new class extends Migration
     }
 
     /**
-     *
      *  Reverse the migrations.
      *
      * @return void

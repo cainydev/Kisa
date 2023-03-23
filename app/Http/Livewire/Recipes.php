@@ -2,9 +2,8 @@
 
 namespace App\Http\Livewire;
 
-use Livewire\Component;
-
 use App\Models\{Bottle};
+use Livewire\Component;
 
 class Recipes extends Component
 {
@@ -12,11 +11,13 @@ class Recipes extends Component
 
     protected $listeners = ['updateRecipes'];
 
-    public function mount(Bottle $bottle){
+    public function mount(Bottle $bottle)
+    {
         $this->bottle = $bottle;
     }
 
-    public function updateRecipes(){
+    public function updateRecipes()
+    {
         $this->update = true;
     }
 

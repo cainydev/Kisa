@@ -2,19 +2,16 @@
 
 namespace App\Orchid\Screens\Meta;
 
-use Orchid\Screen\Screen;
-use Orchid\Screen\Actions\Link;
-use Orchid\Support\Facades\Layout;
-use Orchid\Support\Facades\{Alert, Toast};
-use Orchid\Support\Color;
-
-
 use App\Models\{Supplier};
 use App\Orchid\Layouts\Supplier\SupplierListLayout;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Screen;
+use Orchid\Support\Color;
+use Orchid\Support\Facades\Alert;
+use Orchid\Support\Facades\Layout;
 
 class SupplierScreen extends Screen
 {
-
     /**
      * Query data.
      *
@@ -29,8 +26,6 @@ class SupplierScreen extends Screen
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -42,7 +37,7 @@ class SupplierScreen extends Screen
      */
     public function description(): ?string
     {
-        return "Alle verfügbaren Lieferanten";
+        return 'Alle verfügbaren Lieferanten';
     }
 
     /**
@@ -69,7 +64,7 @@ class SupplierScreen extends Screen
     {
         return [
             Layout::modal('deleteSupplier', [
-                Layout::view('modals.delete')
+                Layout::view('modals.delete'),
             ])
                 ->title('Wirklich löschen?')
                 ->applyButton('Löschen')
@@ -86,15 +81,17 @@ class SupplierScreen extends Screen
 
         if ($supplier->herbs->count() > 0 || $supplier->deliveries->count() > 0) {
             $errors = [];
-            if ($supplier->herbs->count() > 0)
+            if ($supplier->herbs->count() > 0) {
                 $errors['Rohstoffe'] = $supplier->herbs->count();
-            if ($supplier->deliveries->count() > 0)
+            }
+            if ($supplier->deliveries->count() > 0) {
                 $errors['Lieferungen'] = $supplier->deliveries->count();
+            }
 
             Alert::view('toasts.deleteFailed', Color::DANGER(), ['objectName' => 'Lieferant', 'errors' => $errors]);
         } else {
             $supplier->delete();
-            Alert::success('Lieferant ' . $supplierName . ' wurde erfolgreich gelöscht.');
+            Alert::success('Lieferant '.$supplierName.' wurde erfolgreich gelöscht.');
         }
     }
 }

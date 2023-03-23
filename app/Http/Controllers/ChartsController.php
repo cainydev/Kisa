@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Bag;
 use Carbon\Carbon;
 
@@ -17,16 +16,17 @@ class ChartsController extends Controller
         foreach (Bag::all() as $bag) {
             if ($bag->bestbefore < Carbon::now()) {
                 $bad++;
+
                 continue;
             }
             if ($bag->bestbefore < Carbon::now()->addMonths(3)) {
                 $soon++;
+
                 continue;
             }
 
             $good++;
         }
-
 
         $chart = app()->chartjs
             ->name('GebindeHaltbarkeitsListe')
@@ -37,8 +37,8 @@ class ChartsController extends Controller
                 [
                     'backgroundColor' => ['red', 'yellow', 'green'],
                     'hoverBackgroundColor' => ['red', 'yellow', 'green'],
-                    'data' => [$bad, $soon, $good]
-                ]
+                    'data' => [$bad, $soon, $good],
+                ],
             ])
             ->options([]);
 
@@ -59,13 +59,13 @@ class ChartsController extends Controller
                 [
                     'label' => 'Bio',
                     'backgroundColor' => ['green'],
-                    'data' => [$bio]
+                    'data' => [$bio],
                 ],
                 [
                     'label' => 'Nicht Bio',
                     'backgroundColor' => ['red'],
-                    'data' => [$nichtBio]
-                ]
+                    'data' => [$nichtBio],
+                ],
             ])
             ->options([]);
 

@@ -3,12 +3,9 @@
 namespace App\Models;
 
 use Exception;
-use GuzzleHttp\Exception\RequestException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Support\Facades\Http;
-
 use Orchid\Screen\AsSource;
 
 class Variant extends Model
@@ -21,7 +18,7 @@ class Variant extends Model
 
     public function getSKU()
     {
-        return $this->product->mainnumber . $this->ordernumber;
+        return $this->product->mainnumber.$this->ordernumber;
     }
 
     public function getStockFromBillbee()
@@ -37,8 +34,8 @@ class Variant extends Model
                 ->withHeaders(['X-Billbee-Api-Key' => $key])
                 ->retry(2, 500, function ($ex) {
                 })
-                ->get($host . 'products/' . $this->product->mainnumber . $this->ordernumber, [
-                    'lookupBy' => 'sku'
+                ->get($host.'products/'.$this->product->mainnumber.$this->ordernumber, [
+                    'lookupBy' => 'sku',
                 ]);
         } catch (Exception $e) {
             return false;
@@ -46,7 +43,8 @@ class Variant extends Model
 
         if ($response->failed()) {
             $response = $response->json();
-            dd('Couldn\'t get stock from Billbee: ' . $response['ErrorMessage'] . ': ' . $response['ErrorDescription']);
+            dd('Couldn\'t get stock from Billbee: '.$response['ErrorMessage'].': '.$response['ErrorDescription']);
+
             return false;
         }
 
@@ -54,6 +52,7 @@ class Variant extends Model
 
         $this->stock = intval($response['Data']['StockCurrent']);
         $this->save();
+
         return true;
     }
 

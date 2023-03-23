@@ -4,7 +4,6 @@ namespace App\Orchid\Screens\Product;
 
 use App\Models\Product;
 use App\Orchid\Layouts\Product\ProductEditLayout;
-use App\Orchid\Layouts\Product\ProductVariantsLayout;
 use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
@@ -25,7 +24,7 @@ class ProductEditScreen extends Screen
 
     public function name(): ?string
     {
-        return 'Endprodukt ' . ($this->product->exists ? 'bearbeiten' : 'erstellen');
+        return 'Endprodukt '.($this->product->exists ? 'bearbeiten' : 'erstellen');
     }
 
     public function commandBar(): iterable
@@ -57,9 +56,8 @@ class ProductEditScreen extends Screen
             Layout::tabs([
                 'Allgemein' => ProductEditLayout::class,
                 'Varianten' => Layout::livewire('variant-maker'),
-                'Rezept' => Layout::livewire('recipe-maker')
-            ])
-
+                'Rezept' => Layout::livewire('recipe-maker'),
+            ]),
 
         ];
     }

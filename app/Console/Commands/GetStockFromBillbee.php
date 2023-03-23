@@ -2,11 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Variant;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
-
-use App\Models\{Product, Variant};
 
 class GetStockFromBillbee extends Command
 {
@@ -31,11 +28,11 @@ class GetStockFromBillbee extends Command
      */
     public function handle()
     {
-        foreach(Variant::all() as $variant){
-            if($variant->getStockFromBillbee()){
-                $this->info($variant->product->mainnumber . $variant->ordernumber . ' successfully updated. New Stock: ' . $variant->stock);
-            }else{
-                $this->error($variant->product->mainnumber . $variant->ordernumber . ' couldn\'t be updated.');
+        foreach (Variant::all() as $variant) {
+            if ($variant->getStockFromBillbee()) {
+                $this->info($variant->product->mainnumber.$variant->ordernumber.' successfully updated. New Stock: '.$variant->stock);
+            } else {
+                $this->error($variant->product->mainnumber.$variant->ordernumber.' couldn\'t be updated.');
             }
         }
     }

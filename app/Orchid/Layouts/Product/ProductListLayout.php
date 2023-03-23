@@ -10,7 +10,6 @@ use Orchid\Screen\TD;
 
 class ProductListLayout extends Table
 {
-
     protected $target = 'products';
 
     protected function columns(): iterable
@@ -35,7 +34,7 @@ class ProductListLayout extends Table
                         Button::make()
                             ->class('btn btn-danger p-2')
                             ->method('deleteProduct', ['id' => $product->id])
-                            ->confirm('Willst du das Produkt »' . $product->name . '« wirklich löschen?')
+                            ->confirm('Willst du das Produkt »'.$product->name.'« wirklich löschen?')
                             ->icon('trash'),
                         Link::make()
                             ->icon('pencil')

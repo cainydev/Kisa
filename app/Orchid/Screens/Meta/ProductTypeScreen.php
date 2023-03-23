@@ -2,14 +2,12 @@
 
 namespace App\Orchid\Screens\Meta;
 
-use Orchid\Screen\Screen;
-use Orchid\Screen\Actions\Link;
-use Orchid\Support\Facades\Alert;
-use Orchid\Support\Color;
-
-use App\Orchid\Layouts\ProductType\ProductTypeListLayout;
-
 use App\Models\ProductType;
+use App\Orchid\Layouts\ProductType\ProductTypeListLayout;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Screen;
+use Orchid\Support\Color;
+use Orchid\Support\Facades\Alert;
 
 class ProductTypeScreen extends Screen
 {
@@ -21,14 +19,12 @@ class ProductTypeScreen extends Screen
     public function query(): iterable
     {
         return [
-            'productTypes' => ProductType::all()
+            'productTypes' => ProductType::all(),
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -51,7 +47,7 @@ class ProductTypeScreen extends Screen
             Link::make('Hinzufügen')
                 ->icon('plus')
                 ->class('btn btn-success')
-                ->route('platform.meta.producttype.edit')
+                ->route('platform.meta.producttype.edit'),
         ];
     }
 
@@ -63,7 +59,7 @@ class ProductTypeScreen extends Screen
     public function layout(): iterable
     {
         return [
-            ProductTypeListLayout::class
+            ProductTypeListLayout::class,
         ];
     }
 
@@ -77,13 +73,13 @@ class ProductTypeScreen extends Screen
                 Alert::view('toasts.deleteFailed', Color::DANGER(), [
                     'objectName' => 'Produktgruppe',
                     'errors' => [
-                        'Produkte' => $countProducts
-                    ]
+                        'Produkte' => $countProducts,
+                    ],
                 ]);
             } else {
                 $typename = $type->name;
                 $type->delete();
-                Alert::success('Produktgruppe ' . $typename . ' wurde erfolgreich gelöscht.');
+                Alert::success('Produktgruppe '.$typename.' wurde erfolgreich gelöscht.');
             }
         } else {
             Alert::error('Produktgruppe konnte nicht entfernt werden.');

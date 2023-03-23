@@ -9,13 +9,15 @@ trait ReadsCSVData
      */
     protected static function getCSV($filename, $seperator, $header = true, $popLast = true)
     {
-        if (($handle = fopen(base_path('database/seeders/data/' . $filename), "r")) !== FALSE) {
-            while (($csv[] = fgetcsv($handle, 0, $seperator)) !== FALSE) {
+        if (($handle = fopen(base_path('database/seeders/data/'.$filename), 'r')) !== false) {
+            while (($csv[] = fgetcsv($handle, 0, $seperator)) !== false) {
             }
             fclose($handle);
         }
 
-        if ($popLast) array_pop($csv);
+        if ($popLast) {
+            array_pop($csv);
+        }
         if ($header) {
             $keys = array_shift($csv);
             foreach ($csv as $i => $row) {

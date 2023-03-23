@@ -2,21 +2,20 @@
 
 namespace App\Orchid\Screens\Abfuellen;
 
-use Illuminate\Http\Request;
-
-use Orchid\Screen\Screen;
-use Orchid\Support\Facades\{Alert, Layout};
-use Orchid\Screen\Actions\{Button, Link};
-
+use App\Models\Bottle;
+use App\Models\BottlePosition;
+use App\Models\Product;
+use App\Models\Variant;
 use App\Orchid\Layouts\Abfuellen\{AbfuellenGeneralLayout};
-
-use App\Models\{Bottle, BottlePosition, Product, Variant};
+use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Screen;
+use Orchid\Support\Facades\Alert;
+use Orchid\Support\Facades\Layout;
 
 class AbfuellenEditScreen extends Screen
 {
-    /**
-     * @var Bottle
-     */
     public Bottle $bottle;
 
     public $variant;
@@ -26,18 +25,16 @@ class AbfuellenEditScreen extends Screen
     public function query(Bottle $bottle): iterable
     {
         return [
-            'bottle' => $bottle
+            'bottle' => $bottle,
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
-        return 'Abfüllung ' . ($this->bottle->exists ? 'bearbeiten' : 'erstellen');
+        return 'Abfüllung '.($this->bottle->exists ? 'bearbeiten' : 'erstellen');
     }
 
     public function description(): ?string
@@ -65,13 +62,12 @@ class AbfuellenEditScreen extends Screen
                 ->icon('book-open')
                 ->canSee($this->bottle != null && $this->bottle->exists && $this->bottle->positions->count() > 0)
                 ->class('btn btn-link')
-                ->route('platform.bottle.recipe', ['bottle' => $this->bottle])
+                ->route('platform.bottle.recipe', ['bottle' => $this->bottle]),
         ];
     }
 
     public function asyncGetVariants(Product $product = null, Variant $variant = null, $count)
     {
-
         $variants = $product->variants->mapWithKeys(function ($v, $key) {
             return [$v->id => strval($v->size)];
         })->all();
@@ -86,7 +82,6 @@ class AbfuellenEditScreen extends Screen
 
     public function addVariant(Bottle $bottle = null, Request $request)
     {
-
         if ($bottle == null) {
             $bottle = Bottle::create($request->get('bottle'));
         }
@@ -94,10 +89,11 @@ class AbfuellenEditScreen extends Screen
         BottlePosition::create([
             'bottle_id' => $bottle->id,
             'variant_id' => $request->get('variant'),
-            'count' => $request->get('count')
+            'count' => $request->get('count'),
         ]);
 
         Alert::success('Produkt wurde hinzugefügt.');
+
         return redirect(route('platform.bottle.edit', ['bottle' => $bottle]));
     }
 
@@ -116,7 +112,7 @@ class AbfuellenEditScreen extends Screen
     {
         return [Layout::columns([
             AbfuellenGeneralLayout::class,
-            Layout::livewire('variant-adder')
+            Layout::livewire('variant-adder'),
         ])];
     }
 

@@ -2,15 +2,16 @@
 
 namespace App\Orchid\Screens\Meta;
 
-use Illuminate\Http\Request;
-
-use Orchid\Screen\Screen;
-use Orchid\Screen\Actions\{Button, Link};
-use Orchid\Support\Facades\Layout;
-use Orchid\Support\Facades\Alert;
-
-use App\Orchid\Layouts\Supplier\{SupplierEditGeneral, SupplierEditContact, SupplierEditInspector};
 use App\Models\Supplier;
+use App\Orchid\Layouts\Supplier\SupplierEditContact;
+use App\Orchid\Layouts\Supplier\SupplierEditGeneral;
+use App\Orchid\Layouts\Supplier\SupplierEditInspector;
+use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Screen;
+use Orchid\Support\Facades\Alert;
+use Orchid\Support\Facades\Layout;
 
 class SupplierEditScreen extends Screen
 {
@@ -31,8 +32,6 @@ class SupplierEditScreen extends Screen
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -58,7 +57,7 @@ class SupplierEditScreen extends Screen
             Button::make('Speichern')
                 ->icon('save')
                 ->class('btn btn-success')
-                ->method('createOrUpdate')
+                ->method('createOrUpdate'),
         ];
     }
 
@@ -88,7 +87,7 @@ class SupplierEditScreen extends Screen
     {
         $supplier->fill($request->get('supplier'))->save();
 
-        Alert::success('Lieferant ' . $supplier->shortname . ' wurde gespeichert.');
+        Alert::success('Lieferant '.$supplier->shortname.' wurde gespeichert.');
 
         return redirect()->route('platform.meta.supplier');
     }

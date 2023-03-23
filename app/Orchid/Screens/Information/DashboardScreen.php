@@ -2,10 +2,9 @@
 
 namespace App\Orchid\Screens\Information;
 
+use App\Http\Controllers\ChartsController;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
-
-use App\Http\Controllers\ChartsController;
 
 class DashboardScreen extends Screen
 {
@@ -32,7 +31,7 @@ class DashboardScreen extends Screen
                 'bio' => ChartsController::bagIsBio(),
                 'soonSpoil' => ChartsController::bagIsSoonSpoiled(),
             ]),
-            Layout::livewire('bag-usage')
+            Layout::livewire('bag-usage'),
         ];
     }
 }

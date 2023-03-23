@@ -27,7 +27,7 @@ class TableSetting extends Model
 
     public function getColumn(string $column)
     {
-        if (!$this->hasColumn($column)) {
+        if (! $this->hasColumn($column)) {
             return false;
         }
 
@@ -36,11 +36,11 @@ class TableSetting extends Model
 
     public function isSortable(string $column)
     {
-        if (!$this->hasColumn($column)) {
+        if (! $this->hasColumn($column)) {
             return false;
         }
 
-        if (!array_key_exists('withSort', $this->getColumn($column))) {
+        if (! array_key_exists('withSort', $this->getColumn($column))) {
             return false;
         }
 
@@ -49,11 +49,11 @@ class TableSetting extends Model
 
     public function isPrimary(string $column)
     {
-        if (!$this->hasColumn($column)) {
+        if (! $this->hasColumn($column)) {
             return false;
         }
 
-        if (!array_key_exists('primary', $this->getColumn($column))) {
+        if (! array_key_exists('primary', $this->getColumn($column))) {
             return false;
         }
 
@@ -62,11 +62,11 @@ class TableSetting extends Model
 
     public function isForeign(string $column)
     {
-        if (!$this->hasColumn($column)) {
+        if (! $this->hasColumn($column)) {
             return false;
         }
 
-        if (!array_key_exists('foreign', $this->getColumn($column))) {
+        if (! array_key_exists('foreign', $this->getColumn($column))) {
             return false;
         }
 

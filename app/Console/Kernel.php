@@ -10,14 +10,13 @@ class Kernel extends ConsoleKernel
     /**
      * Define the application's command schedule.
      *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
      * @return void
      */
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('kuw:stock')
             ->description('Queries the stock from Billbee')
-            ->cron('*/' . config('kis.billbee.everyXMinutes', 30) . ' * * * *')
+            ->cron('*/'.config('kis.billbee.everyXMinutes', 30).' * * * *')
             ->between(config('kis.billbee.from', '04:00'), config('kis.billbee.to', '23:00'))
             ->runInBackground();
     }
@@ -29,7 +28,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__ . '/Commands');
+        $this->load(__DIR__.'/Commands');
 
         require base_path('routes/console.php');
     }

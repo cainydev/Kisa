@@ -16,10 +16,16 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
     use Dispatchable, InteractsWithQueue, Queueable, Batchable, SerializesModels;
 
     public $herb;
+    public $trashGate;
+    public $startDate;
+    public $endDate;
 
-    public function __construct(Herb $herb)
+    public function __construct(Herb $herb, $trashGate = 100, $startDate = null, $endDate = null)
     {
         $this->herb = $herb;
+        $this->trashGate = $trashGate;
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
     }
 
     public function handle()
@@ -38,6 +44,7 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
             $this->herb->setRedisUsed(0);
             $this->herb->setRedisGrammRemaining(0);
             $this->herb->setRedisDaysRemaining(0);
+
             return;
         }
 
@@ -46,16 +53,24 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
         $gramm_remaining = 0;
 
         foreach ($bags as $bag) {
-            if ($bag->delivery != null)
-                if ($bag->delivery->delivered_date < $firstBought)
+            if ($bag->delivery != null) {
+                if ($bag->delivery->delivered_date < $firstBought) {
                     $firstBought = $bag->delivery->delivered_date;
+                }
+            }
 
-            $bought += $bag->size;
             $current = $bag->getCurrent();
-            $currentWithTrashed = $bag->getCurrentWithTrashed();
-            $gramm_remaining += $current;
+            $percentTrashed = ($bag->trashed / $bag->size) * 100;
 
-            $bag->setRedisCurrent($currentWithTrashed);
+            if ($percentTrashed > $this->trashGate) {
+                $bought += $bag->size - $bag->trashed;
+                $gramm_remaining += $current;
+            } else {
+                $bought += $bag->size;
+                $gramm_remaining += $bag->getCurrentWithTrashed();
+            }
+
+            $bag->setRedisCurrent($bag->getCurrentWithTrashed());
         }
 
         $daysSinceBought = $firstBought->floatDiffInDays(now());

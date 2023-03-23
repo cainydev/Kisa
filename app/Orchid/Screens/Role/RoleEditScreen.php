@@ -25,22 +25,19 @@ class RoleEditScreen extends Screen
     /**
      * Query data.
      *
-     * @param Role $role
      *
      * @return array
      */
     public function query(Role $role): iterable
     {
         return [
-            'role'       => $role,
+            'role' => $role,
             'permission' => $role->getStatusPermission(),
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -49,17 +46,12 @@ class RoleEditScreen extends Screen
 
     /**
      * Display header description.
-     *
-     * @return string|null
      */
     public function description(): ?string
     {
         return 'Access rights';
     }
 
-    /**
-     * @return iterable|null
-     */
     public function permission(): ?iterable
     {
         return [
@@ -109,9 +101,6 @@ class RoleEditScreen extends Screen
     }
 
     /**
-     * @param Request $request
-     * @param Role    $role
-     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function save(Request $request, Role $role)
@@ -140,11 +129,9 @@ class RoleEditScreen extends Screen
     }
 
     /**
-     * @param Role $role
+     * @return \Illuminate\Http\RedirectResponse
      *
      * @throws \Exception
-     *
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function remove(Role $role)
     {

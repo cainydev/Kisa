@@ -2,18 +2,16 @@
 
 namespace App\Orchid\Layouts\Delivery;
 
-use Orchid\Screen\Field;
-use Orchid\Screen\Layouts\Rows;
-
-use Orchid\Screen\Fields\{Relation, Input, CheckBox, DateTimer};
-use Orchid\Support\Facades\Layout;
-
 use App\Models\Herb;
 use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Fields\CheckBox;
+use Orchid\Screen\Fields\DateTimer;
+use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Fields\Relation;
+use Orchid\Screen\Layouts\Rows;
 
 class DeliveryBagsLayout extends Rows
 {
-
     protected function fields(): iterable
     {
         return [
@@ -48,7 +46,7 @@ class DeliveryBagsLayout extends Rows
 
             Button::make('Hinzufügen')
                 ->class('btn btn-success')
-                ->method('addBag')
+                ->method('addBag'),
         ];
     }
 }

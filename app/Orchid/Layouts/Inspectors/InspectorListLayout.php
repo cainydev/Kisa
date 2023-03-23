@@ -2,12 +2,11 @@
 
 namespace App\Orchid\Layouts\Inspectors;
 
-use Orchid\Screen\Layouts\Table;
 use App\Orchid\Fields\Group;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Actions\ModalToggle;
+use Orchid\Screen\Layouts\Table;
 use Orchid\Screen\TD;
-
 
 class InspectorListLayout extends Table
 {
@@ -47,7 +46,7 @@ class InspectorListLayout extends Table
                             ->class('btn btn-primary p-2')
                             ->route('platform.meta.inspector.edit', ['inspector' => $inspector]),
                     ]);
-                })
+                }),
         ];
     }
 }

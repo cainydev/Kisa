@@ -2,11 +2,9 @@
 
 namespace App\Orchid\Screens\Bag;
 
-use Orchid\Screen\Screen;
-
-use App\Orchid\Layouts\Bag\BagListLayout;
 use App\Models\Bag;
-use Illuminate\Support\Facades\Redis;
+use App\Orchid\Layouts\Bag\BagListLayout;
+use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Alert;
 
 class BagScreen extends Screen
@@ -27,15 +25,13 @@ class BagScreen extends Screen
                 })
                 ->sortBy([
                     ['herb.name', 'asc'],
-                    [fn (Bag $bag) => $bag->getRedisCurrent(), 'desc']
-                ])
+                    [fn (Bag $bag) => $bag->getRedisCurrent(), 'desc'],
+                ]),
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -60,19 +56,19 @@ class BagScreen extends Screen
     public function layout(): iterable
     {
         return [
-            BagListLayout::class
+            BagListLayout::class,
         ];
     }
 
     public function deleteBag(Bag $bag)
     {
         $canDelete = true;
-        $message = "";
+        $message = '';
         foreach ($bag->ingredients as $i) {
             $canDelete = false;
-            $message = "Sack konnte nicht gelöscht werden: ";
+            $message = 'Sack konnte nicht gelöscht werden: ';
             foreach ($bag->ingredients as $i) {
-                $message .= "Das Gebinde " . $bag->herb->name . " " . $bag->getSizeInKilo() . " wurde in Abfüllung ID:" . $i->position->bottle->id . " verwendet. ";
+                $message .= 'Das Gebinde '.$bag->herb->name.' '.$bag->getSizeInKilo().' wurde in Abfüllung ID:'.$i->position->bottle->id.' verwendet. ';
             }
         }
 

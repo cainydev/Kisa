@@ -2,17 +2,17 @@
 
 namespace App\Http\Livewire;
 
-use Livewire\Component;
-
 use App\Models\Herb;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Livewire\Component;
 
 class BagUsage extends Component
 {
     protected $usageChart;
 
     public $startDate;
+
     public $endDate;
 
     public Herb $herb;
@@ -37,7 +37,7 @@ class BagUsage extends Component
 
         $period->setRecurrences(10);
 
-        foreach($period as $date){
+        foreach ($period as $date) {
             array_push($labels, $date->toFormattedDateString());
         }
 
@@ -52,7 +52,7 @@ class BagUsage extends Component
                     'label' => $this->herb->name,
                     'borderColor' => 'green',
                     'data' => [5000, 4400, 4200, 3750, 3000, 2800, 2200, 1200, 1000, 800],
-                    'tension' => 0.4
+                    'tension' => 0.4,
                 ],
             ])
             ->options([]);
@@ -61,6 +61,7 @@ class BagUsage extends Component
     public function render()
     {
         $this->generateChart();
+
         return view('livewire.bag-usage', ['chart' => $this->usageChart]);
     }
 }

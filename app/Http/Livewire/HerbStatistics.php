@@ -2,14 +2,13 @@
 
 namespace App\Http\Livewire;
 
-use Illuminate\Support\Facades\Blade;
-
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Storage;
-
-use Livewire\Component;
+use App\Models\Bag;
+use App\Models\Herb;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\{Herb, Bag};
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
 
 class HerbStatistics extends Component
 {
@@ -28,14 +27,14 @@ class HerbStatistics extends Component
 
     public function printPDF(Bag $bag)
     {
-        $name = str('auswertung ' . $bag->herb->name . ' charge ' . $bag->charge . ' ' . Carbon::now())->slug() . '.pdf';
+        $name = str('auswertung '.$bag->herb->name.' charge '.$bag->charge.' '.Carbon::now())->slug().'.pdf';
         $pdf = PDF::loadHTML(Blade::render('<x-herb-statistic :bag="$bag"/>', ['bag' => $bag]));
 
-        Storage::put('stats/' . $name, $pdf->output());
+        Storage::put('stats/'.$name, $pdf->output());
 
-        return Storage::download('stats/' . $name, $name, [
+        return Storage::download('stats/'.$name, $name, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' =>  'attachment; filename="' . $name . '"',
+            'Content-Disposition' => 'attachment; filename="'.$name.'"',
             'Content-Length' => strlen($pdf->output()),
         ]);
     }
@@ -43,6 +42,7 @@ class HerbStatistics extends Component
     public function render()
     {
         $this->herb = Herb::find($this->herb->id);
+
         return view('livewire.herb-statistics');
     }
 }

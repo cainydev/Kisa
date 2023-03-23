@@ -3,8 +3,9 @@
 namespace App\Orchid\Layouts\Settings;
 
 use Orchid\Screen\Field;
+use Orchid\Screen\Fields\CheckBox;
+use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Layouts\Rows;
-use Orchid\Screen\Fields\{Input, CheckBox, DropDown};
 
 class BillbeeLayout extends Rows
 {
@@ -45,7 +46,7 @@ class BillbeeLayout extends Rows
                 ->required()
                 ->help('Uhrzeit im Format hh:mm')
                 ->mask([
-                    'mask' => '99:99'
+                    'mask' => '99:99',
                 ]),
             Input::make('billbee.to')
                 ->title('Uhrzeit Ende des importierens abends')
@@ -53,7 +54,7 @@ class BillbeeLayout extends Rows
                 ->required()
                 ->help('Uhrzeit im Format hh:mm')
                 ->mask([
-                    'mask' => '99:99'
+                    'mask' => '99:99',
                 ]),
 
         ];

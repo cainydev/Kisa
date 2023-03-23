@@ -2,12 +2,11 @@
 
 namespace App\Orchid\Layouts\ProductType;
 
+use App\Orchid\Fields\Group;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Layouts\Table;
 use Orchid\Screen\TD;
-
-use App\Orchid\Fields\Group;
-
-use Orchid\Screen\Actions\{Link, Button};
 
 class ProductTypeListLayout extends Table
 {
@@ -45,7 +44,7 @@ class ProductTypeListLayout extends Table
                         Button::make()
                             ->class('btn btn-danger p-2')
                             ->method('deleteType', ['id' => $type->id])
-                            ->confirm('Willst du die Produktgruppe »' . $type->name . '« wirklich löschen?')
+                            ->confirm('Willst du die Produktgruppe »'.$type->name.'« wirklich löschen?')
                             ->icon('trash'),
                         Link::make()
                             ->icon('pencil')

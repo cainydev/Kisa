@@ -2,11 +2,10 @@
 
 namespace App\Orchid\Layouts\Abfuellen;
 
-use Orchid\Screen\TD;
-use Orchid\Screen\Layouts\Table;
-use Orchid\Screen\Actions\Button;
 use App\Orchid\Fields\Group;
-
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Layouts\Table;
+use Orchid\Screen\TD;
 
 class AbfuellenPositionsLayout extends Table
 {
@@ -16,7 +15,9 @@ class AbfuellenPositionsLayout extends Table
      * @var string|null
      */
     protected $title = 'Alle Produkte dieser Abfüllung';
+
     protected $target = 'bottle.positions';
+
     /**
      * Get the fields elements to be displayed.
      *
@@ -28,7 +29,7 @@ class AbfuellenPositionsLayout extends Table
             TD::make('variant.product.name', 'Produkt'),
             TD::make('size', 'Gebinde')->render(function ($pos) {
                 return view('partials.variants', [
-                    'variants' => [$pos->variant]
+                    'variants' => [$pos->variant],
                 ]);
             }),
             TD::make('Anzahl')->render(function ($pos) {

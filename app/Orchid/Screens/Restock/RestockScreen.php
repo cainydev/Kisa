@@ -2,7 +2,10 @@
 
 namespace App\Orchid\Screens\Restock;
 
-use App\Models\Bag;
+use App\Orchid\Layouts\Restock\RestockSettingsPanel;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Fields\DateRange;
+use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 
@@ -20,8 +23,6 @@ class RestockScreen extends Screen
 
     /**
      * The name of the screen displayed in the header.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -46,7 +47,7 @@ class RestockScreen extends Screen
     public function layout(): iterable
     {
         return [
-            Layout::livewire('restock')
+            Layout::livewire('restock'),
         ];
     }
 }

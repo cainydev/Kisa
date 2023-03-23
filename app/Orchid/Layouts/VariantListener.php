@@ -2,15 +2,14 @@
 
 namespace App\Orchid\Layouts;
 
+use App\Models\Product;
 use Illuminate\Support\Facades\Log;
-
 use Orchid\Screen\Actions\{Button};
-use Orchid\Screen\Fields\{Relation, Select, Input};
-
+use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Fields\Relation;
+use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Layouts\Listener;
 use Orchid\Support\Facades\Layout;
-
-use App\Models\Product;
 
 class VariantListener extends Listener
 {
@@ -24,7 +23,6 @@ class VariantListener extends Listener
 
     protected function layouts(): iterable
     {
-
         Log::debug($this->query->get('bottle'));
 
         return [

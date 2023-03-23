@@ -2,12 +2,10 @@
 
 namespace App\Orchid\Layouts\Product;
 
-use Orchid\Screen\Field;
+use App\Models\ProductType;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Relation;
 use Orchid\Screen\Layouts\Rows;
-
-use App\Models\ProductType;
 
 class ProductEditLayout extends Rows
 {

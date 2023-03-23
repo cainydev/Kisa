@@ -2,12 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 use App\Http\Traits\ReadsCSVData;
-
-use App\Models\{ProductType, Product, Variant, Herb};
+use App\Models\Herb;
+use App\Models\Product;
+use App\Models\ProductType;
+use App\Models\Variant;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class EinzelSeeder extends Seeder
 {
@@ -28,24 +30,23 @@ class EinzelSeeder extends Seeder
             $order = trim($variant['ordernumber']);
             $main = trim($variant['mainnumber']);
 
-
             if (Str::contains($order, '.')) { // Variant
                 $prod = Product::where('mainnumber', $main)->first();
                 Variant::create([
                     'size' => intval($variant['weight']),
                     'ordernumber' => Str::after($order, $main),
-                    'product_id' => $prod->id
+                    'product_id' => $prod->id,
                 ]);
             } else { // Main Article
                 $prod = Product::create([
                     'name' => $variant['name'],
                     'mainnumber' => $order,
-                    'product_type_id' => $typeEinzel->id
+                    'product_type_id' => $typeEinzel->id,
                 ]);
 
                 Variant::create([
                     'size' => intval($variant['weight']),
-                    'product_id' => $prod->id
+                    'product_id' => $prod->id,
                 ]);
 
                 foreach (Herb::all() as $herb) {
@@ -53,7 +54,7 @@ class EinzelSeeder extends Seeder
                         DB::table('herb_product')->insert([
                             'herb_id' => $herb->id,
                             'product_id' => $prod->id,
-                            'percentage' => 100
+                            'percentage' => 100,
                         ]);
                         break;
                     }

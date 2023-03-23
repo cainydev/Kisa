@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
 use App\Models\ProductType;
+use Illuminate\Database\Seeder;
 
 class ProductTypeSeeder extends Seeder
 {
@@ -17,19 +15,19 @@ class ProductTypeSeeder extends Seeder
     public function run()
     {
         ProductType::create([
-            'name' => 'Mischung nach Draht'
+            'name' => 'Mischung nach Draht',
         ]);
 
         ProductType::create([
-            'name' => 'Einzelkraut'
+            'name' => 'Einzelkraut',
         ]);
 
         ProductType::create([
-            'name' => 'Pfennighaus'
+            'name' => 'Pfennighaus',
         ]);
 
         ProductType::create([
-            'name' => 'Roseanum Schönbrunn'
+            'name' => 'Roseanum Schönbrunn',
         ]);
     }
 }

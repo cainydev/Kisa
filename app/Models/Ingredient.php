@@ -11,15 +11,18 @@ class Ingredient extends Model
 
     protected $guarded = [];
 
-    public function position(){
+    public function position()
+    {
         return $this->belongsTo(BottlePosition::class, 'bottle_position_id');
     }
 
-    public function herb(){
+    public function herb()
+    {
         return $this->belongsTo(Herb::class);
     }
 
-    public function bag(){
+    public function bag()
+    {
         return $this->belongsTo(Bag::class);
     }
 }

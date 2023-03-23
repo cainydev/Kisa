@@ -1,10 +1,11 @@
 <?php
 
+use App\Models\Bag;
+use App\Models\BottlePosition;
+use App\Models\Herb;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-
-use App\Models\{BottlePosition, Bag, Herb};
 
 return new class extends Migration
 {

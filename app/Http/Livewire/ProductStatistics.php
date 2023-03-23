@@ -2,14 +2,12 @@
 
 namespace App\Http\Livewire;
 
-use Illuminate\Support\Facades\Blade;
-
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Storage;
-
-use Livewire\Component;
-use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Product;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
 
 class ProductStatistics extends Component
 {
@@ -24,14 +22,14 @@ class ProductStatistics extends Component
 
     public function printPDF()
     {
-        $name = str('auswertung_' . $this->product->name . '_' . Carbon::now())->slug() . '.pdf';
+        $name = str('auswertung_'.$this->product->name.'_'.Carbon::now())->slug().'.pdf';
         $pdf = PDF::loadHTML(Blade::render('<x-product-statistic :product="$product"/>', ['product' => $this->product]));
 
-        Storage::put('stats/' . $name, $pdf->output());
+        Storage::put('stats/'.$name, $pdf->output());
 
-        return Storage::download('stats/' . $name, $name, [
+        return Storage::download('stats/'.$name, $name, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' =>  'attachment; filename="' . $name . '"',
+            'Content-Disposition' => 'attachment; filename="'.$name.'"',
             'Content-Length' => strlen($pdf->output()),
         ]);
     }
@@ -39,6 +37,7 @@ class ProductStatistics extends Component
     public function render()
     {
         $this->product = Product::find($this->product->id);
+
         return view('livewire.product-statistics');
     }
 }

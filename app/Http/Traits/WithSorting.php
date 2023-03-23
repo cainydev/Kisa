@@ -7,6 +7,7 @@ use App\Models\TableSetting;
 trait WithSorting
 {
     public string $sortBy = 'id';
+
     public string $direction = 'asc';
 
     protected $queryStringWithSorting = [

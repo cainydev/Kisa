@@ -27,7 +27,7 @@ class Bottle extends Model
     {
         $prods = '';
         foreach ($this->positions as $pos) {
-            $prods .= $pos->variant->product->name . ', ';
+            $prods .= $pos->variant->product->name.', ';
         }
         $prods = substr($prods, 0, strlen($prods) - 2);
 
@@ -35,7 +35,7 @@ class Bottle extends Model
             'id' => $this->id,
             'note' => $this->note,
             'prods' => $prods,
-            'date' => $this->date->format('d.m.Y') . ' or ' . $this->date->format('d.m.y')
+            'date' => $this->date->format('d.m.Y').' or '.$this->date->format('d.m.y'),
         ];
     }
 
@@ -52,8 +52,11 @@ class Bottle extends Model
     public function finished()
     {
         foreach ($this->positions as $pos) {
-            if (!$pos->hasAllBags()) return false;
+            if (! $pos->hasAllBags()) {
+                return false;
+            }
         }
+
         return true;
     }
 }

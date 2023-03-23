@@ -2,14 +2,13 @@
 
 namespace App\Orchid\Screens\Herb;
 
-use Illuminate\Http\Request;
-
-use Orchid\Screen\Screen;
-use Orchid\Screen\Actions\{Button, Link};
-use Orchid\Support\Facades\{Alert, Layout};
-
-use App\Orchid\Layouts\Herb\HerbEditLayout;
 use App\Models\Herb;
+use App\Orchid\Layouts\Herb\HerbEditLayout;
+use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Screen;
+use Orchid\Support\Facades\Alert;
 
 class HerbEditScreen extends Screen
 {
@@ -18,13 +17,13 @@ class HerbEditScreen extends Screen
     public function query(Herb $herb): iterable
     {
         return [
-            'herb' => $herb
+            'herb' => $herb,
         ];
     }
 
     public function name(): ?string
     {
-        return 'Rohstoff ' . ($this->herb->exists ? 'bearbeiten' : 'erstellen');
+        return 'Rohstoff '.($this->herb->exists ? 'bearbeiten' : 'erstellen');
     }
 
     /**
@@ -58,7 +57,7 @@ class HerbEditScreen extends Screen
     public function layout(): iterable
     {
         return [
-            HerbEditLayout::class
+            HerbEditLayout::class,
         ];
     }
 }

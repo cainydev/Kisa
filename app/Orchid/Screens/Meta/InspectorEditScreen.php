@@ -2,16 +2,14 @@
 
 namespace App\Orchid\Screens\Meta;
 
-use Illuminate\Http\Request;
-
-use Orchid\Screen\Screen;
-use Orchid\Screen\Fields\Input;
-use Orchid\Screen\Actions\{Button, Link};
-
-use Orchid\Support\Facades\Layout;
-use Orchid\Support\Facades\Alert;
-
 use App\Models\BioInspector;
+use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Screen;
+use Orchid\Support\Facades\Alert;
+use Orchid\Support\Facades\Layout;
 
 class InspectorEditScreen extends Screen
 {
@@ -28,14 +26,12 @@ class InspectorEditScreen extends Screen
     public function query(BioInspector $inspector): iterable
     {
         return [
-            'inspector' => $inspector
+            'inspector' => $inspector,
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -57,7 +53,7 @@ class InspectorEditScreen extends Screen
             Button::make('Speichern')
                 ->icon('save')
                 ->class('btn btn-success ml-2')
-                ->method('createOrUpdate')
+                ->method('createOrUpdate'),
         ];
     }
 
@@ -78,22 +74,20 @@ class InspectorEditScreen extends Screen
                 Input::make('inspector.label')
                     ->title('Bio-Identifikationsnummer')
                     ->placeholder('DE-ÖKO-039')
-                    ->required()
-            ])
+                    ->required(),
+            ]),
         ];
     }
 
     /**
-     * @param Post    $post
-     * @param Request $request
-     *
+     * @param  Post  $post
      * @return \Illuminate\Http\RedirectResponse
      */
     public function createOrUpdate(BioInspector $inspector, Request $request)
     {
         $inspector->fill($request->get('inspector'))->save();
 
-        Alert::success('Kontrollstelle ' . $inspector->label . ' wurde gespeichert.');
+        Alert::success('Kontrollstelle '.$inspector->label.' wurde gespeichert.');
 
         return redirect()->route('platform.meta.inspector');
     }

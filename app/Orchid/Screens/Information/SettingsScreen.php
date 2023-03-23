@@ -2,16 +2,15 @@
 
 namespace App\Orchid\Screens\Information;
 
+use App\Orchid\Layouts\Settings\BillbeeLayout;
+use App\Orchid\Layouts\Settings\SettingsLayout;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
+use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Screen;
+use Orchid\Support\Color;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
-use Orchid\Screen\Actions\Button;
-use Orchid\Support\Color;
-
-use Illuminate\Support\Facades\File;
-use Illuminate\Http\Request;
-
-use App\Orchid\Layouts\Settings\{SettingsLayout, BillbeeLayout};
 
 class SettingsScreen extends Screen
 {
@@ -27,8 +26,6 @@ class SettingsScreen extends Screen
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -46,7 +43,7 @@ class SettingsScreen extends Screen
             Button::make('Speichern')
                 ->type(Color::SUCCESS())
                 ->icon('check')
-                ->method('save')
+                ->method('save'),
         ];
     }
 
@@ -75,8 +72,8 @@ class SettingsScreen extends Screen
                 'from' => $request['billbee.from'],
                 'to' => $request['billbee.to'],
                 'get-stock' => boolval($request['billbee.get-stock']),
-                'set-stock' => boolval($request['billbee.set-stock'])
-            ]
+                'set-stock' => boolval($request['billbee.set-stock']),
+            ],
         ];
 
         $data = var_export($settings, 1);

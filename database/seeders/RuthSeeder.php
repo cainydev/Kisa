@@ -2,10 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Http\Traits\ReadsCSVData;
-use App\Models\{ProductType, Variant, Product};
+use App\Models\Product;
+use App\Models\ProductType;
+use App\Models\Variant;
+use Illuminate\Database\Seeder;
 
 class RuthSeeder extends Seeder
 {
@@ -26,19 +27,19 @@ class RuthSeeder extends Seeder
             $prod = Product::create([
                 'name' => $ruthmix['name'],
                 'mainnumber' => $ruthmix['ordernumber'],
-                'product_type_id' => $typeRuth->id
+                'product_type_id' => $typeRuth->id,
             ]);
 
             Variant::create([
                 'size' => 50,
                 'ordernumber' => '',
-                'product_id' => $prod->id
+                'product_id' => $prod->id,
             ]);
 
             Variant::create([
                 'size' => 100,
                 'ordernumber' => '.1',
-                'product_id' => $prod->id
+                'product_id' => $prod->id,
             ]);
         }
     }

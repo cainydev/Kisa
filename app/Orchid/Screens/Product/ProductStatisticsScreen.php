@@ -2,9 +2,8 @@
 
 namespace App\Orchid\Screens\Product;
 
-use Orchid\Screen\Screen;
-
 use App\Models\Product;
+use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 
 class ProductStatisticsScreen extends Screen
@@ -19,18 +18,16 @@ class ProductStatisticsScreen extends Screen
     public function query(Product $product): iterable
     {
         return [
-            'product' => $product
+            'product' => $product,
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
-        return 'Auswertung ' . $this->product->name;
+        return 'Auswertung '.$this->product->name;
     }
 
     /**
@@ -51,7 +48,7 @@ class ProductStatisticsScreen extends Screen
     public function layout(): iterable
     {
         return [
-            Layout::livewire('product-statistics')
+            Layout::livewire('product-statistics'),
         ];
     }
 }

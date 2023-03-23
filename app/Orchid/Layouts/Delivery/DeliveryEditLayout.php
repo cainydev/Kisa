@@ -2,10 +2,11 @@
 
 namespace App\Orchid\Layouts\Delivery;
 
+use App\Models\Supplier;
+use App\Models\User;
+use Orchid\Screen\Fields\DateTimer;
+use Orchid\Screen\Fields\Relation;
 use Orchid\Screen\Layouts\Rows;
-use Orchid\Screen\Fields\{DateTimer, Relation};
-
-use App\Models\{User, Supplier};
 
 class DeliveryEditLayout extends Rows
 {

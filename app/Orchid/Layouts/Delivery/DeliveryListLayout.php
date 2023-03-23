@@ -2,16 +2,14 @@
 
 namespace App\Orchid\Layouts\Delivery;
 
-use Orchid\Screen\Layouts\Table;
-use Orchid\Screen\TD;
-
 use App\Orchid\Fields\Group;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Layouts\Table;
+use Orchid\Screen\TD;
 
 class DeliveryListLayout extends Table
 {
-
     protected $target = 'deliveries';
 
     protected function columns(): iterable
@@ -45,7 +43,7 @@ class DeliveryListLayout extends Table
                         Button::make()
                             ->class('btn btn-danger p-2')
                             ->method('deleteDelivery', ['id' => $delivery->id])
-                            ->confirm('Willst du die Lieferung mit der ID »' . $delivery->id . '« wirklich löschen?')
+                            ->confirm('Willst du die Lieferung mit der ID »'.$delivery->id.'« wirklich löschen?')
                             ->icon('trash'),
                         Link::make()
                             ->icon('pencil')

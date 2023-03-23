@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-
 use App\Models\BioInspector;
+use Illuminate\Database\Seeder;
 
 class BioInspectorSeeder extends Seeder
 {
@@ -12,19 +11,19 @@ class BioInspectorSeeder extends Seeder
     {
         BioInspector::create([
             'company' => 'Kiwa BCS Öko-Garantie GmbH',
-            'label' => 'DE-ÖKO-001'
+            'label' => 'DE-ÖKO-001',
         ]);
         BioInspector::create([
             'company' => 'ABCERT AG',
-            'label' => 'DE-ÖKO-006'
+            'label' => 'DE-ÖKO-006',
         ]);
         BioInspector::create([
             'company' => 'ÖKOP Zertifizierungs GmbH',
-            'label' => 'DE-ÖKO-037'
+            'label' => 'DE-ÖKO-037',
         ]);
         BioInspector::create([
             'company' => 'EUROCERT SA',
-            'label' => 'GR-BIO-17'
+            'label' => 'GR-BIO-17',
         ]);
     }
 }

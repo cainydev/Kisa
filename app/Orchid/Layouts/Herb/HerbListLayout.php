@@ -2,12 +2,11 @@
 
 namespace App\Orchid\Layouts\Herb;
 
-use Orchid\Screen\Layouts\Table;
-use Orchid\Screen\TD;
-
 use App\Orchid\Fields\Group;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Layouts\Table;
+use Orchid\Screen\TD;
 
 class HerbListLayout extends Table
 {
@@ -35,7 +34,7 @@ class HerbListLayout extends Table
                         Button::make()
                             ->class('btn btn-danger p-2')
                             ->method('deleteHerb', ['id' => $herb->id])
-                            ->confirm('Willst du den Rohstoff »' . $herb->name . '« wirklich löschen?')
+                            ->confirm('Willst du den Rohstoff »'.$herb->name.'« wirklich löschen?')
                             ->icon('trash'),
                         Link::make()
                             ->icon('pencil')

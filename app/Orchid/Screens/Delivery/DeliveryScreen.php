@@ -2,16 +2,11 @@
 
 namespace App\Orchid\Screens\Delivery;
 
-use Orchid\Screen\Screen;
-use Orchid\Screen\Actions\Link;
-
-use App\Orchid\Layouts\Delivery\DeliveryListLayout;
-
 use App\Models\Delivery;
-use Orchid\Screen\Fields\Input;
-use Orchid\Screen\Sight;
+use App\Orchid\Layouts\Delivery\DeliveryListLayout;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Alert;
-use Orchid\Support\Facades\Layout;
 
 class DeliveryScreen extends Screen
 {
@@ -23,14 +18,12 @@ class DeliveryScreen extends Screen
     public function query(): iterable
     {
         return [
-            'deliveries' => Delivery::with(['supplier', 'user'])->orderByDesc('delivered_date')->get()
+            'deliveries' => Delivery::with(['supplier', 'user'])->orderByDesc('delivered_date')->get(),
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -48,7 +41,7 @@ class DeliveryScreen extends Screen
             Link::make('Hinzufügen')
                 ->icon('plus')
                 ->class('btn btn-success')
-                ->route('platform.deliveries.edit')
+                ->route('platform.deliveries.edit'),
         ];
     }
 
@@ -60,29 +53,29 @@ class DeliveryScreen extends Screen
     public function layout(): iterable
     {
         return [
-            DeliveryListLayout::class
+            DeliveryListLayout::class,
         ];
     }
 
-    public function deleteDelivery(Delivery $delivery){
+    public function deleteDelivery(Delivery $delivery)
+    {
         $canDelete = true;
-        $message = "";
-        foreach($delivery->bags as $bag){
-            if($bag->ingredients->count() > 0){
+        $message = '';
+        foreach ($delivery->bags as $bag) {
+            if ($bag->ingredients->count() > 0) {
                 $canDelete = false;
-                $message = "Lieferung konnte nicht gelöscht werden: ";
-                foreach($bag->ingredients as $i){
-                    $message .= "Das Gebinde " . $bag->herb->name . " " . $bag->getSizeInKilo() . " wurde in Abfüllung ID:" . $i->position->bottle->id . " verwendet. ";
+                $message = 'Lieferung konnte nicht gelöscht werden: ';
+                foreach ($bag->ingredients as $i) {
+                    $message .= 'Das Gebinde '.$bag->herb->name.' '.$bag->getSizeInKilo().' wurde in Abfüllung ID:'.$i->position->bottle->id.' verwendet. ';
                 }
             }
         }
 
-        if($canDelete){
+        if ($canDelete) {
             $delivery->delete();
             Alert::success('Lieferung wurde gelöscht.');
-        }else{
+        } else {
             Alert::error($message);
         }
-
     }
 }

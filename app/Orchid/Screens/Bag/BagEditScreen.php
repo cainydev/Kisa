@@ -2,14 +2,14 @@
 
 namespace App\Orchid\Screens\Bag;
 
-use Illuminate\Http\Request;
-use Orchid\Screen\Screen;
-use Orchid\Screen\Actions\{Button, Link};
-use Orchid\Support\Facades\{Alert, Layout};
-
-use App\Orchid\Layouts\Bag\BagEditLayout;
-
 use App\Models\{Bag};
+use App\Orchid\Layouts\Bag\BagEditLayout;
+use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Screen;
+use Orchid\Support\Facades\Alert;
+use Orchid\Support\Facades\Layout;
 
 class BagEditScreen extends Screen
 {
@@ -29,12 +29,10 @@ class BagEditScreen extends Screen
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
-        return $this->bag->herb->name . ' ' . $this->bag->specification . ' bearbeiten';
+        return $this->bag->herb->name.' '.$this->bag->specification.' bearbeiten';
     }
 
     /**
@@ -67,7 +65,7 @@ class BagEditScreen extends Screen
             Layout::columns([
                 BagEditLayout::class,
                 Layout::livewire('bag-dispose'),
-            ])
+            ]),
         ];
     }
 

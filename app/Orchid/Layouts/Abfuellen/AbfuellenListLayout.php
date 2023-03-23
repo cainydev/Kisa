@@ -2,10 +2,11 @@
 
 namespace App\Orchid\Layouts\Abfuellen;
 
+use App\Orchid\Fields\Group;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Layouts\Table;
 use Orchid\Screen\TD;
-use Orchid\Screen\Actions\{Link, Button};
-use App\Orchid\Fields\Group;
 
 class AbfuellenListLayout extends Table
 {
@@ -39,13 +40,14 @@ class AbfuellenListLayout extends Table
                 })->width('50px'),
             TD::make('Abgefüllt')
                 ->render(function ($bottle) {
-                    $s = "";
+                    $s = '';
                     foreach ($bottle->positions as $pos) {
-                        $s .= $pos->variant->product->name . ', ';
+                        $s .= $pos->variant->product->name.', ';
                     }
                     if (strlen($s) > 120) {
-                        return substr(rtrim(trim($s), ','), 0, 120) . '...';
+                        return substr(rtrim(trim($s), ','), 0, 120).'...';
                     }
+
                     return rtrim(trim($s), ',');
                 }),
             TD::make()
@@ -56,7 +58,7 @@ class AbfuellenListLayout extends Table
                         Button::make()
                             ->class('btn btn-danger p-2')
                             ->method('deleteBottle', ['id' => $bottle->id])
-                            ->confirm('Willst du die Abfüllung mit der ID »' . $bottle->id . '« wirklich löschen?')
+                            ->confirm('Willst du die Abfüllung mit der ID »'.$bottle->id.'« wirklich löschen?')
                             ->icon('trash'),
                         Link::make()
                             ->icon('pencil')

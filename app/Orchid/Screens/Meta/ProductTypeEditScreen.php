@@ -2,17 +2,15 @@
 
 namespace App\Orchid\Screens\Meta;
 
-use Illuminate\Http\Request;
-
-use Orchid\Screen\Screen;
-use Orchid\Screen\Fields\Input;
-use Orchid\Screen\Actions\{Button, Link};
-
-use Orchid\Support\Facades\Layout;
-use Orchid\Support\Facades\Alert;
-
 use App\Models\ProductType;
+use Illuminate\Http\Request;
+use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Fields\CheckBox;
+use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Screen;
+use Orchid\Support\Facades\Alert;
+use Orchid\Support\Facades\Layout;
 
 class ProductTypeEditScreen extends Screen
 {
@@ -29,14 +27,12 @@ class ProductTypeEditScreen extends Screen
     public function query(ProductType $type): iterable
     {
         return [
-            'type' => $type
+            'type' => $type,
         ];
     }
 
     /**
      * Display header name.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -58,7 +54,7 @@ class ProductTypeEditScreen extends Screen
             Button::make('Speichern')
                 ->icon('save')
                 ->class('btn btn-success ml-2')
-                ->method('createOrUpdate')
+                ->method('createOrUpdate'),
         ];
     }
 
@@ -76,8 +72,8 @@ class ProductTypeEditScreen extends Screen
                     ->required(),
                 CheckBox::make('type.compound')
                     ->title('Ist Verbundmischung?')
-                    ->sendTrueOrFalse()
-            ])->title('Allgemein')
+                    ->sendTrueOrFalse(),
+            ])->title('Allgemein'),
         ];
     }
 
@@ -85,7 +81,7 @@ class ProductTypeEditScreen extends Screen
     {
         $type->fill($request->get('type'))->save();
 
-        Alert::success('Produktgruppe ' . $type->name . ' wurde gespeichert.');
+        Alert::success('Produktgruppe '.$type->name.' wurde gespeichert.');
 
         return redirect()->route('platform.meta.producttype');
     }

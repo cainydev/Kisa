@@ -24,7 +24,7 @@ class Herb extends Model
     {
         $prods = '';
         foreach ($this->products as $prod) {
-            $prods .= $prod->name . ', ';
+            $prods .= $prod->name.', ';
         }
         $prods = substr($prods, 0, strlen($prods) - 2);
 
@@ -38,72 +38,72 @@ class Herb extends Model
 
     public function setRedisAveragePerDay(float $value)
     {
-        return Redis::set('herb:' . $this->id . ':per.day', $value);
+        return Redis::set('herb:'.$this->id.':per.day', $value);
     }
 
     public function getRedisAveragePerDay()
     {
-        return Redis::get('herb:' . $this->id . ':per.day');
+        return Redis::get('herb:'.$this->id.':per.day');
     }
 
     public function setRedisAveragePerMonth(float $value)
     {
-        return Redis::set('herb:' . $this->id . ':per.month', $value);
+        return Redis::set('herb:'.$this->id.':per.month', $value);
     }
 
     public function getRedisAveragePerMonth()
     {
-        return Redis::get('herb:' . $this->id . ':per.month');
+        return Redis::get('herb:'.$this->id.':per.month');
     }
 
     public function setRedisAveragePerYear(float $value)
     {
-        return Redis::set('herb:' . $this->id . ':per.year', $value);
+        return Redis::set('herb:'.$this->id.':per.year', $value);
     }
 
     public function getRedisAveragePerYear()
     {
-        return Redis::get('herb:' . $this->id . ':per.year');
+        return Redis::get('herb:'.$this->id.':per.year');
     }
 
     public function setRedisBought(float $value)
     {
-        return Redis::set('herb:' . $this->id . ':bought', $value);
+        return Redis::set('herb:'.$this->id.':bought', $value);
     }
 
     public function getRedisBought()
     {
-        return Redis::get('herb:' . $this->id . ':bought');
+        return Redis::get('herb:'.$this->id.':bought');
     }
 
     public function setRedisUsed(float $value)
     {
-        return Redis::set('herb:' . $this->id . ':used', $value);
+        return Redis::set('herb:'.$this->id.':used', $value);
     }
 
     public function getRedisUsed()
     {
-        return Redis::get('herb:' . $this->id . ':used');
+        return Redis::get('herb:'.$this->id.':used');
     }
 
     public function setRedisGrammRemaining(float $value)
     {
-        return Redis::set('herb:' . $this->id . ':gramm.remaining', $value);
+        return Redis::set('herb:'.$this->id.':gramm.remaining', $value);
     }
 
     public function getRedisGrammRemaining()
     {
-        return Redis::get('herb:' . $this->id . ':gramm.remaining');
+        return Redis::get('herb:'.$this->id.':gramm.remaining');
     }
 
     public function setRedisDaysRemaining(float $value)
     {
-        return Redis::set('herb:' . $this->id . ':days.remaining', $value);
+        return Redis::set('herb:'.$this->id.':days.remaining', $value);
     }
 
     public function getRedisDaysRemaining()
     {
-        return Redis::get('herb:' . $this->id . ':days.remaining');
+        return Redis::get('herb:'.$this->id.':days.remaining');
     }
 
     public function products()

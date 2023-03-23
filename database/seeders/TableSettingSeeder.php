@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
 use App\Models\TableSetting;
+use Illuminate\Database\Seeder;
 
 class TableSettingSeeder extends Seeder
 {
@@ -31,7 +29,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1fr',
                         'alias' => 'ID',
-                        'description' => 'Eindeutig'
+                        'description' => 'Eindeutig',
                     ],
                     'charge' => [
                         'primary' => false,
@@ -40,7 +38,7 @@ class TableSettingSeeder extends Seeder
                         'format' => '# %s',
                         'width' => '1fr',
                         'alias' => 'Charge',
-                        'description' => 'Nr.'
+                        'description' => 'Nr.',
                     ],
                     'bio' => [
                         'primary' => false,
@@ -49,7 +47,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '0.5fr',
                         'alias' => 'Bio',
-                        'description' => ''
+                        'description' => '',
                     ],
                     'size' => [
                         'primary' => false,
@@ -58,7 +56,7 @@ class TableSettingSeeder extends Seeder
                         'format' => '%ug',
                         'width' => '1fr',
                         'alias' => 'Gebinde',
-                        'description' => ''
+                        'description' => '',
                     ],
                     'current' => [
                         'primary' => false,
@@ -67,32 +65,32 @@ class TableSettingSeeder extends Seeder
                         'format' => '%ug',
                         'width' => '1fr',
                         'alias' => 'Füllstand',
-                        'description' => 'Aktuell'
+                        'description' => 'Aktuell',
                     ],
                     'herb_id' => [
                         'primary' => false,
                         'foreign' => [
                             'table' => 'herbs',
-                            'column' => 'name'
+                            'column' => 'name',
                         ],
                         'withSort' => true,
                         'format' => false,
                         'width' => '1.5fr',
                         'alias' => 'Inhalt',
-                        'description' => 'Kraut'
+                        'description' => 'Kraut',
                     ],
                     'delivery_id' => [
                         'primary' => false,
                         'foreign' => [
                             'table' => 'deliveries',
                             'column' => 'id',
-                            'nullable' => true
+                            'nullable' => true,
                         ],
                         'withSort' => true,
                         'format' => false,
                         'width' => '1.5fr',
                         'alias' => 'Lieferung',
-                        'description' => 'ID'
+                        'description' => 'ID',
                     ],
                     'bestbefore' => [
                         'primary' => false,
@@ -101,7 +99,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1.5fr',
                         'alias' => 'Haltbar bis',
-                        'description' => 'Mindesthaltbarkeitsdatum'
+                        'description' => 'Mindesthaltbarkeitsdatum',
                     ],
                     'steamed' => [
                         'primary' => false,
@@ -110,10 +108,10 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1.5fr',
                         'alias' => 'Dampfbehandelt',
-                        'description' => 'Datum der letzten Dampfbehandlung'
-                    ]
-                ]
-            ]
+                        'description' => 'Datum der letzten Dampfbehandlung',
+                    ],
+                ],
+            ],
         ]);
         // Herbs Table
         TableSetting::create([
@@ -130,7 +128,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1fr',
                         'alias' => 'ID',
-                        'description' => 'Eindeutig'
+                        'description' => 'Eindeutig',
                     ],
                     'name' => [
                         'primary' => false,
@@ -139,7 +137,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1.5fr',
                         'alias' => 'Name',
-                        'description' => 'als Kurzform'
+                        'description' => 'als Kurzform',
                     ],
                     'fullname' => [
                         'primary' => false,
@@ -148,22 +146,22 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '3fr',
                         'alias' => 'Name',
-                        'description' => 'komplett'
+                        'description' => 'komplett',
                     ],
                     'supplier_id' => [
                         'primary' => false,
                         'foreign' => [
                             'table' => 'suppliers',
-                            'column' => 'shortname'
+                            'column' => 'shortname',
                         ],
                         'withSort' => true,
                         'format' => false,
                         'width' => '2fr',
                         'alias' => 'Lieferant',
-                        'description' => 'Standardlieferant'
+                        'description' => 'Standardlieferant',
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Products Table
@@ -181,7 +179,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1fr',
                         'alias' => 'ID',
-                        'description' => 'Eindeutig'
+                        'description' => 'Eindeutig',
                     ],
                     'name' => [
                         'primary' => false,
@@ -190,7 +188,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1.5fr',
                         'alias' => 'Name',
-                        'description' => ''
+                        'description' => '',
                     ],
                     'ordernumber' => [
                         'primary' => false,
@@ -199,22 +197,22 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1fr',
                         'alias' => 'Shopware ID',
-                        'description' => 'Shopware ordernumber'
+                        'description' => 'Shopware ordernumber',
                     ],
                     'product_type_id' => [
                         'primary' => false,
                         'foreign' => [
                             'table' => 'product_types',
-                            'column' => 'name'
+                            'column' => 'name',
                         ],
                         'withSort' => true,
                         'format' => false,
                         'width' => '2fr',
                         'alias' => 'Produkttyp',
-                        'description' => 'Siehe Produkttypen'
+                        'description' => 'Siehe Produkttypen',
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Product_types Table
@@ -231,7 +229,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1fr',
                         'alias' => 'ID',
-                        'description' => 'Eindeutig'
+                        'description' => 'Eindeutig',
                     ],
                     'name' => [
                         'primary' => false,
@@ -239,10 +237,10 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '4fr',
                         'alias' => 'Name',
-                        'description' => ''
-                    ]
-                ]
-            ]
+                        'description' => '',
+                    ],
+                ],
+            ],
         ]);
 
         // Bio-Inspector Table
@@ -260,7 +258,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1fr',
                         'alias' => 'ID',
-                        'description' => 'Eindeutig'
+                        'description' => 'Eindeutig',
                     ],
                     'company' => [
                         'primary' => false,
@@ -269,7 +267,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '3fr',
                         'alias' => 'Firma',
-                        'description' => ''
+                        'description' => '',
                     ],
                     'label' => [
                         'primary' => false,
@@ -278,10 +276,10 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '3fr',
                         'alias' => 'Identifikationsnummer',
-                        'description' => 'Eindeutig'
+                        'description' => 'Eindeutig',
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Deliveries Table
@@ -299,7 +297,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1fr',
                         'alias' => 'ID',
-                        'description' => 'Eindeutig'
+                        'description' => 'Eindeutig',
                     ],
                     'delivered_date' => [
                         'primary' => false,
@@ -308,7 +306,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '3fr',
                         'alias' => 'Lieferdatum',
-                        'description' => 'Ankunft der Ware'
+                        'description' => 'Ankunft der Ware',
                     ],
                     'bio_inspection' => [
                         'primary' => false,
@@ -317,7 +315,7 @@ class TableSettingSeeder extends Seeder
                         'format' => 'Nicht darstellbar',
                         'width' => '2fr',
                         'alias' => 'Eingangskontrolle',
-                        'description' => 'bei Bio Lieferungen'
+                        'description' => 'bei Bio Lieferungen',
                     ],
                     'supplier_id' => [
                         'primary' => false,
@@ -329,10 +327,10 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '2fr',
                         'alias' => 'Lieferant',
-                        'description' => 'dieser Lieferung'
+                        'description' => 'dieser Lieferung',
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Suppliers Table
@@ -350,7 +348,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '1fr',
                         'alias' => 'ID',
-                        'description' => 'Eindeutig'
+                        'description' => 'Eindeutig',
                     ],
                     'company' => [
                         'primary' => false,
@@ -359,7 +357,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '3fr',
                         'alias' => 'Firma',
-                        'description' => 'Firmenname'
+                        'description' => 'Firmenname',
                     ],
                     'contact' => [
                         'primary' => false,
@@ -368,7 +366,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '3fr',
                         'alias' => 'Kontaktperson',
-                        'description' => ''
+                        'description' => '',
                     ],
                     'email' => [
                         'primary' => false,
@@ -377,7 +375,7 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '3fr',
                         'alias' => 'Email',
-                        'description' => ''
+                        'description' => '',
                     ],
                     'website' => [
                         'primary' => false,
@@ -386,22 +384,22 @@ class TableSettingSeeder extends Seeder
                         'format' => false,
                         'width' => '3fr',
                         'alias' => 'Webseite',
-                        'description' => ''
+                        'description' => '',
                     ],
                     'bio_inspector_id' => [
                         'primary' => false,
                         'foreign' => [
                             'table' => 'bio_inspectors',
-                            'column' => 'label'
+                            'column' => 'label',
                         ],
                         'withSort' => true,
                         'format' => false,
                         'width' => '3fr',
                         'alias' => 'Kontrollstelle',
-                        'description' => 'Bio-Kontrollstelle'
-                    ]
-                ]
-            ]
+                        'description' => 'Bio-Kontrollstelle',
+                    ],
+                ],
+            ],
         ]);
     }
 }

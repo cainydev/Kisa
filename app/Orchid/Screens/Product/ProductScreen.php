@@ -13,7 +13,7 @@ class ProductScreen extends Screen
     public function query(): iterable
     {
         return [
-            'products' => Product::with('variants')->get()
+            'products' => Product::with('variants')->get(),
         ];
     }
 
@@ -23,7 +23,7 @@ class ProductScreen extends Screen
             Link::make('Hinzufügen')
                 ->icon('plus')
                 ->class('btn btn-success')
-                ->route('platform.products.edit')
+                ->route('platform.products.edit'),
         ];
     }
 
@@ -35,11 +35,11 @@ class ProductScreen extends Screen
     public function deleteProduct(Product $product)
     {
         $canDelete = true;
-        $message = "Produkt konnte nicht gelöscht werden: ";
+        $message = 'Produkt konnte nicht gelöscht werden: ';
         foreach ($product->variants as $variant) {
             foreach ($variant->positions as $position) {
                 $canDelete = false;
-                $message .= "Die " . $variant->size . "g Variante dieses Produkts wird aktuell noch in der Abfüllung ID: " . $position->bottle->id . " verwendet. ";
+                $message .= 'Die '.$variant->size.'g Variante dieses Produkts wird aktuell noch in der Abfüllung ID: '.$position->bottle->id.' verwendet. ';
             }
         }
 
@@ -51,12 +51,10 @@ class ProductScreen extends Screen
         }
     }
 
-
-
     public function layout(): iterable
     {
         return [
-            ProductListLayout::class
+            ProductListLayout::class,
         ];
     }
 }

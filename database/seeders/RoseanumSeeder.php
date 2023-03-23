@@ -2,10 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Http\Traits\ReadsCSVData;
-use App\Models\{ProductType, Variant, Product};
+use App\Models\Product;
+use App\Models\ProductType;
+use App\Models\Variant;
+use Illuminate\Database\Seeder;
 
 class RoseanumSeeder extends Seeder
 {
@@ -22,13 +23,13 @@ class RoseanumSeeder extends Seeder
         $prod = Product::create([
             'name' => 'Frauenstarktee',
             'mainnumber' => 'tm1201',
-            'product_type_id' => $typeRoseanum->id
+            'product_type_id' => $typeRoseanum->id,
         ]);
 
         Variant::create([
             'size' => 50,
             'ordernumber' => '',
-            'product_id' => $prod->id
+            'product_id' => $prod->id,
         ]);
     }
 }

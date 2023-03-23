@@ -7,12 +7,10 @@ use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Layouts\Table;
 use Orchid\Screen\TD;
-use Orchid\Support\Facades\Layout;
 
 class DeliveryListBagLayout extends Table
 {
     protected $target = 'delivery.bags';
-
 
     protected function columns(): iterable
     {
@@ -42,7 +40,7 @@ class DeliveryListBagLayout extends Table
                             ->class('btn btn-primary p-2')
                             ->route('platform.bags.edit', $bag),
                     ]);
-                })
+                }),
         ];
     }
 }

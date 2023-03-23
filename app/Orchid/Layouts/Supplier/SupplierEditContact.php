@@ -2,13 +2,11 @@
 
 namespace App\Orchid\Layouts\Supplier;
 
-use Orchid\Screen\Field;
-use Orchid\Screen\Layouts\Rows;
 use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Layouts\Rows;
 
 class SupplierEditContact extends Rows
 {
-
     protected function fields(): iterable
     {
         return [
@@ -31,7 +29,7 @@ class SupplierEditContact extends Rows
             Input::make('supplier.website')
                 ->title('Webseite (mit www.)')
                 ->help('Internetpräsenz des Lieferanten')
-                ->required()
+                ->required(),
         ];
     }
 }

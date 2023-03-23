@@ -4,15 +4,14 @@ namespace App\Models;
 
 use App\Jobs\AnalyzeHerb;
 use App\Orchid\Presenters\BagPresenter;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Redis;
 use Laravel\Scout\Searchable;
-use Orchid\Screen\AsSource;
 use Orchid\Filters\Filterable;
+use Orchid\Screen\AsSource;
 
 class Bag extends Model
 {
@@ -55,12 +54,12 @@ class Bag extends Model
 
     public function getRedisCurrent()
     {
-        return Redis::get('bag:' . $this->id . ':remaining');
+        return Redis::get('bag:'.$this->id.':remaining');
     }
 
     public function setRedisCurrent(float $value)
     {
-        return Redis::set('bag:' . $this->id . ':remaining', $value);
+        return Redis::set('bag:'.$this->id.':remaining', $value);
     }
 
     public function presenter()
@@ -72,7 +71,7 @@ class Bag extends Model
     {
         $bottles = '';
         foreach ($this->ingredients as $ing) {
-            $bottles .= 'Abfüllung vom ' . $ing->position->bottle->date->format('d.m.Y') . ', ';
+            $bottles .= 'Abfüllung vom '.$ing->position->bottle->date->format('d.m.Y').', ';
         }
         $bottles = substr($bottles, 0, strlen($bottles) - 2);
 
@@ -81,7 +80,7 @@ class Bag extends Model
             'charge' => $this->charge,
             'size' => $this->size,
             'herb' => $this->herb->fullname,
-            'date' => $this->delivery->delivered_date->format('d.m.Y') . ' or ' . $this->delivery->delivered_date->format('d.m.y'),
+            'date' => $this->delivery->delivered_date->format('d.m.Y').' or '.$this->delivery->delivered_date->format('d.m.y'),
             'specification' => $this->specification,
             'bottles' => $bottles,
         ];
@@ -89,6 +88,7 @@ class Bag extends Model
 
     /**
      * Returns the herb that this bag contains
+     *
      * @return BelongsTo
      */
     public function herb()
@@ -98,6 +98,7 @@ class Bag extends Model
 
     /**
      * Returns the delivery this bag was delivered in
+     *
      * @return BelongsTo
      */
     public function delivery()
@@ -107,6 +108,7 @@ class Bag extends Model
 
     /**
      * Returns the relation with all the Ingredients where this bag is used
+     *
      * @return HasMany
      */
     public function ingredients()
@@ -117,6 +119,7 @@ class Bag extends Model
     /**
      * Returns all the Ingredients where this bag is used in an efficient manner.
      * (Hopefully 1 query for all.. not..)
+     *
      * @return Collection
      */
     public function getIngredientsWithRelations()
@@ -124,12 +127,13 @@ class Bag extends Model
         return $this->ingredients()->with([
             'position' => [
                 'bottle',
-            ]
+            ],
         ])->get()->sortBy(['position.bottle.date', 'position.variant.product.name']);
     }
 
     /**
      * Returns the current amount in this bag in g
+     *
      * @return int|float
      */
     public function getCurrent()
@@ -143,11 +147,13 @@ class Bag extends Model
                 }
             }
         }
+
         return $this->size - $sum;
     }
 
     /**
      * Returns the current amount used by compound products
+     *
      * @return void
      */
     public function getCompoundUsage()
@@ -155,39 +161,46 @@ class Bag extends Model
         $sum = 0;
         foreach ($this->ingredients as $i) {
             $variant = $i->position->variant;
-            if (!$variant->product->type->compound) continue;
+            if (! $variant->product->type->compound) {
+                continue;
+            }
             foreach ($variant->product->herbs as $herb) {
                 if ($herb->id == $this->herb->id) {
                     $sum += ($variant->size * $i->position->count) * ($herb->pivot->percentage / 100);
                 }
             }
         }
+
         return $sum;
     }
 
     /**
      * Returns the current amount used by non-compound products
+     *
      * @return void
      */
     public function getNonCompoundUsage()
-
     {
         $sum = 0;
         foreach ($this->ingredients as $i) {
             $variant = $i->position->variant;
-            if ($variant->product->type->compound) continue;
+            if ($variant->product->type->compound) {
+                continue;
+            }
             foreach ($variant->product->herbs as $herb) {
                 if ($herb->id == $this->herb->id) {
                     $sum += ($variant->size * $i->position->count) * ($herb->pivot->percentage / 100);
                 }
             }
         }
+
         return $sum;
     }
 
     /**
      * Returns the current amount in this bag in g,
      * taking also the trashed amount into account.
+     *
      * @return int|float
      */
     public function getCurrentWithTrashed()
@@ -197,6 +210,7 @@ class Bag extends Model
 
     /**
      * Returns the current amount (With trashed) in percent
+     *
      * @return int|float
      */
     public function getCurrentPercentage()
@@ -206,19 +220,21 @@ class Bag extends Model
 
     /**
      * Returns the size formatted in kg
+     *
      * @return string
      */
     public function getSizeInKilo()
     {
-        return sprintf("%.1fkg", $this->size / 1000);
+        return sprintf('%.1fkg', $this->size / 1000);
     }
 
     /**
      * Returns the size formatted in g
+     *
      * @return string
      */
     public function getSizeInGramm()
     {
-        return sprintf("%ug", $this->size);
+        return sprintf('%ug', $this->size);
     }
 }
