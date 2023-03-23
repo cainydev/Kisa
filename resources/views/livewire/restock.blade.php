@@ -69,7 +69,7 @@
             <select class="form-select"
                     wire:model="sort">
                 <option value="name">Name</option>
-                <option value="monthlyuse">Verbrauch</option>
+                <option value="use">Verbrauch</option>
                 <option value="grammremaining">Gramm übrig</option>
                 <option value="daysremaining">Tage übrig</option>
             </select>
