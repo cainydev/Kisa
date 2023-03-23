@@ -33,6 +33,8 @@ class Restock extends Component
 
         $this->sortDir = 'asc';
         $this->sort = 'daysremaining';
+
+        $this->updateRows();
     }
 
     public function generate()
@@ -55,12 +57,7 @@ class Restock extends Component
         }
     }
 
-    public function updated()
-    {
-        $this->emitSelf('$refresh');
-    }
-
-    public function render()
+    public function updateRows()
     {
         $sorts = [
             'name' => 'herb.name',
@@ -81,7 +78,15 @@ class Restock extends Component
         $this->rows = Herb::all()->filter(function (Herb $herb) {
             return $herb->getRedisAveragePerDay() > 0;
         })->sortBy(callback: $sorts[$this->sort], descending: $this->sortDir == 'desc');
+    }
 
+    public function updated()
+    {
+        $this->updateRows();
+    }
+
+    public function render()
+    {
         return view('livewire.restock', [
             'batch' => $this->batch_uuid != null ? Bus::findBatch($this->batch_uuid) : false,
         ]);
