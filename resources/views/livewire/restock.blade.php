@@ -46,7 +46,13 @@
     @if($batch && !$batch->finished())
     <p>Analysiere Rohstoffe...</p>
     <span class="flex items-center space-x-2">
-        <label for="batch">{{ $batch->processedJobs(); }} / {{ $batch->totalJobs; }}</label>
+        <label for="batch">
+            @if($batch->processedJobs() > 0)
+            {{ $batch->processedJobs(); }} / {{ $batch->totalJobs; }}
+            @else
+            <x-icons.icon-loading class="w-6 h-6" />
+            @endif
+        </label>
         <div class="w-full progress bg-slate-200">
             <div class="progress-bar progress-bar-striped bg-success progress-bar-animated"
                  role="progressbar"
