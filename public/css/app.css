@@ -1214,6 +1214,11 @@ select {
 .w-9 {
   width: 2.25rem;
 }
+.w-min {
+  width: -webkit-min-content;
+  width: -moz-min-content;
+  width: min-content;
+}
 .w-6 {
   width: 1.5rem;
 }
@@ -1239,11 +1244,6 @@ select {
 }
 .w-16 {
   width: 4rem;
-}
-.w-min {
-  width: -webkit-min-content;
-  width: -moz-min-content;
-  width: min-content;
 }
 .w-24 {
   width: 6rem;

@@ -63,34 +63,48 @@
     @endif
 
     @if(!$batch || $batch && $batch->finished())
-    <table class="w-full bg-white border border-collapse border-black table-auto">
-        <thead>
-            <tr>
-                <th class="p-2">Kraut</th>
-                <th class="p-2">Verbrauch/Monat</th>
-                <th class="p-2">Verbrauch/Jahr</th>
-                <th class="p-2">Gramm übrig</th>
-                <th class="p-2">Tage übrig</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach(\App\Models\Herb::with('bags')->get()->filter(function(\App\Models\Herb $herb){
-            return $herb->getRedisAveragePerDay() > 0;
-            })->sortBy(function($herb) {
-            return $herb->getRedisDaysRemaining();
-            }) as $herb)
-            <tr class="odd:bg-gray-200">
-                <td class="p-2">{{ $herb->name }}</td>
-                <td class="p-2">{{ round($herb->getRedisAveragePerMonth(), 2) }}g</td>
-                <td class="p-2">{{ round($herb->getRedisAveragePerYear(), 2) }}g</td>
-                <td class="p-2">
-                    {{ round($herb->getRedisGrammRemaining(), 2) }}
-                    /
-                    {{ round($herb->getRedisBought(), 2) }}g</td>
-                <td class="p-2">{{ round($herb->getRedisDaysRemaining()) }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <div>
+        <div class="flex items-center justify-end w-full py-2 space-x-3">
+            <p>Sortierung:</p>
+            <select class="form-select"
+                    wire:model="sort">
+                <option value="name">Name</option>
+                <option value="monthlyuse">Verbrauch/Monat</option>
+                <option value="yearlyuse">Verbrauch/Jahr</option>
+                <option value="grammremaining">Gramm übrig</option>
+                <option value="daysremaining">Tage übrig</option>
+            </select>
+            <select class="form-select"
+                    wire:model="sortDir">
+                <option value="asc">Aufsteigend</option>
+                <option value="desc">Absteigend</option>
+            </select>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Kraut</th>
+                    <th scope="col">Verbrauch/Monat</th>
+                    <th scope="col">Verbrauch/Jahr</th>
+                    <th scope="col">Gramm übrig</th>
+                    <th scope="col">Tage übrig</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($rows as $herb)
+                <tr class="odd:bg-gray-200">
+                    <td class="p-2">{{ $herb->name }}</td>
+                    <td class="p-2">{{ round($herb->getRedisAveragePerMonth(), 2) }}g</td>
+                    <td class="p-2">{{ round($herb->getRedisAveragePerYear(), 2) }}g</td>
+                    <td class="p-2">
+                        {{ round($herb->getRedisGrammRemaining(), 2) }}
+                        /
+                        {{ round($herb->getRedisBought(), 2) }}g</td>
+                    <td class="p-2">{{ round($herb->getRedisDaysRemaining()) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
     @endif
 </div>

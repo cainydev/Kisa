@@ -14,6 +14,9 @@ class Restock extends Component
     public $endDate;
     public $batch_uuid;
 
+    public $sortDir;
+    public $sort;
+
     protected $rules = [
         'trashGate' => 'numeric|max:100|min:0',
         'startDate' => 'date|nullable|lte:endDate',
@@ -25,6 +28,9 @@ class Restock extends Component
         $this->trashGate = 15;
         $this->startDate = null;
         $this->endDate = null;
+
+        $this->sortDir = 'asc';
+        $this->sort = 'daysremaining';
     }
 
     public function generate()
@@ -49,6 +55,27 @@ class Restock extends Component
 
     public function render()
     {
-        return view('livewire.restock', ['batch' => $this->batch_uuid != null ? Bus::findBatch($this->batch_uuid) : false]);
+        $sorts = [
+            'name' => 'herb.name',
+            'monthlyuse' => function (Herb $herb) {
+                $herb->getRedisAveragePerMonth();
+            },
+            'yearlyuse' => function (Herb $herb) {
+                $herb->getRedisAveragePerYear();
+            },
+            'grammremaining' => function (Herb $herb) {
+                $herb->getRedisGrammRemaining();
+            },
+            'daysremaining' => function (Herb $herb) {
+                $herb->getRedisDaysRemaining();
+            }
+        ];
+
+        return view('livewire.restock', [
+            'batch' => $this->batch_uuid != null ? Bus::findBatch($this->batch_uuid) : false,
+            'rows' => Herb::all()->filter(function (Herb $herb) {
+                return $herb->getRedisAveragePerDay() > 0;
+            })->sortBy(callback: $sorts[$this->sort], descending: $this->sortDir == 'desc')
+        ]);
     }
 }

@@ -127,8 +127,8 @@ Route::screen('bags/edit/{bag?}', BagEditScreen::class)
     });
 
 // Platform > Bestand > Restock
-Route::screen('bags/restock', RestockScreen::class)
-    ->name('platform.bags.restock')
+Route::screen('restock', RestockScreen::class)
+    ->name('platform.restock')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
