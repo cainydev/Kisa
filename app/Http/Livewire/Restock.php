@@ -4,6 +4,7 @@ namespace App\Http\Livewire;
 
 use App\Jobs\AnalyzeHerb;
 use App\Models\Herb;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Bus;
 use Livewire\Component;
 
@@ -17,7 +18,7 @@ class Restock extends Component
     public $sortDir;
     public $sort;
 
-    public $rows;
+    public Collection $rows;
 
     protected $rules = [
         'trashGate' => 'numeric|max:100|min:0',
@@ -61,18 +62,10 @@ class Restock extends Component
     {
         $sorts = [
             'name' => 'herb.name',
-            'monthlyuse' => function (Herb $herb) {
-                $herb->getRedisAveragePerMonth();
-            },
-            'yearlyuse' => function (Herb $herb) {
-                $herb->getRedisAveragePerYear();
-            },
-            'grammremaining' => function (Herb $herb) {
-                $herb->getRedisGrammRemaining();
-            },
-            'daysremaining' => function (Herb $herb) {
-                $herb->getRedisDaysRemaining();
-            }
+            'monthlyuse' => fn (Herb $herb) => $herb->getRedisAveragePerMonth(),
+            'yearlyuse' => fn (Herb $herb) => $herb->getRedisAveragePerYear(),
+            'grammremaining' => fn (Herb $herb) => $herb->getRedisGrammRemaining(),
+            'daysremaining' => fn (Herb $herb) => $herb->getRedisDaysRemaining()
         ];
 
         $this->rows = Herb::all()->filter(function (Herb $herb) {
