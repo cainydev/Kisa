@@ -34,7 +34,7 @@ class Restock extends Component
         $this->sortDir = 'asc';
         $this->sort = 'daysremaining';
 
-        $this->updateRows();
+        $this->updated();
     }
 
     public function generate()
@@ -57,7 +57,7 @@ class Restock extends Component
         }
     }
 
-    public function updateRows()
+    public function updated()
     {
         $sorts = [
             'name' => 'herb.name',
@@ -78,11 +78,6 @@ class Restock extends Component
         $this->rows = Herb::all()->filter(function (Herb $herb) {
             return $herb->getRedisAveragePerDay() > 0;
         })->sortBy(callback: $sorts[$this->sort], descending: $this->sortDir == 'desc');
-    }
-
-    public function updated()
-    {
-        $this->updateRows();
     }
 
     public function render()
