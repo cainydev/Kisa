@@ -54,12 +54,12 @@ class Bag extends Model
 
     public function getRedisCurrent()
     {
-        return Redis::get('bag:'.$this->id.':remaining');
+        return Redis::get('bag:' . $this->id . ':remaining');
     }
 
     public function setRedisCurrent(float $value)
     {
-        return Redis::set('bag:'.$this->id.':remaining', $value);
+        return Redis::set('bag:' . $this->id . ':remaining', $value);
     }
 
     public function presenter()
@@ -71,7 +71,7 @@ class Bag extends Model
     {
         $bottles = '';
         foreach ($this->ingredients as $ing) {
-            $bottles .= 'Abfüllung vom '.$ing->position->bottle->date->format('d.m.Y').', ';
+            $bottles .= 'Abfüllung vom ' . $ing->position->bottle->date->format('d.m.Y') . ', ';
         }
         $bottles = substr($bottles, 0, strlen($bottles) - 2);
 
@@ -80,7 +80,7 @@ class Bag extends Model
             'charge' => $this->charge,
             'size' => $this->size,
             'herb' => $this->herb->fullname,
-            'date' => $this->delivery->delivered_date->format('d.m.Y').' or '.$this->delivery->delivered_date->format('d.m.y'),
+            'date' => $this->delivery->delivered_date->format('d.m.Y') . ' or ' . $this->delivery->delivered_date->format('d.m.y'),
             'specification' => $this->specification,
             'bottles' => $bottles,
         ];
@@ -161,7 +161,7 @@ class Bag extends Model
         $sum = 0;
         foreach ($this->ingredients as $i) {
             $variant = $i->position->variant;
-            if (! $variant->product->type->compound) {
+            if (!$variant->product->type->compound) {
                 continue;
             }
             foreach ($variant->product->herbs as $herb) {

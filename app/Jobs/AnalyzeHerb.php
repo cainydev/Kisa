@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
 {
@@ -30,23 +31,11 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
 
     public function handle()
     {
-        if ($this->batch()->cancelled()) {
+        if ($this->batch() != null && $this->batch()->cancelled()) {
             return;
         }
 
         $bags = $this->herb->bags;
-
-        if ($bags->count() == 0) {
-            $this->herb->setRedisAveragePerDay(0);
-            $this->herb->setRedisAveragePerMonth(0);
-            $this->herb->setRedisAveragePerYear(0);
-            $this->herb->setRedisBought(0);
-            $this->herb->setRedisUsed(0);
-            $this->herb->setRedisGrammRemaining(0);
-            $this->herb->setRedisDaysRemaining(0);
-
-            return;
-        }
 
         $firstBought = now();
         $bought = 0;
@@ -74,6 +63,18 @@ class AnalyzeHerb implements ShouldQueue, ShouldBeUnique
         $monthsSinceBought = $firstBought->floatDiffInMonths(now());
         $yearsSinceBought = $firstBought->floatDiffInYears(now());
         $used = $bought - $gramm_remaining;
+
+        if ($bags->count() == 0 || $used == 0) {
+            $this->herb->setRedisAveragePerDay(0);
+            $this->herb->setRedisAveragePerMonth(0);
+            $this->herb->setRedisAveragePerYear(0);
+            $this->herb->setRedisBought($bought);
+            $this->herb->setRedisUsed(0);
+            $this->herb->setRedisGrammRemaining(0);
+            $this->herb->setRedisDaysRemaining(0);
+
+            return;
+        }
 
         $this->herb->setRedisAveragePerDay($used / $daysSinceBought);
         $this->herb->setRedisAveragePerMonth($used / $monthsSinceBought);
