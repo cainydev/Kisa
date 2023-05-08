@@ -26,9 +26,23 @@ class VariantMaker extends Component
         'product.variants.*.ordernumber.starts_with' => 'Die ordernumber muss mit einem Punkt beginnen!',
     ];
 
+    public function presetSKU()
+    {
+        if ($this->product == null || !$this->product->exists) return;
+
+        $highest = -1;
+        foreach ($this->product->variants as $variant) {
+            $n = intval(str($variant->ordernumber)->after('.')->toString());
+            if ($n > $highest) $highest = $n;
+        }
+
+        if ($highest > -1) $this->sku = str($n + 1)->start('.');
+    }
+
     public function mount(Product $product)
     {
         $this->product = $product;
+        $this->presetSKU();
     }
 
     public function saveActiveVariants()
@@ -44,6 +58,7 @@ class VariantMaker extends Component
 
         $this->validateOnly('product.variants.*');
         $this->product->variants->each->save();
+        $this->presetSKU();
 
         session()->flash('success', 'Varianten wurden gespeichert.');
     }
@@ -70,6 +85,7 @@ class VariantMaker extends Component
         $this->sku = '';
 
         $this->product->refresh();
+        $this->presetSKU();
 
         session()->flash('message', 'Variante wurde erfolgreich erstellt.');
     }
@@ -87,6 +103,8 @@ class VariantMaker extends Component
         if ($canDelete) {
             $variant->delete();
             $this->product->refresh();
+            $this->presetSKU();
+
             session()->flash('success', 'Variante wurde erfolgreich entfernt.');
         } else {
             session()->flash('error', $message);
