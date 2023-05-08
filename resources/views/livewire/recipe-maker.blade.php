@@ -54,27 +54,31 @@
         </div>
 
 
-        <p class="mt-6 mb-3 text-xl text-gray-800">Aktuelles Rezept:</p>
-        @forelse ($product->herbs as $herb)
-        <div class="@if($loop->even) bg-gray-100 @endif flex items-center justify-between w-full max-w-lg px-3 py-2">
-            <p>{{ $herb->name }}</p>
-            <p class="">{{ $herb->pivot->percentage }}%</p>
-            <button class="btn btn-danger"
-                    wire:click="detach({{ $herb->id }})">
-                Löschen
-            </button>
+        <p class="mt-6 mb-3 text-xl text-gray-800 ">Aktuelles Rezept:</p>
+        <div class="max-w-lg border-t border-b-4 rounded-t border-x">
+            @forelse ($product->herbs as $herb)
+            <div
+                 class="@if($loop->even) bg-gray-100 @endif flex items-center justify-between w-full px-3 py-2">
+                <p>{{ $herb->name }}</p>
+                <p class="">{{ $herb->pivot->percentage }}%</p>
+                <button class="btn btn-danger"
+                        wire:click="detach({{ $herb->id }})">
+                    Löschen
+                </button>
+            </div>
+
+            @empty
+            <p>Für dieses Produkt wurde noch keine Rezeptur gespeichert.</p>
+            @endforelse
         </div>
 
-        @empty
-        <p>Für dieses Produkt wurde noch keine Rezeptur gespeichert.</p>
-        @endforelse
-        <div class="max-w-lg">
-            <hr class="mt-3" />
+        <div class="max-w-lg p-3 border-b rounded-b border-x">
             <span class="w-full text-right">
                 @php
                 $gesamt = $product->herbs->sum('pivot.percentage');
                 @endphp
-                <p class="mt-2 font-bold @if(floatval($gesamt) != 100.0) text-red-500 @else text-green-600 @endif">Prozent gesamt:
+                <p class="font-bold @if(floatval($gesamt) != 100.0) text-red-500 @else text-green-600 @endif">
+                    Prozent gesamt:
                     {{ $gesamt }}%</p>
             </span>
         </div>

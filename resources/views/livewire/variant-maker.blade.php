@@ -21,7 +21,7 @@
 
         <div class="grid gap-8 xl:grid-cols-2">
             @if($product->exists)
-            <div class="flex flex-col justify-start gap-3 p-6 mt-3 rounded shadow">
+            <div class="flex flex-col justify-start gap-3 p-6 mt-3 border rounded">
                 <h2 class="pb-2 text-lg font-semibold">Neue Variante</h2>
                 <div class="flex flex-col gap-1">
                     <span class="flex items-center">
@@ -62,13 +62,13 @@
                         @enderror
                     </span>
                 </div>
-                <button wire:click="add"
+                <button wire:click="addNewVariant"
                         class="flex items-center gap-2 px-2 py-1 font-semibold text-white bg-green-600 border rounded whitespace-nowrap w-min">
                     <x-icons.plus.solid class="w-5 h-5 fill-white" />Hinzufügen
                 </button>
             </div>
 
-            <div class="flex flex-col gap-4 p-6 mt-3 rounded shadow">
+            <div class="flex flex-col gap-4 p-6 mt-3 border rounded">
                 <span class="pb-2">
                     <h2 class="text-lg font-semibold">Aktive Varianten</h2>
                     <span class="text-red-600">
@@ -78,11 +78,11 @@
                     </span>
                 </span>
 
-                @if($product->variants->count() > 0)
+                @if(count($product->variants) > 0)
                 @foreach($product->variants as $variant)
 
                 <span
-                      class="flex items-center justify-between gap-3 px-3 py-2 font-semibold bg-gray-100 border rounded shadow-sm">
+                      class="flex items-center justify-between gap-3 py-2 font-semibol">
 
                     <div class="flex items-stretch">
                         <input type="text"
@@ -107,9 +107,14 @@
                 </span>
 
                 @endforeach
+                <button wire:click="saveActiveVariants"
+                        class="flex items-center gap-2 px-2 py-1 font-semibold text-white bg-green-600 border rounded whitespace-nowrap w-min">
+                    <x-icons.icon-checkmark-solid class="w-5 h-5 fill-white" />Speichern
+                </button>
                 @else
                 <p>Noch keine Varianten vorhanden.</p>
                 @endif
+
             </div>
 
         </div>

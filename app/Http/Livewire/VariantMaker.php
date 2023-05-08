@@ -31,17 +31,18 @@ class VariantMaker extends Component
         $this->product = $product;
     }
 
-    public function updated()
+    public function saveActiveVariants()
     {
-        $this->validate();
+        $this->validateOnly('product.variants.*');
         $this->product->variants->each->save();
 
         session()->flash('success', 'Varianten wurden gespeichert.');
     }
 
-    public function add()
+    public function addNewVariant()
     {
-        $this->validate();
+        $this->validateOnly('size');
+        $this->validateOnly('sku');
 
         Variant::create([
             'size' => $this->size,
@@ -51,6 +52,8 @@ class VariantMaker extends Component
 
         $this->size = 100;
         $this->sku = null;
+
+        $this->product->refresh();
 
         session()->flash('message', 'Variante wurde erfolgreich erstellt.');
     }
@@ -62,11 +65,12 @@ class VariantMaker extends Component
 
         foreach ($variant->positions as $pos) {
             $canDelete = false;
-            $message .= "Die Variante wird aktuell in der <a class='underline' href='".route('platform.bottle.edit', $pos->bottle->id)."'>".'Abfüllung [ID '.$pos->bottle->id.']</a> verwendet.<br/>';
+            $message .= "Die Variante wird aktuell in der <a class='underline' href='" . route('platform.bottle.edit', $pos->bottle->id) . "'>" . 'Abfüllung [ID ' . $pos->bottle->id . ']</a> verwendet.<br/>';
         }
 
         if ($canDelete) {
             $variant->delete();
+            $this->product->refresh();
             session()->flash('success', 'Variante wurde erfolgreich entfernt.');
         } else {
             session()->flash('error', $message);
@@ -75,10 +79,6 @@ class VariantMaker extends Component
 
     public function render()
     {
-        if ($this->product->exists) {
-            $this->product = Product::find($this->product->id);
-        }
-
         return view('livewire.variant-maker');
     }
 }
