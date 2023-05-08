@@ -16,9 +16,9 @@ class VariantMaker extends Component
 
     protected $rules = [
         'size' => 'numeric|min:1|max:100000|required',
-        'sku' => 'nullable|starts_with:.',
+        'sku' => 'sometimes|starts_with:.',
         'product.variants.*.size' => 'numeric|min:1|max:100000|required',
-        'product.variants.*.ordernumber' => 'nullable|starts_with:.',
+        'product.variants.*.ordernumber' => 'sometimes|starts_with:.',
     ];
 
     protected $messages = [
@@ -34,8 +34,12 @@ class VariantMaker extends Component
     public function saveActiveVariants()
     {
         foreach ($this->product->variants as $variant) {
-            $sku = str($variant->ordernumber);
-            $variant->ordernumber = $sku->isEmpty() ? null : $sku->start('.');
+            if ($variant->ordernumber == null) {
+                $variant->ordernumber = '';
+            } else {
+                $sku = str($variant->ordernumber);
+                $variant->ordernumber = $sku->isEmpty() ? $sku : $sku->start('.');
+            }
         }
 
         $this->validateOnly('product.variants.*');
@@ -46,8 +50,12 @@ class VariantMaker extends Component
 
     public function addNewVariant()
     {
-        $sku = str($this->sku);
-        $this->sku = $sku->isEmpty() ? null : $sku->start('.');
+        if ($this->sku == null) {
+            $this->sku = '';
+        } else {
+            $sku = str($this->sku);
+            $this->sku = $sku->isEmpty() ? $sku : $sku->start('.');
+        }
 
         $this->validateOnly('size');
         $this->validateOnly('sku');
@@ -59,7 +67,7 @@ class VariantMaker extends Component
         ]);
 
         $this->size = 100;
-        $this->sku = null;
+        $this->sku = '';
 
         $this->product->refresh();
 
