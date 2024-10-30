@@ -1,0 +1,16 @@
+<?php
+
+namespace App\Filament\Resources\DeliveryResource\Pages;
+
+use App\Filament\Resources\DeliveryResource;
+use Filament\Resources\Pages\CreateRecord;
+
+class CreateDelivery extends CreateRecord
+{
+    protected static string $resource = DeliveryResource::class;
+
+    public function getFooter(): ?\Illuminate\Contracts\View\View
+    {
+        return view('filament.settings.DeliverySaveFirst');
+    }
+}
