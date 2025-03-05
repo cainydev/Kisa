@@ -7,4 +7,5 @@ export default {
         './resources/**/*.{blade.php,js,html}',
         './vendor/filament/**/*.blade.php',
     ],
+    safelist: ['items-stretch']
 }

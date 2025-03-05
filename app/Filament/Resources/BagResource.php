@@ -21,6 +21,7 @@ class BagResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'herb.fullname';
 
+    protected static ?int $navigationSort = 20;
     protected static ?string $navigationGroup = 'Bestand';
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
 
@@ -31,13 +32,14 @@ class BagResource extends Resource
                 Livewire::make(BagAmountBar::class)
                     ->columnSpan(2)
                     ->hiddenOn(['create'])
-                    ->hidden(fn (?Bag $record) => $record === null),
+                    ->hidden(fn(?Bag $record) => $record === null),
                 Forms\Components\Select::make('herb_id')
                     ->label('Rohstoff')
                     ->required()
                     ->relationship('herb', 'fullname')
                     ->searchable(),
                 Forms\Components\Toggle::make('bio')
+                    ->default(true)
                     ->inline(false),
                 Forms\Components\TextInput::make('charge')
                     ->required()
@@ -144,5 +146,10 @@ class BagResource extends Resource
             'view' => Pages\ViewBag::route('/{record}'),
             'edit' => Pages\EditBag::route('/{record}/edit'),
         ];
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
     }
 }

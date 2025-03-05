@@ -13,6 +13,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 
 class DeliveryResource extends Resource
@@ -24,10 +25,11 @@ class DeliveryResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
+    protected static ?int $navigationSort = 30;
     protected static ?string $navigationGroup = 'Bestand';
     protected static ?string $navigationIcon = 'carbon-delivery';
 
-    public static function getGlobalSearchResultTitle(Model $record): string|\Illuminate\Contracts\Support\Htmlable
+    public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
     {
         return "{$record->supplier->shortname} ({$record->delivered_date->format('d.m.Y')})";
     }
@@ -57,12 +59,12 @@ class DeliveryResource extends Resource
                         Forms\Components\Select::make('user_id')
                             ->label("Empfänger")
                             ->relationship('user', 'name')
-                            ->default(fn () => User::where('name', 'Marcus Wagner')->first()->id)
+                            ->default(fn() => User::where('name', 'Marcus Wagner')->first()->id)
                             ->required(),
                         Forms\Components\Select::make('supplier_id')
                             ->label("Lieferant")
                             ->relationship('supplier', 'shortname')
-                            ->default(fn () => Supplier::where('shortname', 'Galke')->first()->id)
+                            ->default(fn() => Supplier::where('shortname', 'Galke')->first()->id)
                             ->required(),
                     ]),
                     Forms\Components\Tabs\Tab::make('Dokumente')->schema([
@@ -86,7 +88,11 @@ class DeliveryResource extends Resource
                             ->maxFiles(1)
                     ])->columns(['md' => 3]),
                     Forms\Components\Tabs\Tab::make('Eingangskontrolle')->schema([
-                        Forms\Components\Split::make([
+                        Forms\Components\Grid::make([
+                            'default' => 1,
+                            'sm' => 2,
+                            'lg' => 3,
+                        ])->schema([
                             Forms\Components\Section::make("Allgemein")->schema([
                                 Forms\Components\DatePicker::make('bio_inspection.date')
                                     ->label("Kontrolldatum")
@@ -101,7 +107,12 @@ class DeliveryResource extends Resource
                                 Forms\Components\Toggle::make('bio_inspection.goodsMatchValidity')
                                     ->label("Entspricht die Ware dem Zertizierungsbereich?")
                                     ->default(true),
-                            ]),
+                            ])
+                                ->extraAttributes(['class' => 'h-full'])
+                                ->columnSpan([
+                                    'sm' => 2,
+                                    'lg' => 1,
+                                ]),
                             Forms\Components\Section::make("Dokumentenkontrolle")->schema([
                                 Forms\Components\Toggle::make('bio_inspection.hasInvoice')
                                     ->label("Rechnung vorhanden?")
@@ -115,7 +126,7 @@ class DeliveryResource extends Resource
                                 Forms\Components\Toggle::make('bio_inspection.codeOnDeliveryNote')
                                     ->label("Codenummer der Kontrollstelle auf Lieferschein? ")
                                     ->default(false),
-                            ]),
+                            ])->extraAttributes(['class' => 'h-full'])->columnSpan(1),
                             Forms\Components\Section::make("Gebindekontrolle")->schema([
                                 Forms\Components\Toggle::make('bio_inspection.codeOnBag')
                                     ->label("Codenummer der Kontrollstelle auf Gebinde? ")
@@ -129,7 +140,7 @@ class DeliveryResource extends Resource
                                 Forms\Components\TextInput::make('bio_inspection.notes')
                                     ->label("Bei Befund (Bemerkungen): ")
                                     ->default(""),
-                            ]),
+                            ])->extraAttributes(['class' => 'h-full'])->columnSpan(1),
                         ])
                     ]),
                 ])->columnSpan('full')
@@ -179,11 +190,6 @@ class DeliveryResource extends Resource
         ];
     }
 
-    public function hasCombinedRelationManagerTabsWithContent(): bool
-    {
-        return true;
-    }
-
     public static function getPages(): array
     {
         return [
@@ -191,5 +197,10 @@ class DeliveryResource extends Resource
             'create' => Pages\CreateDelivery::route('/create'),
             'edit' => Pages\EditDelivery::route('/{record}/edit'),
         ];
+    }
+
+    public function hasCombinedRelationManagerTabsWithContent(): bool
+    {
+        return true;
     }
 }

@@ -6,14 +6,13 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      *
      * @return void
      */
-    public function up()
+    public function up(): void
     {
         Schema::create('bags', function (Blueprint $table) {
             $table->id();
@@ -26,6 +25,7 @@ return new class extends Migration
             $table->foreignIdFor(Delivery::class)->nullable();
             $table->date('bestbefore');
             $table->date('steamed')->nullable();
+            $table->boolean('trashed')->default(false);
             $table->timestamps();
         });
     }

@@ -1,3 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.fi-fo-split .items-stretch > div > section.fi-section {
+    @apply h-full;
+}

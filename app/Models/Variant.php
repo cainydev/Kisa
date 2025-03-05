@@ -15,16 +15,20 @@ class Variant extends Model
 {
     protected $guarded = [];
 
+    /**
+     * Always queries the related product
+     * @var string[]
+     */
     protected $with = ['product'];
 
     public function sku(): Attribute
     {
-        return new Attribute(get: fn () => $this->product->mainnumber.$this->ordernumber);
+        return new Attribute(get: fn() => $this->product->mainnumber . $this->ordernumber);
     }
 
     public function billbee(): Attribute
     {
-        return new Attribute(get: function(): BillbeeProduct|null {
+        return new Attribute(get: function (): BillbeeProduct|null {
             $response = Billbee::products()->getProduct($this->sku, ProductLookupBy::SKU);
             return $response->getData();
         });

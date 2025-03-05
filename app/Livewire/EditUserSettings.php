@@ -24,7 +24,7 @@ class EditUserSettings extends Component implements HasForms
     {
         $this->form->fill([
             ...(auth()->user()->toArray()),
-            ...['avatar' => auth()->user()->getFirstMedia('avatar')]
+            'avatar' => auth()->user()->getFirstMedia('avatar')
         ]);
     }
 
@@ -42,6 +42,7 @@ class EditUserSettings extends Component implements HasForms
                         ->imageEditorViewportWidth('1080')
                         ->imageEditorViewportHeight('1080')
                         ->avatar()
+                        ->model(auth()->user())
                         ->grow(false),
                     Grid::make(['default' => 1])->schema([
                         TextInput::make('name')
@@ -60,9 +61,10 @@ class EditUserSettings extends Component implements HasForms
     {
         $state = $this->form->getState();
 
-        dd($state);
-
-        //if (isset($state['avatar']))
+        auth()->user()->update([
+            'name' => $state['name'],
+            'email' => $state['email'],
+        ]);
 
         Notification::make()
             ->title('Benutzer Einstellungen gespeichert')

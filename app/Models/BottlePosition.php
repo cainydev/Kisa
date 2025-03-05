@@ -27,12 +27,50 @@ class BottlePosition extends Model
     protected $with = ['variant'];
 
     /**
+     * Initializes the position with a auto-generated charge
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $pos) {
+            $pos->charge = $pos->getCharge();
+            $pos->save();
+        });
+    }
+
+    /**
+     * Returns the K&W Charge of the bottle position.
+     * Case 1) Returns a generated charge if it has multiple or none ingredients
+     * Case 2) Returns the supplier charge if it has exactly one ingredient
+     * @return string The generated charge number
+     */
+    public function getCharge(): string
+    {
+        $ingredients = $this->variant->product->recipeIngredients;
+
+        if ($ingredients->count() === 1) {
+            if ($this->ingredients->isEmpty()) return 'CHARGE_NOT_CALCULATABLE';
+            return $this->ingredients->first()->bag->charge;
+        } else {
+            $bottlePositionsToday =
+                BottlePosition::all()
+                    ->where('bottle.date', $this->bottle->date)
+                    ->where('created_at', '<', $this->created_at)
+                    ->filter(function ($pos) {
+                        return $pos->variant->product->recipeIngredients->count() > 1;
+                    })
+                    ->count();
+
+            return $this->bottle->date->format('ymd') . $bottlePositionsToday + 1;
+        }
+    }
+
+    /**
      * Update the stock for this variant in Billbee
      * @return bool True, if stock is updated
      */
     public function upload(): bool
     {
-        if($this->uploaded) return true;
+        if ($this->uploaded) return true;
 
         try {
             $newStock = Stock::fromProduct($this->variant->billbee)
@@ -56,75 +94,17 @@ class BottlePosition extends Model
         }
     }
 
-    /**
-     * Returns the K&W Charge of the bottle position.
-     * Case 1) Returns a generated charge if has multiple or none ingredients
-     * Case 2) Returns the supplier charge if has exactly one ingredient
-     * @return string The generated charge number
-     */
-    public function getCharge(): string
+    public function hasAllBags(): bool
     {
-        $herbsContained = $this->variant->product->herbs;
-        if ($herbsContained->count() == 1) {
-            if ($this->ingredients->count() == 1) {
-                return $this->ingredients->first()->bag->charge;
-            }
-        } else {
-            $bottlePositionsToday =
-                BottlePosition::all()
-                ->where('bottle.date', $this->bottle->date)
-                ->where(function ($pos) {
-                    return $pos->variant->product->herbs->count() > 1;
-                });
+        $herbsSpecified = $this->ingredients->pluck('herb_id');
+        $herbsRequired = $this->variant->product->recipeIngredients->pluck('herb_id');
 
-            $index = 1;
-            foreach ($bottlePositionsToday as $pos) {
-                if ($this->id == $pos->id) {
-                    return $this->bottle->date->format('ymd').$index;
-                }
-                $index++;
-            }
-        }
-
-        return 'CHARGE_NOT_CALCULATABLE';
+        return $herbsRequired->diff($herbsSpecified)->isEmpty();
     }
 
     public function hasBagFor(Herb $herb): bool
     {
-        $i = $this->ingredients->where('herb_id', $herb->id)->first();
-
-        if ($i != null) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public function isBagFor(Bag $bag, Herb $herb): bool
-    {
-        $i = $this->ingredients->where('herb_id', $herb->id)->first();
-        if ($i == null) {
-            return false;
-        }
-
-        if ($i->bag == null) {
-            $i->delete();
-
-            return false;
-        }
-
-        return $i->bag->id == $bag->id;
-    }
-
-    public function hasAllBags(): bool
-    {
-        foreach ($this->variant->product->herbs as $herb) {
-            if (!$this->hasBagFor($herb)) {
-                return false;
-            }
-        }
-
-        return true;
+        return $this->ingredients->pluck('herb_id')->has($herb->id);
     }
 
     /**
@@ -152,16 +132,5 @@ class BottlePosition extends Model
     public function ingredients(): HasMany
     {
         return $this->hasMany(Ingredient::class);
-    }
-
-    /**
-     * Initializes the position with a auto-generated charge
-     */
-    protected static function booted(): void
-    {
-        static::created(function (self $pos) {
-            $pos->charge = $pos->getCharge();
-            $pos->save();
-        });
     }
 }

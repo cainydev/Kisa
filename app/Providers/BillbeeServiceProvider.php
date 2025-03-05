@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Settings\BillbeeSettings;
 use BillbeeDe\BillbeeAPI\Client;
 use Illuminate\Support\ServiceProvider;
 
@@ -12,10 +13,14 @@ class BillbeeServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(Client::class, function ($app) {
-            $user = config('services.billbee.username');
-            $apiPassword = config('services.billbee.api_password');
-            $apiKey = config('services.billbee.api_key');
+        $this->app->singleton(Client::class, function ($app, BillbeeSettings $settings) {
+            $user = $settings->username ?? config('services.billbee.username');
+            $apiPassword = $settings->password ?? config('services.billbee.api_password');
+            $apiKey = $settings->key ?? config('services.billbee.api_key');
+
+            if (empty($user) || empty($apiPassword) || empty($apiKey)) {
+                throw new \Exception('Billbee API credentials are missing.');
+            }
 
             return new Client($user, $apiPassword, $apiKey);
         });

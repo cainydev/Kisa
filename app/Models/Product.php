@@ -24,9 +24,10 @@ class Product extends Model
      */
     public function billbee(): Attribute
     {
-        return new Attribute(get: function(): BillbeeProduct|null {
-            $response = Billbee::products()->getProduct($this->mainnumber, ProductLookupBy::SKU);
-            return $response->getData();
+        return new Attribute(get: function (): BillbeeProduct|null {
+            return Billbee::products()
+                ->getProduct($this->mainnumber, ProductLookupBy::SKU)
+                ->getData();
         });
     }
 

@@ -26,8 +26,6 @@ class EditBillbeeSettings extends Component implements HasForms
     public function mount(BillbeeSettings $settings): void
     {
         $this->form->fill($settings->toArray());
-
-
         $this->testSuccess = false;
     }
 
@@ -43,7 +41,7 @@ class EditBillbeeSettings extends Component implements HasForms
                     ->autocomplete(false)
                     ->live()
                     ->requiredIf('enabled', true)
-                    ->hidden(fn (Get $get) => !$get('enabled'))
+                    ->hidden(fn(Get $get) => !$get('enabled'))
                     ->hint('Dies ist normalerweise die Email-Adresse mit der du dich bei Billbee einloggst.'),
                 TextInput::make('password')
                     ->password()
@@ -51,29 +49,31 @@ class EditBillbeeSettings extends Component implements HasForms
                     ->live()
                     ->hint('Das Passwort, welches du für die API-Verbindung angegeben hast.')
                     ->requiredIf('enabled', true)
-                    ->hidden(fn (Get $get) => !$get('enabled'))
+                    ->hidden(fn(Get $get) => !$get('enabled'))
                     ->label("Passwort"),
                 TextInput::make('key')
                     ->autocomplete(false)
                     ->label("API-Schlüssel")
                     ->live()
                     ->requiredIf('enabled', true)
-                    ->hidden(fn (Get $get) => !$get('enabled'))
+                    ->hidden(fn(Get $get) => !$get('enabled'))
                     ->hint('Der Schlüssel kann nur direkt beim Billbee-Support angefragt werden.')
                     ->mask('********-****-****-****-************')
             ])
             ->statePath('data');
     }
 
-    public function updating() {
+    public function updating(): void
+    {
         $this->testSuccess = false;
     }
 
-    public function save(BillbeeSettings $settings): void {
+    public function save(BillbeeSettings $settings): void
+    {
         $data = $this->form->getState();
         $settings->enabled = $data['enabled'];
 
-        if($settings->enabled) {
+        if ($settings->enabled) {
             $settings->username = $data['username'];
             $settings->password = $data['password'];
             $settings->key = $data['key'];
@@ -91,16 +91,16 @@ class EditBillbeeSettings extends Component implements HasForms
     {
         $data = $this->form->getState();
 
-        $client = new Client($data['username'], $data['password'], $data['key']);
-        
         try {
+            $client = new Client($data['username'], $data['password'], $data['key']);
+
             $response = $client->provisioning()->getTermsInfo();
-            if($response->getErrorCode() != 0){
+            if ($response->getErrorCode() != 0) {
                 $this->testSuccess = false;
-            }else{
+            } else {
                 $this->testSuccess = true;
             }
-        }catch(Exception $e){
+        } catch (Exception $e) {
             $this->testSuccess = false;
         }
     }

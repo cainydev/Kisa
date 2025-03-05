@@ -87,13 +87,13 @@ class ProductResource extends Resource
                             ->readOnly()
                             ->disabled()
                             ->maxWidth('xs')
-                            ->prefixIcon(fn($state) => $state == 100.0 ? 'heroicon-s-check' : 'heroicon-s-x-mark')
-                            ->prefixIconColor(fn($state) => $state == 100.0 ? 'success' : 'danger'),
+                            ->prefixIcon(fn($state) => round($state, 1) === 100.0 ? 'heroicon-s-check' : 'heroicon-s-x-mark')
+                            ->prefixIconColor(fn($state) => round($state, 1) === 100.0 ? 'success' : 'danger'),
                         Repeater::make('recipeIngredients')
                             ->addActionLabel("Neue Zutat")
-                            ->hiddenLabel()
                             ->relationship()
                             ->live()
+                            ->hiddenLabel()
                             ->schema([
                                 Split::make([
                                     Forms\Components\Select::make('herb_id')
@@ -139,7 +139,7 @@ class ProductResource extends Resource
             ->map(fn($item) => $item['percentage'])
             ->sum();
 
-        $set('sum', $sum);
+        $set('sum', round($sum, 1));
     }
 
     public static function table(Table $table): Table
