@@ -17,7 +17,7 @@ class DrahtSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run(): void
     {
         $typeDraht = ProductType::find(1);
 
@@ -33,6 +33,7 @@ class DrahtSeeder extends Seeder
             Variant::create([
                 'size' => 100,
                 'product_id' => $prod->id,
+                'ordernumber' => $drahtmix['ordernumber'],
             ]);
         }
     }

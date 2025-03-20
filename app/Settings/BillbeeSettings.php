@@ -14,6 +14,8 @@ class BillbeeSettings extends Settings
 
     public ?string $key;
 
+    public ?string $customShopKey;
+
     public static function group(): string
     {
         return 'billbee';
@@ -24,7 +26,8 @@ class BillbeeSettings extends Settings
         return [
             'username',
             'password',
-            'key'
+            'key',
+            'customShopKey',
         ];
     }
 }

@@ -42,7 +42,7 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    'debug' => (bool)env('APP_DEBUG', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -160,6 +160,7 @@ return [
          * Package Service Providers...
          */
         App\Providers\BillbeeServiceProvider::class,
+        App\Providers\BillbeeCustomShopKeyAuthenticatorProvider::class,
 
         /*
          * Application Service Providers...
@@ -170,6 +171,7 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\Filament\AdminPanelProvider::class,
         App\Providers\RouteServiceProvider::class,
+        App\Providers\TelescopeServiceProvider::class,
     ])->toArray(),
 
     /*

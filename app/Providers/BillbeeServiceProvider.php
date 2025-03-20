@@ -13,7 +13,9 @@ class BillbeeServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(Client::class, function ($app, BillbeeSettings $settings) {
+        $this->app->singleton(Client::class, function ($app) {
+            $settings = $app->make(BillbeeSettings::class);
+
             $user = $settings->username ?? config('services.billbee.username');
             $apiPassword = $settings->password ?? config('services.billbee.api_password');
             $apiKey = $settings->key ?? config('services.billbee.api_key');

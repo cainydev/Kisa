@@ -28,7 +28,7 @@ class RoseanumSeeder extends Seeder
 
         Variant::create([
             'size' => 50,
-            'ordernumber' => '',
+            'ordernumber' => 'tm1201',
             'product_id' => $prod->id,
         ]);
     }

@@ -36,6 +36,7 @@ return [
         'api_password' => env('BILLBEE_PW'),
         'api_key' => env('BILLBEE_KEY'),
         'api_host' => env('BILLBEE_HOST', 'https://api.billbee.io/api/v1/'),
+        'custom_shop_key' => env('BILLBEE_CUSTOM_SHOP_KEY', ''),
     ],
 
 ];

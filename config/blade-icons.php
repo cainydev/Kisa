@@ -92,10 +92,10 @@ return [
             |
             */
 
-            // 'attributes' => [
-            // 'width' => 50,
-            // 'height' => 50,
-            // ],
+            'attributes' => [
+                'width' => 50,
+                'height' => 50,
+            ],
 
         ],
 

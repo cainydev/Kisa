@@ -11,22 +11,27 @@ class DatabaseSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run(): void
     {
-        // General
-        $this->call(TableSettingSeeder::class);
-        $this->call(UserSeeder::class);
-        $this->call(ProductTypeSeeder::class);
+        if (app()->environment('local')) {
+            // General
+            $this->call(TableSettingSeeder::class);
+            $this->call(UserSeeder::class);
+            $this->call(ProductTypeSeeder::class);
 
-        // Supplier & Bio
-        $this->call(BioInspectorSeeder::class);
-        $this->call(SupplierSeeder::class);
+            // Supplier & Bio
+            $this->call(BioInspectorSeeder::class);
+            $this->call(SupplierSeeder::class);
 
-        // Data
-        $this->call(RoseanumSeeder::class);
-        $this->call(RuthSeeder::class);
-        $this->call(DrahtSeeder::class);
-        $this->call(HerbPercentageSeeder::class);
-        $this->call(EinzelSeeder::class);
+            // Data
+            $this->call(RoseanumSeeder::class);
+            $this->call(RuthSeeder::class);
+            $this->call(DrahtSeeder::class);
+            $this->call(HerbPercentageSeeder::class);
+            $this->call(EinzelSeeder::class);
+
+            // Development data
+            $this->call(DevelopmentSeeder::class);
+        }
     }
 }

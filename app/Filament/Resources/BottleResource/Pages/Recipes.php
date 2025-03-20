@@ -3,11 +3,14 @@
 namespace App\Filament\Resources\BottleResource\Pages;
 
 use App\Filament\Resources\BottleResource;
-use App\Models\Bottle;
+use App\Models\BottlePosition;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Collection;
+use Livewire\Attributes\Url;
+use function in_array;
 use function url;
 
 class Recipes extends Page
@@ -18,20 +21,41 @@ class Recipes extends Page
 
     protected static string $view = 'filament.resources.bottle-resource.pages.recipes';
 
-    public Bottle $bottle;
+    public bool $grouped;
 
-    public bool $grouped = true;
+    #[Url(as: 'tab', keep: true)]
+    public int $activeTab;
 
-    /**
-     * We need to mount the record to the page for it to be available.
-     *
-     * @param int|string $record
-     * @return void
-     */
+    #[Url(as: 'group', keep: true)]
+    public int $activeGroupedTab;
+
+    public Collection $positions;
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
-        $this->bottle = Bottle::find($record);
+        $this->grouped = true;
+
+        $groups = $this->record->positions->groupBy('variant.product_id');
+
+        $this->activeTab = $this->activeTab ?? $this->record->positions->first()->id;
+        $this->activeGroupedTab = $this->activeGroupedTab ?? $groups->keys()->first();
+
+        $this->refreshPositions();
+    }
+
+    public function refreshPositions(): void
+    {
+        $this->positions = $this->grouped
+            ? $this->record->positions->where('variant.product_id', $this->activeGroupedTab)
+            : collect(BottlePosition::find($this->activeTab));
+    }
+
+    public function updated($property): void
+    {
+        if (in_array($property, ['activeTab', 'activeGroupedTab', 'grouped'])) {
+            $this->refreshPositions();
+        }
     }
 
     /**

@@ -32,13 +32,13 @@ class RuthSeeder extends Seeder
 
             Variant::create([
                 'size' => 50,
-                'ordernumber' => '',
+                'ordernumber' => $ruthmix['ordernumber'],
                 'product_id' => $prod->id,
             ]);
 
             Variant::create([
                 'size' => 100,
-                'ordernumber' => '.1',
+                'ordernumber' => $ruthmix['ordernumber'] . '.1',
                 'product_id' => $prod->id,
             ]);
         }

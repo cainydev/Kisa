@@ -32,10 +32,9 @@ class EinzelSeeder extends Seeder
 
             if (Str::contains($order, '.')) { // Variant
                 $prod = Product::where('mainnumber', $main)->first();
-                Variant::create([
+                $prod->variants()->create([
                     'size' => intval($variant['weight']),
-                    'ordernumber' => Str::after($order, $main),
-                    'product_id' => $prod->id,
+                    'ordernumber' => $order
                 ]);
             } else { // Main Article
                 $prod = Product::create([
@@ -47,6 +46,7 @@ class EinzelSeeder extends Seeder
                 Variant::create([
                     'size' => intval($variant['weight']),
                     'product_id' => $prod->id,
+                    'ordernumber' => $order,
                 ]);
 
                 foreach (Herb::all() as $herb) {

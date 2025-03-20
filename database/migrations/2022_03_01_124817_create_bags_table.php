@@ -25,7 +25,7 @@ return new class extends Migration {
             $table->foreignIdFor(Delivery::class)->nullable();
             $table->date('bestbefore');
             $table->date('steamed')->nullable();
-            $table->boolean('trashed')->default(false);
+            $table->date('discarded')->nullable();
             $table->timestamps();
         });
     }
