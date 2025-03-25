@@ -15,7 +15,6 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
-use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -41,11 +40,6 @@ class ProductResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->default('Unbenanntes Produkt'),
-                        Forms\Components\TextInput::make('mainnumber')
-                            ->label("SKU")
-                            ->required()
-                            ->maxLength(255)
-                            ->default('unbenannt'),
                         Forms\Components\Select::make('product_type_id')
                             ->relationship('type', 'name')
                             ->label("Produktgruppe")
@@ -56,23 +50,17 @@ class ProductResource extends Resource
                             ->addActionLabel("Neue Variante")
                             ->hiddenLabel()
                             ->itemLabel(function (array $state): string {
-                                $ordernumber = $state['ordernumber'];
-                                $size = $state['size'];
-                                if ($size != null)
-                                    return "{$size}g Variante";
+                                if ($state['size'] !== null)
+                                    return "{$state['size']}g Variante";
                                 return "Neue Variante";
                             })
                             ->relationship()
                             ->schema([
                                 Split::make([
-                                    Forms\Components\TextInput::make('ordernumber')
+                                    Forms\Components\TextInput::make('sku')
                                         ->label("SKU")
-                                        ->mask(RawJs::make(<<<'JS'
-                                            '.' + '*'.repeat($input.length)
-                                        JS
-                                        ))
                                         ->dehydrateStateUsing(fn($state) => str($state)->toString())
-                                        ->prefix(fn(Get $get): string => $get('../../mainnumber')),
+                                        ->required(),
                                     Forms\Components\TextInput::make('size')
                                         ->numeric()
                                         ->live()
@@ -147,9 +135,6 @@ class ProductResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('mainnumber')
-                    ->label("SKU")
                     ->searchable(),
                 VariantColumn::make('variants')
                     ->label("Varianten"),

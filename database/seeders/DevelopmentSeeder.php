@@ -17,7 +17,6 @@ class DevelopmentSeeder extends Seeder
         // Example Product
         $product = Product::create([
             'name' => 'Testprodukt',
-            'mainnumber' => 'test1000',
             'product_type_id' => 1,
         ]);
 
@@ -29,7 +28,7 @@ class DevelopmentSeeder extends Seeder
 
         $variant = $product->variants()->create([
             'size' => 100,
-            'ordernumber' => 'test1000',
+            'sku' => 'test1000',
             'stock' => 0,
         ]);
 

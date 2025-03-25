@@ -26,14 +26,13 @@ class DrahtSeeder extends Seeder
         foreach ($draht as $drahtmix) {
             $prod = Product::create([
                 'name' => $drahtmix['name'],
-                'mainnumber' => $drahtmix['ordernumber'],
                 'product_type_id' => $typeDraht->id,
             ]);
 
             Variant::create([
                 'size' => 100,
                 'product_id' => $prod->id,
-                'ordernumber' => $drahtmix['ordernumber'],
+                'sku' => $drahtmix['ordernumber'],
             ]);
         }
     }

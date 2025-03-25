@@ -37,11 +37,7 @@ class BillbeeController extends Controller
 
         if ($products->isEmpty()) {
             $billbee_product = Billbee::products()->getProduct($product_id);
-            $sku = $billbee_product->data->sku;
-            $mainnumber = str($sku)->beforeLast('.');
-            $ordernumber = str($sku)->after($mainnumber);
-            $products = Variant::where('ordernumber', $ordernumber)
-                ->whereRelation('product', 'mainnumber', $mainnumber)->get();
+            $products = Variant::where('sku', $billbee_product->data->sku)->get();
         }
 
         if ($products->isEmpty()) {

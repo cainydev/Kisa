@@ -68,7 +68,7 @@ class RefreshBillbeeData extends Command
 
         foreach (Variant::all() as $variant) {
             $billbeeData = $products->first(function (Product $p) use ($variant) {
-                return $p->sku === $variant->ordernumber;
+                return $p->sku === $variant->sku;
             });
 
             if ($billbeeData instanceof Product) {

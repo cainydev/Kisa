@@ -17,18 +17,18 @@ class RoseanumSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run(): void
     {
         $typeRoseanum = ProductType::find(4);
+
         $prod = Product::create([
             'name' => 'Frauenstarktee',
-            'mainnumber' => 'tm1201',
             'product_type_id' => $typeRoseanum->id,
         ]);
 
         Variant::create([
             'size' => 50,
-            'ordernumber' => 'tm1201',
+            'sku' => 'tm1201',
             'product_id' => $prod->id,
         ]);
     }

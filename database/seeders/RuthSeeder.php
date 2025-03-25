@@ -17,7 +17,7 @@ class RuthSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run(): void
     {
         $typeRuth = ProductType::find(3);
 
@@ -26,19 +26,18 @@ class RuthSeeder extends Seeder
         foreach ($row as $ruthmix) {
             $prod = Product::create([
                 'name' => $ruthmix['name'],
-                'mainnumber' => $ruthmix['ordernumber'],
                 'product_type_id' => $typeRuth->id,
             ]);
 
             Variant::create([
                 'size' => 50,
-                'ordernumber' => $ruthmix['ordernumber'],
+                'sku' => $ruthmix['ordernumber'],
                 'product_id' => $prod->id,
             ]);
 
             Variant::create([
                 'size' => 100,
-                'ordernumber' => $ruthmix['ordernumber'] . '.1',
+                'sku' => $ruthmix['ordernumber'] . '.1',
                 'product_id' => $prod->id,
             ]);
         }
