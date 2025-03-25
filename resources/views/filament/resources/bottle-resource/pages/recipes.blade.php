@@ -28,9 +28,7 @@
                 @endforeach
             @endif
         </x-filament::tabs>
-    @endif
-
-    @if($this->positions !== null)
+    
         @php($ids = $this->positions->pluck('id')->implode('-'))
         <div wire:loading.remove wire:target="grouped, activeGroupedTab, activeTab">
             <livewire:bottle-position-list :positions="$this->positions"
