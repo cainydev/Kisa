@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Facades\Billbee;
+use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
 use BillbeeDe\BillbeeAPI\Model\Product as BillbeeProduct;
+use BillbeeDe\BillbeeAPI\Type\ProductLookupBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,16 +29,35 @@ class Variant extends Model
      */
     public static function booted(): void
     {
-        static::creating(function (Variant $variant) {
-            if (!empty($variant->billbee_id) && !empty($variant->ean)) return;
-
-            $billbee = $variant->billbee;
-            if ($billbee === null) return;
-
-            if (empty($variant->billbee_id)) $variant->billbee_id = $billbee->id;
-            if (empty($variant->ean)) $variant->ean = $billbee->ean;
-            if (empty($variant->stock)) $variant->stock = $billbee->stockCurrent;
+        static::created(function (Variant $variant) {
+            $this->hasBillbee();
         });
+    }
+
+    /**
+     * Try to find the billbee product data and set billbee_id
+     *
+     * @return bool If the operation was successful
+     * @throws QuotaExceededException
+     */
+    public function hasBillbee(): bool
+    {
+        $billbee = $this->billbee;
+
+        if ($billbee === null) {
+            $billbee = Billbee::products()->getProduct($this->sku, ProductLookupBy::SKU);
+            if ($billbee->errorCode !== 0) return false;
+
+            $this->billbee_id = $billbee->data->id;
+        }
+
+        if ($billbee === null) return false;
+
+        $this->ean = $billbee->data->ean;
+        $this->stock = $billbee->data->stockCurrent;
+        $this->save();
+
+        return true;
     }
 
     /**

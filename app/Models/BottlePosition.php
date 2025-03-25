@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Facades\Billbee;
+use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
 use BillbeeDe\BillbeeAPI\Model\Stock;
 use Exception;
 use Filament\Notifications\Notification;
@@ -70,6 +71,7 @@ class BottlePosition extends Model
     /**
      * Update the stock for this variant in Billbee
      * @return bool True, if stock is updated
+     * @throws QuotaExceededException
      */
     public function upload(): bool
     {
@@ -100,32 +102,42 @@ class BottlePosition extends Model
             return false;
         }
 
-        try {
-            $newStock = Stock::fromProduct($this->variant->billbee)
-                ->setDeltaQuantity($this->count)
-                ->setReason("Einlagerung $this->charge");
+        if ($this->variant->hasBillbee()) {
+            try {
+                $newStock = Stock::fromProduct($this->variant->billbee)
+                    ->setDeltaQuantity($this->count)
+                    ->setReason("Einlagerung $this->charge");
 
-            Billbee::products()->updateStock($newStock);
+                Billbee::products()->updateStock($newStock);
 
-            $this->variant->update([
-                'stock' => $newStock->getNewQuantity()
-            ]);
+                $this->variant->update([
+                    'stock' => $newStock->getNewQuantity()
+                ]);
 
-            $this->update([
-                'uploaded' => true
-            ]);
+                $this->update([
+                    'uploaded' => true
+                ]);
 
-            Notification::make()
-                ->title('Einlagern erfolgreich')
-                ->body('Neuer Bestand in Billbee: ' . $newStock->getNewQuantity())
-                ->success()
-                ->send();
+                Notification::make()
+                    ->title('Einlagern erfolgreich')
+                    ->body('Neuer Bestand in Billbee: ' . $newStock->getNewQuantity())
+                    ->success()
+                    ->send();
 
-            return true;
-        } catch (Exception $e) {
+                return true;
+            } catch (Exception $e) {
+                Notification::make()
+                    ->title('Einlagern fehlgeschlagen')
+                    ->body('Bitte warte etwas zwischen deinen Anfragen.')
+                    ->danger()
+                    ->send();
+
+                return false;
+            }
+        } else {
             Notification::make()
                 ->title('Einlagern fehlgeschlagen')
-                ->body('Bitte warte etwas zwischen deinen Anfragen.')
+                ->body('Es konnte kein passendes Billbee-Produkt gefunden werden.')
                 ->danger()
                 ->send();
 
