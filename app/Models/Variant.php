@@ -45,16 +45,17 @@ class Variant extends Model
         $billbee = $this->billbee;
 
         if ($billbee === null) {
-            $billbee = Billbee::products()->getProduct($this->sku, ProductLookupBy::SKU);
-            if ($billbee->errorCode !== 0) return false;
+            $response = Billbee::products()->getProduct($this->sku, ProductLookupBy::SKU);
+            if ($response->errorCode !== 0 || $response->data === null) return false;
 
-            $this->billbee_id = $billbee->data->id;
+            $billbee = $response->data;
+            $this->billbee_id = $billbee->id;
         }
 
         if ($billbee === null) return false;
 
-        $this->ean = $billbee->data->ean;
-        $this->stock = $billbee->data->stockCurrent;
+        $this->ean = $billbee->ean;
+        $this->stock = $billbee->stockCurrent;
         $this->save();
 
         return true;
