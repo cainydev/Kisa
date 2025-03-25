@@ -3,59 +3,95 @@
 namespace App\Filament\Resources\BottleResource\Pages;
 
 use App\Filament\Resources\BottleResource;
-use App\Models\BottlePosition;
+use App\Models\Bottle;
 use Filament\Actions\Action;
-use Filament\Resources\Pages\Concerns\InteractsWithRecord;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
-use function in_array;
-use function url;
+use function route;
 
 class Recipes extends Page
 {
-    use InteractsWithRecord;
-
     protected static string $resource = BottleResource::class;
 
     protected static string $view = 'filament.resources.bottle-resource.pages.recipes';
 
-    public bool $grouped;
+    /** @var Bottle */
+    public Bottle $bottle;
+
+    #[Url(as: 'grouped', keep: true)]
+    public bool $grouped = true;
 
     #[Url(as: 'tab', keep: true)]
-    public int $activeTab;
+    public string|null $activeTab = null;
 
     #[Url(as: 'group', keep: true)]
-    public int $activeGroupedTab;
+    public string|null $activeGroupedTab = null;
 
-    public Collection $positions;
-
-    public function mount(int|string $record): void
+    public function mount(int $record): void
     {
-        $this->record = $this->resolveRecord($record);
-        $this->grouped = true;
-
-        $groups = $this->record->positions->groupBy('variant.product_id');
-
-        $this->activeTab = $this->activeTab ?? $this->record->positions->first()->id;
-        $this->activeGroupedTab = $this->activeGroupedTab ?? $groups->keys()->first();
-
-        $this->refreshPositions();
+        $this->bottle = Bottle::find($record);
+        $this->recalculateTabs();
     }
 
+    public function recalculateTabs(): void
+    {
+        if (!$this->activeTab || !$this->bottle->positions->pluck('id')->contains($this->activeTab)) {
+            $this->activeTab = $this->bottle->positions->first()->id;
+        }
+
+        if (!$this->activeGroupedTab || !$this->groups->keys()->contains($this->activeGroupedTab)) {
+            if ($this->activeGroupedTab) {
+                $groupCount = $this->groups->count();
+                $ids = str($this->activeGroupedTab)->after('g-')->explode('-');
+
+                $this->activeGroupedTab = $this->groups->filter(function (Collection $positions) use ($ids) {
+                    return $positions->pluck('id')->contains($ids->first());
+                })->keys()->first();
+
+                if ($this->grouped)
+                    Notification::make()
+                        ->title('Gruppen zusammengeführt.')
+                        ->body('Zwei Gruppen wurden automatisch zusammengeführt weil die Zutaten identisch sind.')
+                        ->success()
+                        ->send();
+            } else {
+                $this->activeGroupedTab = $this->groups->keys()->first();
+            }
+        }
+    }
+
+    #[On('positions.updated')]
     public function refreshPositions(): void
     {
-        $this->positions = $this->grouped
-            ? $this->record->positions->where('variant.product_id', $this->activeGroupedTab)
-            : collect(BottlePosition::find($this->activeTab));
+        unset($this->positions, $this->groups);
+        $this->recalculateTabs();
     }
 
-    public function updated($property): void
+    #[Computed]
+    public function positions()
     {
-        if (in_array($property, ['activeTab', 'activeGroupedTab', 'grouped'])) {
-            $this->refreshPositions();
+        if ($this->grouped) {
+            return $this->groups->get($this->activeGroupedTab);
+        } else {
+            return $this->bottle->positions->where('id', $this->activeTab);
         }
+    }
+
+    #[Computed]
+    public function groups()
+    {
+        return $this->bottle->positions->groupBy(function ($item) {
+            $attachedBags = $item->ingredients->pluck('bag_id')->sort();
+            if ($attachedBags->isEmpty()) return "{$item->variant->product_id}";
+            return "{$item->variant->product_id}-{$attachedBags->implode('-')}";
+        })->mapWithKeys(fn(Collection $positions) => [
+            "g-{$positions->pluck('id')->implode('-')}" => $positions
+        ]);
     }
 
     /**
@@ -65,7 +101,7 @@ class Recipes extends Page
      */
     public function getTitle(): string|Htmlable
     {
-        return "Rezepte {$this->record->getAttribute('date')->format('d.m.Y')}";
+        return "Rezepte {$this->bottle->date->format('d.m.Y')}";
     }
 
     public function getHeaderActions(): array
@@ -74,7 +110,7 @@ class Recipes extends Page
             Action::make('back')
                 ->label('Zurück')
                 ->color('gray')
-                ->url(url()->previous()),
+                ->url(route('filament.admin.resources.bottles.edit', ['record' => $this->bottle->id])),
             Action::make('group')
                 ->color(fn() => $this->grouped ? 'info' : 'gray')
                 ->label(fn() => $this->grouped ? 'Gruppiert' : 'Nicht gruppiert')

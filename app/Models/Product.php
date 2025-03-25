@@ -2,34 +2,18 @@
 
 namespace App\Models;
 
-use App\Facades\Billbee;
-use BillbeeDe\BillbeeAPI\Model\Product as BillbeeProduct;
-use BillbeeDe\BillbeeAPI\Type\ProductLookupBy;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Represents a final product.
- * Has many variants, a product type and a recipe.
+ * Has many variants, a product type and recipe ingredients.
  */
 class Product extends Model
 {
     protected $guarded = [];
-
-    /**
-     * Get the billbee product instance
-     * @return Attribute
-     */
-    public function billbee(): Attribute
-    {
-        return new Attribute(get: function (): BillbeeProduct|null {
-            return Billbee::products()
-                ->getProduct($this->mainnumber, ProductLookupBy::SKU)
-                ->getData();
-        });
-    }
 
     /**
      * Returns the percentage of a herb in the recipe
@@ -48,6 +32,7 @@ class Product extends Model
 
     /**
      * The recipe ingredients
+     *
      * @return HasMany
      */
     public function recipeIngredients(): HasMany
@@ -57,6 +42,7 @@ class Product extends Model
 
     /**
      * The type of product
+     *
      * @return BelongsTo
      */
     public function type(): BelongsTo
@@ -66,11 +52,17 @@ class Product extends Model
 
     /**
      * The variants of the product.
-     * The mainnumber concatenated with the ordernumber of the variant forms the SKU of the variant.
+     *
      * @return HasMany
      */
     public function variants(): HasMany
     {
         return $this->hasMany(Variant::class);
+    }
+
+    public function herbs(): BelongsToMany
+    {
+        return $this->belongsToMany(Herb::class, 'herb_product')
+            ->withPivot('percentage');
     }
 }

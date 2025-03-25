@@ -6,7 +6,7 @@ use App\Facades\Billbee;
 use BillbeeDe\BillbeeAPI\Model\Stock;
 use Exception;
 use Filament\Notifications\Notification;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class BottlePosition extends Model
 {
+    use HasFactory;
+
     protected $guarded = [];
 
     /**
@@ -65,13 +67,6 @@ class BottlePosition extends Model
         }
     }
 
-    public function stock(): Attribute
-    {
-        return Attribute::make(get: function (): int {
-            return $this->variant->billbee->stockCurrent;
-        })->shouldCache();
-    }
-
     /**
      * Update the stock for this variant in Billbee
      * @return bool True, if stock is updated
@@ -112,8 +107,13 @@ class BottlePosition extends Model
 
             Billbee::products()->updateStock($newStock);
 
-            $this->uploaded = true;
-            $this->save();
+            $this->variant->update([
+                'stock' => $newStock->getNewQuantity()
+            ]);
+
+            $this->update([
+                'uploaded' => true
+            ]);
 
             Notification::make()
                 ->title('Einlagern erfolgreich')
@@ -143,7 +143,16 @@ class BottlePosition extends Model
 
     public function hasBagFor(Herb $herb): bool
     {
-        return $this->ingredients->pluck('herb_id')->has($herb->id);
+        return $this->getBagFor($herb) !== null;
+    }
+
+    public function getBagFor(Herb $herb): Bag|null
+    {
+        return $this->ingredients
+            ->firstWhere('herb_id', $herb->id)
+            ?->bag()
+            ->withTrashed()
+            ->first();
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -11,6 +12,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Delivery extends Model implements HasMedia
 {
     use InteractsWithMedia;
+    use HasFactory;
 
     protected $with = ['bags'];
 
@@ -20,13 +22,6 @@ class Delivery extends Model implements HasMedia
         'delivered_date' => 'date:Y-m-d',
         'bio_inspection' => 'array',
     ];
-
-    protected function title(): Attribute
-    {
-        return new Attribute(get: function () {
-            return "Lieferung von {$this->supplier->shortname} ({$this->delivered_date->format('d.m.Y')})";
-        });
-    }
 
     public function registerMediaCollections(): void
     {
@@ -59,7 +54,7 @@ class Delivery extends Model implements HasMedia
     {
         $bags = '';
         foreach ($this->bags as $bag) {
-            $bags .= $bag->herb->name.'-'.$bag->getSizeInKilo().', ';
+            $bags .= $bag->herb->name . '-' . $bag->getSizeInKilo() . ', ';
         }
         $bags = substr($bags, 0, strlen($bags) - 2);
 
@@ -89,5 +84,12 @@ class Delivery extends Model implements HasMedia
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    protected function title(): Attribute
+    {
+        return new Attribute(get: function () {
+            return "Lieferung von {$this->supplier->shortname} ({$this->delivered_date->format('d.m.Y')})";
+        });
     }
 }

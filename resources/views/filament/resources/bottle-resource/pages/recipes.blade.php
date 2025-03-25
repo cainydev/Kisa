@@ -1,31 +1,27 @@
 <x-filament-panels::page>
-    @if($record->positions->count() === 0)
+    @if($bottle->positions->count() === 0)
         <div>
             <p>Keine Positionen hinzugefügt</p>
         </div>
     @else
-        @php($groups = $record->positions->groupBy('variant.product_id'))
-        <x-filament::tabs class="w-full" x-data="{
-            activeTab: $wire.entangle('activeTab').live,
-            activeGroupedTab: $wire.entangle('activeGroupedTab').live
-        }">
+        <x-filament::tabs class="w-full" x-data="{}">
             @if($grouped)
-                @foreach($groups as $product_id => $groupPositions)
+                @foreach($this->groups as $key => $positions)
                     <x-filament::tabs.item
-                        wire:key="group-{{ $product_id }}"
-                        @click="activeGroupedTab = {{ $product_id }}"
-                        alpine-active="activeGroupedTab === {{ $product_id }}"
-                        :badge="count($groupPositions) > 1 ? count($groupPositions) : null"
+                        wire:key="group-{{ Js::from($key) }}"
+                        wire:click="$set('activeGroupedTab', {{ Js::from($key) }})"
+                        alpine-active="{{ Js::from($activeGroupedTab == $key) }}"
+                        :badge="count($positions) > 1 ? count($positions) : null"
                         badge-color="info">
-                        {{ \App\Models\Product::find($product_id)->name }}
+                        {{ $positions->first()->variant->product->name }}
                     </x-filament::tabs.item>
                 @endforeach
             @else
-                @foreach($record->positions as $position)
+                @foreach($bottle->positions as $position)
                     <x-filament::tabs.item
                         wire:key="single-{{ $position->id }}"
-                        @click="activeTab = {{ $position->id }}"
-                        alpine-active="activeTab === {{ $position->id }}"
+                        wire:click="$set('activeTab', {{ $position->id }})"
+                        alpine-active="{{ Js::from($activeTab == $position->id) }}"
                         :badge="$position->variant->size . 'g'">
                         {{ $position->count }} × {{ $position->variant->product->name }}
                     </x-filament::tabs.item>
@@ -34,7 +30,22 @@
         </x-filament::tabs>
     @endif
 
-    <div wire:loading.class="[&_*_.fi-ta-row]:blur-sm">
-        <livewire:bottle-position-list :$positions/>
-    </div>
+    @if($this->positions !== null)
+        @php($ids = $this->positions->pluck('id')->implode('-'))
+        <div wire:loading.remove wire:target="grouped, activeGroupedTab, activeTab">
+            <livewire:bottle-position-list :positions="$this->positions"
+                                           wire:key="list-{{ $ids }}"/>
+        </div>
+
+        <div wire:loading.remove wire:target="grouped, activeGroupedTab, activeTab">
+            <livewire:recipe :positions="$this->positions"
+                             wire:key="recipe-{{ $ids }}"/>
+        </div>
+
+        <div wire:loading.flex wire:target="grouped, activeGroupedTab, activeTab"
+             class="hidden flex-col gap-8">
+            <x-filament::loading-section height="117px"/>
+            <x-filament::loading-section height="300px"/>
+        </div>
+    @endif
 </x-filament-panels::page>

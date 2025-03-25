@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Facades\Billbee;
 use BillbeeDe\BillbeeAPI\Model\Product as BillbeeProduct;
-use BillbeeDe\BillbeeAPI\Type\ProductLookupBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,64 +20,68 @@ class Variant extends Model
      */
     protected $with = ['product'];
 
+    /**
+     * Initializes the variant with billbee data
+     *
+     * @return void
+     */
+    public static function booted(): void
+    {
+        static::creating(function (Variant $variant) {
+            if (!empty($variant->billbee_id) && !empty($variant->ean)) return;
+
+            $billbee = $variant->billbee;
+            if ($billbee === null) return;
+
+            if (empty($variant->billbee_id)) $variant->billbee_id = $billbee->id;
+            if (empty($variant->ean)) $variant->ean = $billbee->ean;
+            if (empty($variant->stock)) $variant->stock = $billbee->stockCurrent;
+        });
+    }
+
+    /**
+     * The billbee product data. Expensive operation.
+     *
+     * @return Attribute
+     */
     public function billbee(): Attribute
     {
-        return Attribute::make(get: function (): BillbeeProduct|null {
-            return Billbee::products()->getProduct($this->billbeeId)->data;
+        return Attribute::make(get: function (?string $value, array $attributes): BillbeeProduct|null {
+            if (empty($attributes['billbee_id'])) return null;
+            return Billbee::products()->getProduct($attributes['billbee_id'])->data;
         });
     }
 
-    public function billbeeId(): Attribute
-    {
-        if ($this->billbee_id === null || $this->billbee_id === '') {
-            $billbee = Billbee::products()->getProduct($this->ordernumber, ProductLookupBy::SKU)->data;
-            if ($billbee !== null) {
-                $this->billbee_id = $billbee->id;
-                $this->save();
-            }
-
-        }
-
-        return Attribute::make(get: function (?string $value, array $attributes): string {
-            if ($value === null || $value === '') {
-                $billbee = Billbee::products()->getProduct($attributes['ordernumber'], ProductLookupBy::SKU)->data;
-                if ($billbee !== null) {
-                    $this->billbee_id = $billbee->id;
-                    $this->save();
-                }
-            }
-
-            return $this->billbee_id;
-        });
-    }
-
-    public function ean(): Attribute
-    {
-        return Attribute::make(get: function (?string $value, array $attributes): string {
-            if ($value === null || $value === '') {
-                $billbee = $this->billbee;
-                if ($billbee !== null) {
-                    $this->ean = $billbee->ean;
-                    $this->save();
-                }
-            }
-
-            return $this->ean;
-        });
-    }
-
+    /**
+     * The product the variant belongs to
+     *
+     * @return BelongsTo
+     */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
+    /**
+     * The bottles that contain this variant
+     *
+     * @return BelongsToMany
+     */
     public function bottles(): BelongsToMany
     {
         return $this->belongsToMany(Bottle::class);
     }
 
+
+    /**
+     * The positions that contain this variant
+     *
+     * @return HasMany
+     */
     public function positions(): HasMany
     {
         return $this->hasMany(BottlePosition::class);
     }
+
+
 }

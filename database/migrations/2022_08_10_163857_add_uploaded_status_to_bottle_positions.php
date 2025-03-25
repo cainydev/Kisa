@@ -8,16 +8,15 @@ use Illuminate\Support\Facades\Schema;
  *  the new Stock is updated in Billbee.
  */
 
-return new class extends Migration
-{
-    public function up()
+return new class extends Migration {
+    public function up(): void
     {
         Schema::table('bottle_positions', function (Blueprint $table) {
             $table->boolean('uploaded')->default(false);
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::table('bottle_positions', function (Blueprint $table) {
             $table->dropColumn('uploaded');

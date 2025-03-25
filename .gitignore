@@ -2,8 +2,11 @@
 /node_modules
 /public/build
 /public/hot
+/public/tmp
 /public/storage
 /storage/*.key
+/storage/clockwork
+/storage/debugbar
 /vendor
 .env
 .env.backup

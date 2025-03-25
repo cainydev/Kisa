@@ -29,7 +29,7 @@ class DevelopmentSeeder extends Seeder
 
         $variant = $product->variants()->create([
             'size' => 100,
-            'ordernumber' => '',
+            'ordernumber' => 'test1000',
             'stock' => 0,
         ]);
 
@@ -45,7 +45,7 @@ class DevelopmentSeeder extends Seeder
             ['variant_id' => 3, 'count' => 10],
             ['variant_id' => 32, 'count' => 8],
             ['variant_id' => 109, 'count' => 12],
-            ['variant_id' => $variant->id, 'count' => 1]
+            ['variant_id' => $variant->id, 'count' => 50]
         ]);
     }
 }

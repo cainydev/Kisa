@@ -21,6 +21,6 @@ class Ingredient extends Model
 
     public function bag(): BelongsTo
     {
-        return $this->belongsTo(Bag::class);
+        return $this->belongsTo(Bag::class)->withTrashed();
     }
 }

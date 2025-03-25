@@ -7,11 +7,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up(): void
     {
         Schema::create('bags', function (Blueprint $table) {
@@ -25,17 +20,11 @@ return new class extends Migration {
             $table->foreignIdFor(Delivery::class)->nullable();
             $table->date('bestbefore');
             $table->date('steamed')->nullable();
-            $table->date('discarded')->nullable();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('bags');
     }

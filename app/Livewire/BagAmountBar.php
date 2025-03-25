@@ -4,31 +4,42 @@ namespace App\Livewire;
 
 use App\Models\Bag;
 use Illuminate\Contracts\View\View;
-use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 class BagAmountBar extends Component
 {
-    #[Locked]
-    public ?Bag $bag;
+    public Bag $bag;
 
-    public function mount(?Bag $record = null): void
+    public float $total;
+    public float $free;
+    public float $used;
+    public float $trashed;
+
+    public function mount(Bag $bag): void
     {
-        $this->bag = $record;
+        $this->bag = $bag;
+        $this->recalculate();
     }
 
-    #[On('bag-updated')]
+    public function recalculate(): void
+    {
+        $this->total = $this->bag->size;
+        $this->free = $this->bag->getCurrentWithTrashed();
+        $this->trashed = $this->bag->trashed;
+        $this->used = $this->bag->size - $this->free - $this->trashed;
+    }
+
+    #[On('bag.{bag.id}.updated')]
     public function refresh(): void
     {
+        $this->js('console.log("refreshed")');
         $this->bag->refresh();
+        $this->recalculate();
     }
 
     public function render(): ?View
     {
-        if($this->bag !== null)
-            return view('livewire.bag-amount-bar');
-
-        return null;
+        return view('livewire.bag-amount-bar');
     }
 }

@@ -2,11 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Redis;
 
 class Herb extends Model
 {
+    use HasFactory;
+
     protected $guarded = [];
 
     public function toSearchableArray(): array
@@ -95,17 +101,17 @@ class Herb extends Model
         return Redis::get('herb:' . $this->id . ':days.remaining');
     }
 
-    public function products()
+    public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class);
     }
 
-    public function bags()
+    public function bags(): HasMany
     {
         return $this->hasMany(Bag::class);
     }
 
-    public function supplier()
+    public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');
     }

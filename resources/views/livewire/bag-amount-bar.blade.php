@@ -1,38 +1,54 @@
 {{-- To attain knowledge, add things every day; To attain wisdom, subtract things every day. --}}
 
-<x-filament::section class="[&>div>div]:p-1 mt-6">
-    @php
-        $total = $this->bag->size;
-        $trashed = $this->bag->trashed;
-        $used = 400;//$total - $this->bag->getCurrent();
+<div class="grow" x-data="{
+        total: $wire.entangle('total', true),
+        free: $wire.entangle('free', true),
+        used:  $wire.entangle('used', true),
+        trashed: $wire.entangle('trashed', true),
 
-        $usedP = ($used / $total) * 100;
-        $trashedP = ($trashed / $total) * 100;
-    @endphp
-    <div class="flex items-stretch h-8 gap-1.5">
-        @if($usedP + $trashedP < $total)
-            <div
-                class="flex items-center justify-left px-2 rounded-l-lg @if($used + $trashed === 0) rounded-r-lg @else rounded-r-sm @endif bg-green-500 grow">
-                <p class="uppercase text-sm font-semibold whitespace-nowrap text-green-900">
-                    rest / {{ $total - $used - $trashed }}g
-                </p>
-            </div>
-        @endif
-        @if($usedP > 0)
-            <div
-                class="flex items-center justify-left px-2 @if($total - $used - $trashed === 0) rounded-l-lg @else rounded-l-sm @endif @if($trashed === 0) rounded-r-lg @else rounded-r-sm @endif transition-all bg-yellow-500" @style(["flex-basis: $usedP%"])>
-                <p class="uppercase text-sm font-semibold whitespace-nowrap text-yellow-900">
-                    used / {{ $used }}g
-                </p>
-            </div>
-        @endif
-        @if($trashedP > 0)
-            <div
-                class="flex items-center justify-left px-2 @if($trashed === $total) rounded-l-lg @else rounded-l-sm @endif rounded-r-lg bg-red-500" @style(["flex-basis: $trashedP%"])>
-                <p class="uppercase text-sm font-semibold whitespace-nowrap text-red-900">
-                    trash / {{ $trashed }}g
-                </p>
-            </div>
-        @endif
+        toPercentage(value){
+            return (value / this.total) * 100 + '%';
+        }
+    }">
+    <div class="flex items-stretch gap-1 w-full">
+        <div class="flex items-stretch grow overflow-hidden transition-all min-w-max basis-0"
+             x-bind:style="{flexBasis: toPercentage(trashed)}">
+            <x-filament::badge color="danger"
+                               class="transition-all rounded-l-md rounded-r-sm min-w-max overflow-hidden grow">
+                <span class="flex items-center relative">
+                    <x-filament::icon icon="heroicon-s-trash" class="w-4 h-4"/>
+                    <span class="transition-all overflow-hidden"
+                          x-transition
+                          x-show="trashed > 0"
+                          x-text="trashed > 0 ? '  ' + Math.round(trashed) + 'g' : ''"></span>
+                </span>
+            </x-filament::badge>
+        </div>
+        <div class="flex items-stretch grow overflow-hidden transition-all min-w-max basis-0"
+             x-bind:style="{flexBasis: toPercentage(used)}">
+            <x-filament::badge color="warning"
+                               class="transition-all rounded-sm min-w-max overflow-hidden grow">
+                <span class="flex items-center relative">
+                    <x-filament::icon icon="heroicon-s-x-mark" class="w-4 h-4"/>
+                    <span class="transition-all overflow-hidden"
+                          x-transition
+                          x-show="used > 0"
+                          x-text="used > 0 ? '  ' + Math.round(used) + 'g' : ''"></span>
+                </span>
+            </x-filament::badge>
+        </div>
+        <div class="flex items-stretch grow overflow-hidden transition-all min-w-max basis-0"
+             x-bind:style="{flexBasis: toPercentage(free)}">
+            <x-filament::badge color="success"
+                               class="transition-all rounded-l-sm rounded-r-md min-w-max overflow-hidden grow">
+                <span class="flex items-center">
+                    <x-filament::icon icon="heroicon-s-check" class="w-4 h-4"/>
+                    <span class="transition-all overflow-hidden"
+                          x-transition
+                          x-show="free > 0"
+                          x-text="free > 0 ? '  ' + Math.round(free) + 'g' : ''"></span>
+                </span>
+            </x-filament::badge>
+        </div>
     </div>
-</x-filament::section>
+</div>

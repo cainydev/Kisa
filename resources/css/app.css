@@ -5,3 +5,12 @@
 .fi-fo-split .items-stretch > div > section.fi-section {
     @apply h-full;
 }
+
+.hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}

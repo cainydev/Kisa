@@ -4,14 +4,19 @@ namespace App\Models;
 
 use App\Jobs\AnalyzeHerb;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Redis;
 
 class Bag extends Model
 {
+    use HasFactory;
+    use SoftDeletes;
+
     protected $guarded = [];
 
     protected $with = ['herb'];
@@ -32,6 +37,32 @@ class Bag extends Model
         });
     }
 
+    public function discard(): bool
+    {
+        $this->update(['trashed' => $this->getCurrent()]);
+        return $this->delete();
+    }
+
+    /**
+     * Returns the current amount in this bag in g
+     *
+     * @return float
+     */
+    public function getCurrent(): float
+    {
+        $sum = 0;
+        foreach ($this->ingredients as $i) {
+            $variant = $i->position->variant;
+            foreach ($variant->product->herbs as $herb) {
+                if ($herb->id == $this->herb->id) {
+                    $sum += ($variant->size * $i->position->count) * ($herb->pivot->percentage / 100);
+                }
+            }
+        }
+
+        return $this->size - $sum;
+    }
+
     /**
      * Get the computed identifier of this bag.
      * @return Attribute
@@ -44,6 +75,16 @@ class Bag extends Model
     }
 
     /**
+     * Returns the size formatted in kg
+     *
+     * @return string
+     */
+    public function getSizeInKilo(): string
+    {
+        return sprintf('%.1fkg', $this->size / 1000);
+    }
+
+    /**
      * @return mixed
      */
     public function redisCurrent(): Attribute
@@ -51,8 +92,8 @@ class Bag extends Model
         $redisQuery = "bag:$this->id:remaining";
 
         return new Attribute(
-            get: fn () => floatval(Redis::get($redisQuery)),
-            set: fn ($value) => Redis::set($redisQuery, $value) && $value
+            get: fn() => floatval(Redis::get($redisQuery)),
+            set: fn($value) => Redis::set($redisQuery, $value) && $value
         );
     }
 
@@ -77,16 +118,6 @@ class Bag extends Model
     }
 
     /**
-     * Returns the relation with all the Ingredients where this bag is used
-     *
-     * @return HasMany
-     */
-    public function ingredients(): HasMany
-    {
-        return $this->hasMany(Ingredient::class);
-    }
-
-    /**
      * Returns all the Ingredients where this bag is used in an efficient manner.
      * (Hopefully 1 query for all.. not..)
      *
@@ -101,23 +132,13 @@ class Bag extends Model
     }
 
     /**
-     * Returns the current amount in this bag in g
+     * Returns the relation with all the Ingredients where this bag is used
      *
-     * @return float
+     * @return HasMany
      */
-    public function getCurrent(): float
+    public function ingredients(): HasMany
     {
-        $sum = 0;
-        foreach ($this->ingredients as $i) {
-            $variant = $i->position->variant;
-            foreach ($variant->product->herbs as $herb) {
-                if ($herb->id == $this->herb->id) {
-                    $sum += ($variant->size * $i->position->count) * ($herb->pivot->percentage / 100);
-                }
-            }
-        }
-
-        return $this->size - $sum;
+        return $this->hasMany(Ingredient::class);
     }
 
     /**
@@ -167,17 +188,6 @@ class Bag extends Model
     }
 
     /**
-     * Returns the current amount in this bag in g,
-     * taking also the trashed amount into account.
-     *
-     * @return float
-     */
-    public function getCurrentWithTrashed(): float
-    {
-        return $this->getCurrent() - $this->trashed;
-    }
-
-    /**
      * Returns the current amount (With trashed) in percent
      *
      * @return float
@@ -188,13 +198,14 @@ class Bag extends Model
     }
 
     /**
-     * Returns the size formatted in kg
+     * Returns the current amount in this bag in g,
+     * taking also the trashed amount into account.
      *
-     * @return string
+     * @return float
      */
-    public function getSizeInKilo(): string
+    public function getCurrentWithTrashed(): float
     {
-        return sprintf('%.1fkg', $this->size / 1000);
+        return $this->getCurrent() - $this->trashed;
     }
 
     /**

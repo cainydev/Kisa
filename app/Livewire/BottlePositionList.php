@@ -13,22 +13,21 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
-use Livewire\Attributes\Reactive;
 use Livewire\Component;
-use function view;
 
 class BottlePositionList extends Component implements HasForms, HasTable
 {
     use InteractsWithTable;
     use InteractsWithForms;
 
-    #[Reactive]
     public Collection $positions;
 
     public function table(Table $table): Table
     {
+        $ids = $this->positions->pluck('id');
+
         return $table
-            ->query(BottlePosition::with(['variant', 'variant.product'])->whereIn('id', $this->positions->pluck('id')))
+            ->query(BottlePosition::with('variant')->whereIn('id', $ids))
             ->paginated(false)
             ->columns([
                 TextColumn::make('count')
@@ -41,7 +40,7 @@ class BottlePositionList extends Component implements HasForms, HasTable
                     ->label('')
                     ->grow()
                     ->formatStateUsing(fn($state) => $state . 'g'),
-                TextColumn::make('stock')
+                TextColumn::make('variant.stock')
                     ->label('Bestand'),
                 TextColumn::make('charge')
                     ->label('Charge')

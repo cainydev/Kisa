@@ -32,6 +32,8 @@ class DatabaseSeeder extends Seeder
 
             // Development data
             $this->call(DevelopmentSeeder::class);
+            $this->call(BagSeeder::class);
+            $this->call(BottleSeeder::class);
         }
     }
 }
