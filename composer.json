@@ -10,12 +10,8 @@
     "license": "MIT",
     "repositories": [
         {
-            "type": "path",
-            "url": "../billbee-php-sdk"
-        },
-        {
-            "type": "path",
-            "url": "../custom-shop-php-sdk"
+            "type": "git",
+            "url": "https://github.com/cainytheslave/custom-shop-php-sdk.git"
         }
     ],
     "require": {
