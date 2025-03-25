@@ -25,12 +25,12 @@ class Recipe extends Component implements HasForms
 
     public Collection $positions;
 
-    public int $activeTab;
+    public int|null $activeTab;
 
     public function mount(Collection $positions): void
     {
         $this->positions = $positions;
-        $this->activeTab = $this->ingredients->first()->herb_id;
+        $this->activeTab = $this->ingredients->first()?->herb_id;
 
         $this->selectedBag = [];
         foreach ($this->ingredients as $ingredient) {
