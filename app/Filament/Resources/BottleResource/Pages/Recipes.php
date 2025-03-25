@@ -40,6 +40,12 @@ class Recipes extends Page
 
     public function recalculateTabs(): void
     {
+        if ($this->bottle->positions->isEmpty()) {
+            $this->activeTab = null;
+            $this->activeGroupedTab = null;
+            return;
+        }
+
         if (!$this->activeTab || !$this->bottle->positions->pluck('id')->contains($this->activeTab)) {
             $this->activeTab = $this->bottle->positions->first()->id;
         }
@@ -75,6 +81,10 @@ class Recipes extends Page
     #[Computed]
     public function positions()
     {
+        if ($this->bottle->positions->isEmpty()) {
+            return collect();
+        }
+
         if ($this->grouped) {
             return $this->groups->get($this->activeGroupedTab);
         } else {
@@ -85,6 +95,10 @@ class Recipes extends Page
     #[Computed]
     public function groups()
     {
+        if ($this->bottle->positions->isEmpty()) {
+            return collect();
+        }
+
         return $this->bottle->positions->groupBy(function ($item) {
             $attachedBags = $item->ingredients->pluck('bag_id')->sort();
             if ($attachedBags->isEmpty()) return "{$item->variant->product_id}";
