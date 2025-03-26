@@ -71,7 +71,8 @@ class PositionsRelationManager extends RelationManager
                     ->alignCenter()
                     ->formatStateUsing(fn($state) => "{$state}g")
                     ->badge(),
-                TextColumn::make('spacer')->grow()->label(''),
+                TextColumn::make('charge')
+                    ->grow(),
                 IconColumn::make('is_bottled')
                     ->label('Abgefüllt')
                     ->boolean()

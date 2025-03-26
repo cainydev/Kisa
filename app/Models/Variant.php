@@ -105,5 +105,23 @@ class Variant extends Model
         return $this->hasMany(BottlePosition::class);
     }
 
+    /**
+     * The order positions that contain this variant
+     *
+     * @return HasMany
+     */
+    public function orderPositions(): HasMany
+    {
+        return $this->hasMany(OrderPosition::class);
+    }
 
+    /**
+     * The orders that contain this variant
+     *
+     * @return BelongsToMany
+     */
+    public function orders(): BelongsToMany
+    {
+        return $this->belongsToMany(Order::class, 'order_positions');
+    }
 }

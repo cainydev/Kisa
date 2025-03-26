@@ -8,15 +8,16 @@ use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
 use BillbeeDe\BillbeeAPI\Model\Product;
 use Exception;
 use Illuminate\Console\Command;
+use function intval;
 
-class RefreshBillbeeData extends Command
+class FetchBillbeeProducts extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'billbee:fetch';
+    protected $signature = 'billbee:products {--perpage=250 : Page size when fetching}';
 
     /**
      * The console command description.
@@ -36,7 +37,7 @@ class RefreshBillbeeData extends Command
 
         $products = collect();
         $page = 1;
-        $pageSize = 200;
+        $pageSize = intval($this->argument('perpage'));
         $pagingInfo = Billbee::products()->getProducts($page, $pageSize)->paging;
 
         $bar = $this->output->createProgressBar($pagingInfo['TotalRows']);
