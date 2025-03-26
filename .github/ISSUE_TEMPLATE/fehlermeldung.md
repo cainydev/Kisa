@@ -2,7 +2,7 @@
 name: Fehlermeldung
 about: Je mehr Informationen du bereitstellst, desto besser können wir das Problem
   beheben.
-title: "[BUG] "
+title: ""
 labels: ''
 assignees: cainytheslave
 
