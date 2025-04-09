@@ -26,6 +26,7 @@ class PositionBagSelector extends Field
         $actions = $this->herb->bags()->withTrashed()->get()->map(function (Bag $bag) {
             return Action::make("select-bag-$bag->id")
                 ->label('Auswählen')
+                ->disabled(fn($state) => $state === $bag->id && $bag->trashed())
                 ->icon(fn($state) => $state === $bag->id ? 'heroicon-s-check' : 'heroicon-s-arrows-right-left')
                 ->color(fn($state) => $state === $bag->id ? 'success' : 'gray')
                 ->action(function ($state) use ($bag) {
