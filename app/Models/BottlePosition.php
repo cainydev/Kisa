@@ -69,6 +69,15 @@ class BottlePosition extends Model
     }
 
     /**
+     * The ingredients used in the process of completing this position
+     * @return HasMany
+     */
+    public function ingredients(): HasMany
+    {
+        return $this->hasMany(Ingredient::class);
+    }
+
+    /**
      * Update the stock for this variant in Billbee
      * @return bool True, if stock is updated
      * @throws QuotaExceededException
@@ -183,14 +192,5 @@ class BottlePosition extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(Variant::class);
-    }
-
-    /**
-     * The ingredients used in the process of completing this position
-     * @return HasMany
-     */
-    public function ingredients(): HasMany
-    {
-        return $this->hasMany(Ingredient::class);
     }
 }

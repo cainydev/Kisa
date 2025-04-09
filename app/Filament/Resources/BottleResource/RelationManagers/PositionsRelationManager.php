@@ -47,7 +47,7 @@ class PositionsRelationManager extends RelationManager
                         ->required()
                         ->integer()
                         ->live()
-                        ->default(10)
+                        ->default(1)
                         ->grow(false)
                         ->extraAttributes(['class' => 'w-24'])
                 ])->columnSpanFull()
@@ -97,7 +97,8 @@ class PositionsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->modalDescription("Möchten Sie diese Position wirklich löschen? Falls bereits Rohstoffe zugewiesen wurden, werden diese vorher als nicht mehr zugewiesen markiert."),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
