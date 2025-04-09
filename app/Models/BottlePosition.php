@@ -31,7 +31,7 @@ class BottlePosition extends Model
     protected $with = ['variant'];
 
     /**
-     * Initializes the position with a auto-generated charge
+     * Initializes the position with an auto-generated charge
      */
     protected static function booted(): void
     {

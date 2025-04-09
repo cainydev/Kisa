@@ -27,9 +27,14 @@ class PositionBagSelector extends Field
             return Action::make("select-bag-$bag->id")
                 ->label('Auswählen')
                 ->icon(fn($state) => $state === $bag->id ? 'heroicon-s-check' : 'heroicon-s-arrows-right-left')
-                ->disabled(fn($state) => $state === $bag->id)
                 ->color(fn($state) => $state === $bag->id ? 'success' : 'gray')
-                ->action(fn() => $this->selectBag($bag->id));
+                ->action(function ($state) use ($bag) {
+                    if ($state === $bag->id) {
+                        $this->unselectBag();
+                    } else {
+                        $this->selectBag($bag->id);
+                    }
+                });
         })->all();
 
         $this->registerActions($actions);
@@ -37,6 +42,24 @@ class PositionBagSelector extends Field
         if (!empty($this->getPositions())) $this->state($this->getDefaultState());
 
         return $this;
+    }
+
+    public function unselectBag(): void
+    {
+        $bagBefore = $this->getState();
+
+        $this->positions->each(function (BottlePosition $p) {
+            $p->ingredients()
+                ->where('herb_id', $this->herb->id)
+                ->delete();
+            $p->refresh();
+        });
+
+        $this->state(null);
+        $this->getLivewire()->validate();
+
+        $this->getLivewire()->dispatch('positions.updated');
+        if ($bagBefore) $this->getLivewire()->dispatch('bag.' . $bagBefore . '.updated');
     }
 
     public function selectBag(int $bagId): void
