@@ -30,7 +30,7 @@ class Variant extends Model
     public static function booted(): void
     {
         static::created(function (Variant $variant) {
-            $this->hasBillbee();
+            $variant->hasBillbee();
         });
     }
 

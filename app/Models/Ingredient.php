@@ -19,7 +19,7 @@ class Ingredient extends Model
         return $this->belongsTo(Herb::class);
     }
 
-    public function bag(): BelongsTo
+    public function bag()
     {
         return $this->belongsTo(Bag::class)->withTrashed();
     }
