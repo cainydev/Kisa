@@ -119,7 +119,7 @@ class Bag extends Model
 
     /**
      * Returns all the Ingredients where this bag is used in an efficient manner.
-     * (Hopefully 1 query for all.. not..)
+     * (Hopefully 1 query for all... not...)
      *
      * @return Collection
      */

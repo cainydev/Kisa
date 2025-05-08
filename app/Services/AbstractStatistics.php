@@ -6,10 +6,11 @@ use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use Carbon\CarbonPeriod;
 use Closure;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
-abstract class AbstractStatisticsService
+abstract class AbstractStatistics
 {
     /**
      * Cache durations in seconds
@@ -22,6 +23,23 @@ abstract class AbstractStatisticsService
     const string PER_WEEK = '1 week';
     const string PER_MONTH = '1 month';
     const string PER_YEAR = '1 year';
+
+    /**
+     * Generate all statistics for the given entity
+     *
+     * @return void
+     */
+    abstract public static function generateAll(): void;
+
+
+    /**
+     * Generate statistics for the given instances
+     *
+     * @param Collection|Model|array|null $herbs
+     * @return void
+     */
+    abstract public static function generate(Collection|Model|array|null $herbs = null): void;
+
 
     /**
      * Get a CarbonPeriod for the past x days
@@ -123,8 +141,6 @@ abstract class AbstractStatisticsService
         foreach ($period as $key => $start) {
             $end = $start->copy()->add($period->getDateInterval());
             $value = $getData($start, $end, $key);
-
-            if (empty($value)) break;
 
             $data[$start->toIso8601String()] = $value;
         }
