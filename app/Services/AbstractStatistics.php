@@ -9,7 +9,7 @@ use Closure;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
-class AbstractStatisticsService
+abstract class AbstractStatisticsService
 {
     /**
      * Cache durations in seconds
@@ -18,10 +18,21 @@ class AbstractStatisticsService
     const int CACHE_MEDIUM = 86400; // 1 day
     const int CACHE_LONG = 604800;  // 1 week
 
-    const string PER_DAY = '-1 day';
-    const string PER_WEEK = '-1 week';
-    const string PER_MONTH = '-1 month';
-    const string PER_YEAR = '-1 year';
+    const string PER_DAY = '1 day';
+    const string PER_WEEK = '1 week';
+    const string PER_MONTH = '1 month';
+    const string PER_YEAR = '1 year';
+
+    /**
+     * Get a CarbonPeriod for the past x days
+     *
+     * @param int $days Number of days to go back
+     * @return CarbonPeriod
+     */
+    public static function pastDays(int $days): CarbonPeriod
+    {
+        return self::getPeriod(self::PER_DAY, now()->subDays($days - 1)->startOfDay(), now()->endOfDay());
+    }
 
     /**
      * Get a CarbonPeriod for the given time period (going backwards in time)
@@ -33,41 +44,70 @@ class AbstractStatisticsService
      */
     public static function getPeriod(CarbonInterval|string $interval, Carbon|string|float $start = -INF, Carbon|string|float $end = 'now'): CarbonPeriod
     {
+        $interval = ($interval instanceof CarbonInterval)
+            ? $interval->optimize()
+            : CarbonInterval::make($interval)->optimize();
+
+        if ($interval->totalMicroseconds === 0.0) {
+            throw new \InvalidArgumentException("Interval cannot be zero.");
+        }
+
         $start = Carbon::create($start);
         $end = Carbon::create($end);
-        $interval = CarbonInterval::make($interval)->optimize();
 
         if ($start->gt($end)) [$start, $end] = [$end, $start];
 
-        if ($interval->lt(CarbonInterval::microseconds(0))) {
-            return CarbonPeriod::create($end, CarbonInterval::make($interval), $start);
-        } else {
-            return CarbonPeriod::create($start, CarbonInterval::make($interval), $end);
-        }
+        return CarbonPeriod::create($start, CarbonInterval::make($interval), $end);
+    }
+
+    /**
+     * Get a CarbonPeriod for the past x weeks
+     *
+     * @param int $weeks Number of weeks to go back
+     * @return CarbonPeriod
+     */
+    public static function pastWeeks(int $weeks): CarbonPeriod
+    {
+        return self::getPeriod(self::PER_WEEK, now()->subWeeks($weeks - 1)->startOfWeek(), now()->endOfWeek());
+    }
+
+    /**
+     * Get a CarbonPeriod for the past x months
+     *
+     * @param int $months Number of months to go back
+     * @return CarbonPeriod
+     */
+    public static function pastMonths(int $months): CarbonPeriod
+    {
+        return self::getPeriod(self::PER_MONTH, now()->subMonths($months - 1)->startOfMonth(), now()->endOfMonth());
+    }
+
+    /**
+     * Get a CarbonPeriod for the past x years
+     *
+     * @param int $years Number of years to go back
+     * @return CarbonPeriod
+     */
+    public static function pastYears(int $years): CarbonPeriod
+    {
+        return self::getPeriod(self::PER_YEAR, now()->subYears($years - 1)->startOfYear(), now()->endOfYear());
     }
 
     /**
      * Invalidate cache for a specific key
      *
-     * @param string $key
+     * @param string|array $key
      * @return bool
      */
-    public static function invalidateCache(string $key): bool
+    public static function invalidate(string|array $key): bool
     {
-        return Cache::forget($key);
-    }
-
-    /**
-     * Invalidate multiple cache keys
-     *
-     * @param array $keys
-     * @return void
-     */
-    public static function invalidateCaches(array $keys): void
-    {
-        foreach ($keys as $key) {
-            Cache::forget($key);
+        if (is_array($key)) {
+            return collect($key)
+                ->map(fn($k) => Cache::forget($k))
+                ->every(fn($el) => $el);
         }
+
+        return Cache::forget($key);
     }
 
     /**
