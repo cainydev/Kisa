@@ -7,7 +7,8 @@ return [
      * put them (manually) here.
      */
     'settings' => [
-        \App\Settings\BillbeeSettings::class
+        \App\Settings\BillbeeSettings::class,
+        \App\Settings\StatsSettings::class,
     ],
 
     /*
