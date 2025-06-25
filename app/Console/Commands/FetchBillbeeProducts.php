@@ -36,7 +36,7 @@ class FetchBillbeeProducts extends Command
 
         $products = collect();
         $page = 1;
-        $pageSize = 250; //intval($this->argument('perpage'));
+        $pageSize = intval($this->option('perpage'));
         $pagingInfo = Billbee::products()->getProducts($page, $pageSize)->paging;
 
         $bar = $this->output->createProgressBar($pagingInfo['TotalRows']);

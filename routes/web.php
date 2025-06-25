@@ -16,8 +16,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/test', function () {
     //\App\Services\HerbUsageStatistics::generateAll();
     //GenerateHerbUsageStatistics::dispatch();
-    \App\Jobs\GenerateVariantSalesStatistics::dispatch();
+    //\App\Jobs\GenerateVariantSalesStatistics::dispatch();
     //\App\Services\VariantStatisticsService::generateAll();
+
+    $err = 0 / (5 - 3 - 2);
 
     return "Generating...";
 });

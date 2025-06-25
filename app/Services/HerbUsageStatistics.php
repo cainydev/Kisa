@@ -24,14 +24,14 @@ class HerbUsageStatistics extends AbstractStatistics
     /**
      * Generate statistics for all the given herbs.
      *
-     * @param Collection<Herb> $model The collection of herbs to generate statistics for
+     * @param Collection<Herb> $models The collection of herbs to generate statistics for
      * @return void
      */
-    public static function generate(Collection $model): void
+    public static function generate(Collection $models): void
     {
         $startDate = app(StatsSettings::class)->startDate;
 
-        foreach ($model as $herb) {
+        foreach ($models as $herb) {
             $dailyRaw = DB::table('ingredients', 'i')
                 ->join('bags as b', 'i.bag_id', '=', 'b.id')
                 ->join('bottle_positions as bp', 'i.bottle_position_id', '=', 'bp.id')
