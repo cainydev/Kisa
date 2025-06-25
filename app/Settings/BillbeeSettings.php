@@ -6,15 +6,15 @@ use Spatie\LaravelSettings\Settings;
 
 class BillbeeSettings extends Settings
 {
-    public bool $enabled;
+    public bool $enabled = false;
 
-    public ?string $username;
+    public ?string $username = '';
 
-    public ?string $password;
+    public ?string $password = '';
 
-    public ?string $key;
+    public ?string $key = '';
 
-    public ?string $customShopKey;
+    public ?string $customShopKey = '';
 
     public static function group(): string
     {

@@ -29,7 +29,6 @@ class DevelopmentSeeder extends Seeder
         $variant = $product->variants()->create([
             'size' => 100,
             'sku' => 'test1000',
-            'stock' => 0,
         ]);
 
         // Example Bottle

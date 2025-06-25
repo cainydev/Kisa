@@ -15,9 +15,17 @@ class TableSetting extends Model
         'options' => 'array',
     ];
 
-    public function getColumns()
+    public function isSortable(string $column)
     {
-        return $this->options['columns'];
+        if (!$this->hasColumn($column)) {
+            return false;
+        }
+
+        if (!array_key_exists('withSort', $this->getColumn($column))) {
+            return false;
+        }
+
+        return $this->getColumns()[$column]['withSort'];
     }
 
     public function hasColumn(string $column)
@@ -25,35 +33,27 @@ class TableSetting extends Model
         return array_key_exists($column, $this->getColumns());
     }
 
+    public function getColumns()
+    {
+        return $this->options['columns'];
+    }
+
     public function getColumn(string $column)
     {
-        if (! $this->hasColumn($column)) {
+        if (!$this->hasColumn($column)) {
             return false;
         }
 
         return $this->getColumns()[$column];
     }
 
-    public function isSortable(string $column)
-    {
-        if (! $this->hasColumn($column)) {
-            return false;
-        }
-
-        if (! array_key_exists('withSort', $this->getColumn($column))) {
-            return false;
-        }
-
-        return $this->getColumns()[$column]['withSort'];
-    }
-
     public function isPrimary(string $column)
     {
-        if (! $this->hasColumn($column)) {
+        if (!$this->hasColumn($column)) {
             return false;
         }
 
-        if (! array_key_exists('primary', $this->getColumn($column))) {
+        if (!array_key_exists('primary', $this->getColumn($column))) {
             return false;
         }
 
@@ -62,11 +62,11 @@ class TableSetting extends Model
 
     public function isForeign(string $column)
     {
-        if (! $this->hasColumn($column)) {
+        if (!$this->hasColumn($column)) {
             return false;
         }
 
-        if (! array_key_exists('foreign', $this->getColumn($column))) {
+        if (!array_key_exists('foreign', $this->getColumn($column))) {
             return false;
         }
 

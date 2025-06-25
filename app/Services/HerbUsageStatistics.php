@@ -2,58 +2,90 @@
 
 namespace App\Services;
 
+use App\Models\Bag;
 use App\Models\Herb;
-use App\Models\Ingredient;
 use App\Settings\StatsSettings;
-use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class HerbUsageStatistics extends AbstractStatistics
 {
+    /**
+     * Generate statistics for all herbs.
+     *
+     * @return void
+     */
     public static function generateAll(): void
     {
         self::generate(Herb::all());
     }
 
-    // stats:herb:123:depleted => depleted date based on last semester usage per day
-    // stats:herb:123:daily => array of daily date => usage
-    // stats:herb:123:weekly => array of weekly date => usage
-    // stats:herb:123:monthly => array of monthly date => usage
-    // stats:herb:123:yearly => array of yearly date => usage
-
-    // stats:herb:123:averageLastDay => average usage per day in the last day
-    // stats:herb:123:averageLastWeek => average usage per day in the last week
-    // stats:herb:123:averageLastMonth => average usage per day in the last month
-    // stats:herb:123:averageLastSemester => average usage per day in the last semester
-    // stats:herb:123:averageLastYear => average usage per day in the last year
-
-    public static function generate(Collection|Model|array|null $herbs = null): void
+    /**
+     * Generate statistics for all the given herbs.
+     *
+     * @param Collection<Herb> $model The collection of herbs to generate statistics for
+     * @return void
+     */
+    public static function generate(Collection $model): void
     {
-        $herbs = collect($herbs);
-
         $startDate = app(StatsSettings::class)->startDate;
 
-        foreach ($herbs as $herb) {
-            $usageByDay = self::generateDataset(function ($start, $end) use ($herb) {
-                return Ingredient::query()
-                    ->join('bags', 'ingredients.bag_id', '=', 'bags.id')
-                    ->join('bottle_positions', 'ingredients.bottle_position_id', '=', 'bottle_positions.id')
-                    ->join('variants', 'bottle_positions.variant_id', '=', 'variants.id')
-                    ->join('products', 'variants.product_id', '=', 'products.id')
-                    ->join('herb_product', 'products.id', '=', 'herb_product.product_id')
-                    ->join('herbs', 'herb_product.herb_id', '=', 'herbs.id')
-                    ->whereBetween('bags.created_at', [$start, $end])
-                    ->where('herbs.id', $herb)
-                    ->sum(DB::raw(
-                        '`variants`.`size` * (`herb_product`.`percentage` / 100.0) * `bottle_positions`.`count`'
-                    )) ?? 0;
-            }, self::getPeriod('1 day', $startDate, now()->endOfDay()));
+        foreach ($model as $herb) {
+            $dailyRaw = DB::table('ingredients', 'i')
+                ->join('bags as b', 'i.bag_id', '=', 'b.id')
+                ->join('bottle_positions as bp', 'i.bottle_position_id', '=', 'bp.id')
+                ->join('variants as v', 'bp.variant_id', '=', 'v.id')
+                ->join('products as p', 'v.product_id', '=', 'p.id')
+                ->join('herb_product as hp', function ($join) {
+                    $join->on('hp.product_id', '=', 'p.id')
+                        ->on('hp.herb_id', '=', 'b.herb_id');
+                })
+                ->where('b.herb_id', $herb->id)
+                ->whereBetween('i.created_at', [$startDate->startOfDay(), now()->endOfDay()])
+                ->select(
+                    DB::raw('DATE(i.created_at) as time'),
+                    DB::raw('ROUND(COALESCE(SUM(
+                        v.`size` *
+                        (hp.`percentage` / 100.0) *
+                        bp.`count`
+                    ), 0)) as total')
+                )
+                ->groupBy(DB::raw('time'))
+                ->orderBy(DB::raw('time'))
+                ->pluck('total', 'time');
 
-            Cache::put("stats:herb:$herb->id:daily", $usageByDay, self::CACHE_LONG);
+            $daily = self::generateDataset(
+                fn(Carbon $start) => $dailyRaw[$start->toDateString()] ?? 0,
+                self::days(since: $startDate)
+            );
 
-            dd($usageByDay);
+            $herb->daily_usage_stats = $daily;
+
+            $weekly = self::aggregateData($daily, self::weeks(since: $startDate));
+            $herb->weekly_usage_stats = $weekly;
+
+            $monthly = self::aggregateData($daily, self::months(since: $startDate));
+            $herb->monthly_usage_stats = $monthly;
+
+            $yearly = self::aggregateData($daily, self::years(since: $startDate));
+            $herb->yearly_usage_stats = $yearly;
+
+            $currentStock = $herb->bags->sum(function (Bag $bag) {
+                return $bag->getCurrentWithTrashed();
+            });
+
+            $averagePerDay90 = $daily->reverse()->take(90)->avg() ?: 0;
+            $depletedDate = self::extrapolateDate($currentStock, $averagePerDay90);
+
+            $herb->average_daily_usage = $daily->avg() ?: 0;
+            $herb->average_weekly_usage = $weekly->avg() ?: 0;
+            $herb->average_monthly_usage = $monthly->avg() ?: 0;
+            $herb->average_yearly_usage = $yearly->avg() ?: 0;
+
+            $herb->estimated_depletion_date = $depletedDate;
+            $herb->current_stock = $currentStock;
+            $herb->total_usage = $daily->sum();
         }
     }
 }

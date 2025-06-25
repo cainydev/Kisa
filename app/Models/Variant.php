@@ -3,17 +3,25 @@
 namespace App\Models;
 
 use App\Facades\Billbee;
+use App\Traits\CachedAttributes;
 use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
-use BillbeeDe\BillbeeAPI\Model\Product as BillbeeProduct;
 use BillbeeDe\BillbeeAPI\Type\ProductLookupBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+
+// Import Cache facade
+
+// Optional: for logging Billbee errors
 
 class Variant extends Model
 {
+    use CachedAttributes;
+
     protected $guarded = [];
 
     /**
@@ -30,98 +38,154 @@ class Variant extends Model
     public static function booted(): void
     {
         static::created(function (Variant $variant) {
-            $variant->hasBillbee();
+            try {
+                $variant->fetchBillbee();
+            } catch (QuotaExceededException $e) {
+                Log::warning("Billbee quota exceeded while initializing variant {$variant->id}: {$e->getMessage()}");
+            } catch (\Throwable $e) {
+                Log::error("Error initializing variant {$variant->id} with Billbee: {$e->getMessage()}");
+            }
         });
     }
 
     /**
-     * Try to find the billbee product data and set billbee_id
+     * Try to find the billbee product data and set billbee_id.
+     * This also updates the local EAN.
+     * The initial stock setting via $this->stock will be handled by the stock attribute's logic.
      *
      * @return bool If the operation was successful
      * @throws QuotaExceededException
      */
-    public function hasBillbee(): bool
+    public function fetchBillbee(): bool
     {
-        $billbee = $this->billbee;
+        $billbeeProductData = null;
 
-        if ($billbee === null) {
-            $response = Billbee::products()->getProduct($this->sku, ProductLookupBy::SKU);
-            if ($response->errorCode !== 0 || $response->data === null) return false;
-
-            $billbee = $response->data;
-            $this->billbee_id = $billbee->id;
+        if ($this->billbee_id) {
+            try {
+                $response = Billbee::products()->getProduct($this->billbee_id);
+                if ($response->errorCode === 0 && $response->data !== null) {
+                    $billbeeProductData = $response->data;
+                }
+            } catch (QuotaExceededException $e) {
+                throw $e;
+            } catch (\Throwable $e) {
+                Log::warning("Error fetching Billbee product by ID {$this->billbee_id} for variant {$this->id}: {$e->getMessage()}");
+            }
         }
 
-        if ($billbee === null) return false;
+        if ($billbeeProductData === null && $this->sku) {
+            try {
+                $response = Billbee::products()->getProduct($this->sku, ProductLookupBy::SKU);
+                if ($response->errorCode === 0 && $response->data !== null) {
+                    $billbeeProductData = $response->data;
+                    $this->billbee_id = $billbeeProductData->id; // Set/update billbee_id
+                } else {
+                    Log::info("Billbee product not found by SKU {$this->sku} for variant {$this->id}. Error code: {$response->errorCode}");
+                    return false;
+                }
+            } catch (QuotaExceededException $e) {
+                throw $e; // Re-throw
+            } catch (\Throwable $e) {
+                Log::error("Error fetching Billbee product by SKU {$this->sku} for variant {$this->id}: {$e->getMessage()}");
+                return false;
+            }
+        }
 
-        $this->ean = $billbee->ean;
-        $this->stock = $billbee->stockCurrent;
+        if ($billbeeProductData === null) {
+            return false;
+        }
+
+        $this->ean = $billbeeProductData->ean;
+        $this->stock = $billbeeProductData->stockCurrent ?? 0;
+        $this->billbee = $billbeeProductData;
+
         $this->save();
 
         return true;
     }
 
     /**
-     * The billbee product data. Expensive operation.
+     * The billbee product data. Expensive operation. Fetches if necessary.
      *
      * @return Attribute
      */
     public function billbee(): Attribute
     {
-        return Attribute::make(get: function (?string $value, array $attributes): BillbeeProduct|null {
-            if (empty($attributes['billbee_id'])) return null;
-            return Billbee::products()->getProduct($attributes['billbee_id'])->data;
-        });
+        return $this->cache('billbee', fn() => $this->fetchBillbee() ? $this->billbee : null);
     }
 
-    /**
-     * The product the variant belongs to
-     *
-     * @return BelongsTo
-     */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    /**
-     * The bottles that contain this variant
-     *
-     * @return BelongsToMany
-     */
     public function bottles(): BelongsToMany
     {
         return $this->belongsToMany(Bottle::class);
     }
 
-
-    /**
-     * The positions that contain this variant
-     *
-     * @return HasMany
-     */
     public function positions(): HasMany
     {
         return $this->hasMany(BottlePosition::class);
     }
 
-    /**
-     * The order positions that contain this variant
-     *
-     * @return HasMany
-     */
     public function orderPositions(): HasMany
     {
         return $this->hasMany(OrderPosition::class);
     }
 
-    /**
-     * The orders that contain this variant
-     *
-     * @return BelongsToMany
-     */
     public function orders(): BelongsToMany
     {
         return $this->belongsToMany(Order::class, 'order_positions');
+    }
+
+    public function stock(): Attribute
+    {
+        return $this->cache('stock', 0);
+    }
+
+    public function dailySales(): Attribute
+    {
+        return $this->cache('daily', collect());
+    }
+
+    public function weeklySales(): Attribute
+    {
+        return $this->cache('weekly', collect());
+    }
+
+    public function monthlySales(): Attribute
+    {
+        return $this->cache('monthly', collect());
+    }
+
+    public function yearlySales(): Attribute
+    {
+        return $this->cache('yearly', collect());
+    }
+
+    public function averageDailySales(): Attribute
+    {
+        return $this->cache('daily:avg', 0.0);
+    }
+
+    public function averageWeeklySales(): Attribute
+    {
+        return $this->cache('weekly:avg', 0.0);
+    }
+
+    public function averageMonthlySales(): Attribute
+    {
+        return $this->cache('monthly:avg', 0.0);
+    }
+
+    public function averageYearlySales(): Attribute
+    {
+        return $this->cache('yearly:avg', 0.0);
+    }
+
+    public function depletedDate(): Attribute
+    {
+        return $this->cache('depleted', Carbon::endOfTime());
     }
 }
