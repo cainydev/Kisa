@@ -1,8 +1,5 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
-
 /*
 |--------------------------------------------------------------------------
 | Console Routes
@@ -14,6 +11,14 @@ use Illuminate\Support\Facades\Artisan;
 |
 */
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+use App\Console\Commands\FetchBillbeeOrders;
+use App\Console\Commands\FetchBillbeeProducts;
+use App\Console\Commands\GenerateStats;
+use Spatie\Backup\Commands\BackupCommand;
+
+Schedule::timezone('Europe/Berlin')->group(function () {
+    Schedule::command(FetchBillbeeProducts::class)->dailyAt('2:00');
+    Schedule::command(FetchBillbeeOrders::class)->dailyAt('2:30');
+    Schedule::command(GenerateStats::class)->dailyAt('3:00');
+    Schedule::command(BackupCommand::class)->dailyAt('4:00');
+});

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\HerbUsageStatistics;
+use App\Services\VariantStatisticsService;
 use Illuminate\Console\Command;
 
 class GenerateStats extends Command
@@ -12,7 +13,7 @@ class GenerateStats extends Command
      *
      * @var string
      */
-    protected $signature = 'stats:generate {entity}';
+    protected $signature = 'stats:generate {entity?}';
 
     /**
      * The console command description.
@@ -24,11 +25,22 @@ class GenerateStats extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): void
     {
-        switch ($this->argument('entity')) {
-            case 'herb' | 'herbs':
-                HerbUsageStatistics::generateAll();
+        if ($this->hasArgument('entity')) {
+            switch ($this->argument('entity')) {
+                case 'herb' | 'herbs':
+                    HerbUsageStatistics::generateAll();
+                    break;
+                case 'variant' | 'variants':
+                    VariantStatisticsService::generateAll();
+                    break;
+                default:
+                    $this->error('Unknown entity: ' . $this->argument('entity'));
+            }
+        } else {
+            HerbUsageStatistics::generateAll();
+            VariantStatisticsService::generateAll();
         }
     }
 }
