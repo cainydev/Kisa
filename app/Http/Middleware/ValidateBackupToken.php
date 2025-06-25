@@ -18,7 +18,7 @@ class ValidateBackupToken
     {
         $providedKey = $request->bearerToken();
 
-        $validKey = config('backup.backup.password');
+        $validKey = config('backup.token');
 
         if (!$validKey || !hash_equals($validKey, $providedKey ?? '')) {
             DiscordAlert::message("Someone tried to download a backup but failed. ProvidedKey: $providedKey, validKey: $validKey");
