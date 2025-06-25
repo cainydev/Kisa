@@ -27,7 +27,7 @@ class GenerateStats extends Command
      */
     public function handle(): void
     {
-        if ($this->hasArgument('entity')) {
+        if ($this->hasArgument('entity') && str($this->argument('entity'))->isNotEmpty()) {
             switch ($this->argument('entity')) {
                 case 'herb' | 'herbs':
                     HerbUsageStatistics::generateAll();
@@ -39,7 +39,13 @@ class GenerateStats extends Command
                     $this->error('Unknown entity: ' . $this->argument('entity'));
             }
         } else {
+            $this->info("No entity, generating all statistics");
+            $this->newLine();
+
+            $this->info('Herb usage statistics...');
             HerbUsageStatistics::generateAll();
+
+            $this->info('Variant statistics...');
             VariantStatisticsService::generateAll();
         }
     }

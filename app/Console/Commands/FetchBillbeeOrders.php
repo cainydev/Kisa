@@ -39,7 +39,7 @@ class FetchBillbeeOrders extends Command
 
         $orders = collect();
         $page = 1;
-        $pageSize = intval($this->option('perpage', 250));
+        $pageSize = intval($this->option('perpage'));
         $pagingInfo = Billbee::orders()->getOrders($page, $pageSize)->paging;
 
         $bar = $this->output->createProgressBar($pagingInfo['TotalRows']);
