@@ -111,7 +111,7 @@ class BottlePosition extends Model
             return false;
         }
 
-        if ($this->variant->hasBillbee()) {
+        if ($this->variant->fetchBillbee()) {
             try {
                 $newStock = Stock::fromProduct($this->variant->billbee)
                     ->setDeltaQuantity($this->count)

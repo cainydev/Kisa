@@ -13,7 +13,6 @@ return new class extends Migration {
             $table->integer('size');
             $table->string('ordernumber')->default('');
             $table->foreignIdFor(Product::class);
-            $table->integer('stock')->default(0);
             $table->timestamps();
         });
     }
