@@ -35,7 +35,7 @@ class DiscordWebhookHandler extends AbstractProcessingHandler
         $emoji = self::LEVEL_EMOJIS[$record->level->getName()] ?? '📝';
 
         $message = sprintf(
-            '[%s **%s**] %s',
+            '%s **%s** %s',
             $emoji,
             $record->level->getName(),
             $record->message

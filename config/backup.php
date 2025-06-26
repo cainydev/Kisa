@@ -1,6 +1,7 @@
 <?php
 
 use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
 use Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification;
 use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
 
@@ -177,6 +178,7 @@ return [
             BackupHasFailedNotification::class => ['discord'],
             UnhealthyBackupWasFoundNotification::class => ['discord'],
             CleanupHasFailedNotification::class => ['discord'],
+            BackupWasSuccessfulNotification::class => ['discord'],
         ],
 
         /*
