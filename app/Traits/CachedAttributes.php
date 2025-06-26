@@ -7,10 +7,42 @@ use Closure;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
+use ReflectionNamedType;
 use function value;
 
 trait CachedAttributes
 {
+    /**
+     * Get all the "Attribute" return typed attribute mutator methods.
+     * Needed to prevent errors trying to invoke cached without args.
+     *
+     * @param mixed $class
+     * @return array
+     * @throws ReflectionException
+     */
+    protected static function getAttributeMarkedMutatorMethods($class): array
+    {
+        $instance = is_object($class) ? $class : new $class;
+
+        return collect(new ReflectionClass($instance)->getMethods())
+            ->filter(function (ReflectionMethod $method) use ($instance) {
+                $returnType = $method->getReturnType();
+
+                if ($method->getName() === 'cached') return false;
+                if ($returnType instanceof ReflectionNamedType &&
+                    $returnType->getName() === Attribute::class) {
+                    if (is_callable($method->invoke($instance)->get)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })->map->name->values()->all();
+    }
+
     /**
      * Helper to create a cached Eloquent Attribute.
      *
