@@ -53,7 +53,7 @@ return [
      * settings will be stored within a provided Laravel store and can have an
      * additional prefix.
      */
-    'cache' => [
+    'cached' => [
         'enabled' => env('SETTINGS_CACHE_ENABLED', false),
         'store' => null,
         'prefix' => null,
@@ -83,5 +83,5 @@ return [
      * Automatically discovered settings classes can be cached, so they don't
      * need to be searched each time the application boots up.
      */
-    'discovered_settings_cache_path' => base_path('bootstrap/cache'),
+    'discovered_settings_cache_path' => base_path('bootstrap/cached'),
 ];

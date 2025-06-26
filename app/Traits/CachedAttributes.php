@@ -14,17 +14,17 @@ trait CachedAttributes
     /**
      * Helper to create a cached Eloquent Attribute.
      *
-     * @param string $key The name of the metric (used for cache key).
-     * @param mixed $default If a Closure, it's executed on cache miss to get the fresh value.
+     * @param string $key The name of the metric (used for cached key).
+     * @param mixed $default If a Closure, it's executed on cached miss to get the fresh value.
      *                           It receives no arguments and should return the value.
-     *                           If not a Closure, this value itself is used as the default/fallback if cache misses.
+     *                           If not a Closure, this value itself is used as the default/fallback if cached misses.
      * @param Closure|null $onChange A closure executed when the attribute is set *and* the new value
      *                               is different from the currently cached value (or if no old value was cached).
      *                               It receives two arguments: ($newValue, $oldValueFromCache).
-     * @param int|null $cacheDuration Custom cache duration in seconds. Null uses model/trait default.
+     * @param int|null $cacheDuration Custom cached duration in seconds. Null uses model/trait default.
      * @return Attribute
      */
-    public function cache(
+    public function cached(
         string   $key,
         mixed    $default = null,
         ?Closure $onChange = null,
@@ -52,7 +52,7 @@ trait CachedAttributes
     }
 
     /**
-     * Default cache duration in seconds for attributes using this trait.
+     * Default cached duration in seconds for attributes using this trait.
      * Can be overridden in the model using the trait.
      */
     public function getDefaultAttributeCacheDuration(): int
@@ -61,7 +61,7 @@ trait CachedAttributes
     }
 
     /**
-     * Generates a standardized cache key for an attribute.
+     * Generates a standardized cached key for an attribute.
      *
      * @param string $metric The specific metric or attribute name.
      * @return string
@@ -69,7 +69,7 @@ trait CachedAttributes
     public function getCacheKey(string $metric): string
     {
         if (!$this->exists()) {
-            throw new \RuntimeException('Cannot generate cache key for non-existing model instance.');
+            throw new \RuntimeException('Cannot generate cached key for non-existing model instance.');
         }
 
         $modelName = Str::snake(class_basename($this));

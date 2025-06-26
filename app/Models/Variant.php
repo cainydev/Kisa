@@ -14,10 +14,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
-// Import Cache facade
-
-// Optional: for logging Billbee errors
-
 class Variant extends Model
 {
     use CachedAttributes;
@@ -111,7 +107,7 @@ class Variant extends Model
      */
     public function billbee(): Attribute
     {
-        return $this->cache('billbee', fn() => $this->fetchBillbee() ? $this->billbee : null);
+        return $this->cached('billbee', fn() => $this->fetchBillbee() ? $this->billbee : null);
     }
 
     public function product(): BelongsTo
@@ -141,51 +137,51 @@ class Variant extends Model
 
     public function stock(): Attribute
     {
-        return $this->cache('stock', 0);
+        return $this->cached('stock', 0);
     }
 
     public function dailySales(): Attribute
     {
-        return $this->cache('daily', collect());
+        return $this->cached('daily', collect());
     }
 
     public function weeklySales(): Attribute
     {
-        return $this->cache('weekly', collect());
+        return $this->cached('weekly', collect());
     }
 
     public function monthlySales(): Attribute
     {
-        return $this->cache('monthly', collect());
+        return $this->cached('monthly', collect());
     }
 
     public function yearlySales(): Attribute
     {
-        return $this->cache('yearly', collect());
+        return $this->cached('yearly', collect());
     }
 
     public function averageDailySales(): Attribute
     {
-        return $this->cache('daily:avg', 0.0);
+        return $this->cached('daily:avg', 0.0);
     }
 
     public function averageWeeklySales(): Attribute
     {
-        return $this->cache('weekly:avg', 0.0);
+        return $this->cached('weekly:avg', 0.0);
     }
 
     public function averageMonthlySales(): Attribute
     {
-        return $this->cache('monthly:avg', 0.0);
+        return $this->cached('monthly:avg', 0.0);
     }
 
     public function averageYearlySales(): Attribute
     {
-        return $this->cache('yearly:avg', 0.0);
+        return $this->cached('yearly:avg', 0.0);
     }
 
     public function depletedDate(): Attribute
     {
-        return $this->cache('depleted', Carbon::endOfTime());
+        return $this->cached('depleted', Carbon::endOfTime());
     }
 }

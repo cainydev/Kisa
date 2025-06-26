@@ -48,57 +48,57 @@ class Herb extends Model
 
     protected function dailyUsageStats(): Attribute
     {
-        return $this->cache('daily', default: collect());
+        return $this->cached('daily', default: collect());
     }
 
     protected function weeklyUsageStats(): Attribute
     {
-        return $this->cache('weekly', default: collect());
+        return $this->cached('weekly', default: collect());
     }
 
     protected function monthlyUsageStats(): Attribute
     {
-        return $this->cache('monthly', default: collect());
+        return $this->cached('monthly', default: collect());
     }
 
     protected function yearlyUsageStats(): Attribute
     {
-        return $this->cache('yearly', default: collect());
+        return $this->cached('yearly', default: collect());
     }
 
     protected function averageDailyUsage(): Attribute
     {
-        return $this->cache('daily:avg', default: 0.0);
+        return $this->cached('daily:avg', default: 0.0);
     }
 
     protected function averageWeeklyUsage(): Attribute
     {
-        return $this->cache('weekly:avg', default: 0.0);
+        return $this->cached('weekly:avg', default: 0.0);
     }
 
     protected function averageMonthlyUsage(): Attribute
     {
-        return $this->cache('monthly:avg', default: 0.0);
+        return $this->cached('monthly:avg', default: 0.0);
     }
 
     protected function averageYearlyUsage(): Attribute
     {
-        return $this->cache('yearly:avg', default: 0.0);
+        return $this->cached('yearly:avg', default: 0.0);
     }
 
     protected function currentStock(): Attribute
     {
-        return $this->cache('current', default: 0.0);
+        return $this->cached('current', default: 0.0);
     }
 
     protected function totalUsage(): Attribute
     {
-        return $this->cache('total', default: 0.0);
+        return $this->cached('total', default: 0.0);
     }
 
     protected function estimatedDepletionDate(): Attribute
     {
-        return $this->cache('depleted');
+        return $this->cached('depleted');
 
         /*
         $cacheKey = $this->getCacheKey('depleted');
