@@ -4,9 +4,10 @@ namespace App\Providers;
 
 use App\Settings\BillbeeSettings;
 use BillbeeDe\BillbeeAPI\Client;
+use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 
-class BillbeeServiceProvider extends ServiceProvider
+class BillbeeServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     /**
      * Register services.
@@ -26,5 +27,15 @@ class BillbeeServiceProvider extends ServiceProvider
 
             return new Client($user, $apiPassword, $apiKey);
         });
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array<int, string>
+     */
+    public function provides(): array
+    {
+        return [Client::class];
     }
 }

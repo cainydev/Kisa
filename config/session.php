@@ -92,9 +92,9 @@ return [
     | Session Cache Store
     |--------------------------------------------------------------------------
     |
-    | While using one of the framework's cached driven session backends you may
-    | list a cached store that should be used for these sessions. This value
-    | must match with one of the application's configured cached "stores".
+    | While using one of the framework's cachedAttribute driven session backends you may
+    | list a cachedAttribute store that should be used for these sessions. This value
+    | must match with one of the application's configured cachedAttribute "stores".
     |
     | Affects: "apc", "dynamodb", "memcached", "redis"
     |

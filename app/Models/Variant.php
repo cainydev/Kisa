@@ -107,7 +107,7 @@ class Variant extends Model
      */
     public function billbee(): Attribute
     {
-        return $this->cached('billbee', fn() => $this->fetchBillbee() ? $this->billbee : null);
+        return $this->cachedAttribute('billbee', fn() => $this->fetchBillbee() ? $this->billbee : null)();
     }
 
     public function product(): BelongsTo
@@ -137,51 +137,51 @@ class Variant extends Model
 
     public function stock(): Attribute
     {
-        return $this->cached('stock', 0);
+        return $this->cachedAttribute('stock', 0)();
     }
 
     public function dailySales(): Attribute
     {
-        return $this->cached('daily', collect());
+        return $this->cachedAttribute('daily', collect())();
     }
 
     public function weeklySales(): Attribute
     {
-        return $this->cached('weekly', collect());
+        return $this->cachedAttribute('weekly', collect())();
     }
 
     public function monthlySales(): Attribute
     {
-        return $this->cached('monthly', collect());
+        return $this->cachedAttribute('monthly', collect())();
     }
 
     public function yearlySales(): Attribute
     {
-        return $this->cached('yearly', collect());
+        return $this->cachedAttribute('yearly', collect())();
     }
 
     public function averageDailySales(): Attribute
     {
-        return $this->cached('daily:avg', 0.0);
+        return $this->cachedAttribute('daily:avg', 0.0)();
     }
 
     public function averageWeeklySales(): Attribute
     {
-        return $this->cached('weekly:avg', 0.0);
+        return $this->cachedAttribute('weekly:avg', 0.0)();
     }
 
     public function averageMonthlySales(): Attribute
     {
-        return $this->cached('monthly:avg', 0.0);
+        return $this->cachedAttribute('monthly:avg', 0.0)();
     }
 
     public function averageYearlySales(): Attribute
     {
-        return $this->cached('yearly:avg', 0.0);
+        return $this->cachedAttribute('yearly:avg', 0.0)();
     }
 
     public function depletedDate(): Attribute
     {
-        return $this->cached('depleted', Carbon::endOfTime());
+        return $this->cachedAttribute('depleted', Carbon::endOfTime())();
     }
 }

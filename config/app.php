@@ -134,10 +134,10 @@ return [
     |--------------------------------------------------------------------------
     |
     | These configuration options determine the driver used to determine and
-    | manage Laravel's "maintenance mode" status. The "cached" driver will
+    | manage Laravel's "maintenance mode" status. The "cachedAttribute" driver will
     | allow maintenance mode to be controlled across multiple machines.
     |
-    | Supported drivers: "file", "cached"
+    | Supported drivers: "file", "cachedAttribute"
     |
     */
 

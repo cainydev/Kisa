@@ -9,7 +9,7 @@ return [
     | Default Cache Store
     |--------------------------------------------------------------------------
     |
-    | This option controls the default cached connection that gets used while
+    | This option controls the default cachedAttribute connection that gets used while
     | using this caching library. This connection is used when another is
     | not explicitly specified when executing a given caching function.
     |
@@ -22,9 +22,9 @@ return [
     | Cache Stores
     |--------------------------------------------------------------------------
     |
-    | Here you may define all of the cached "stores" for your application as
+    | Here you may define all of the cachedAttribute "stores" for your application as
     | well as their drivers. You may even define multiple stores for the
-    | same cached driver to group types of items stored in your caches.
+    | same cachedAttribute driver to group types of items stored in your caches.
     |
     | Supported drivers: "apc", "array", "database", "file",
     |         "memcached", "redis", "dynamodb", "octane", "null"
@@ -44,15 +44,15 @@ return [
 
         'database' => [
             'driver' => 'database',
-            'table' => 'cached',
+            'table' => 'cachedAttribute',
             'connection' => null,
             'lock_connection' => null,
         ],
 
         'file' => [
             'driver' => 'file',
-            'path' => storage_path('framework/cached/data'),
-            'lock_path' => storage_path('framework/cached/data'),
+            'path' => storage_path('framework/cachedAttribute/data'),
+            'lock_path' => storage_path('framework/cachedAttribute/data'),
         ],
 
         'memcached' => [
@@ -76,7 +76,7 @@ return [
 
         'redis' => [
             'driver' => 'redis',
-            'connection' => 'cached',
+            'connection' => 'cachedAttribute',
             'lock_connection' => 'default',
         ],
 
@@ -85,7 +85,7 @@ return [
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
             'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-            'table' => env('DYNAMODB_CACHE_TABLE', 'cached'),
+            'table' => env('DYNAMODB_CACHE_TABLE', 'cachedAttribute'),
             'endpoint' => env('DYNAMODB_ENDPOINT'),
         ],
 
@@ -100,9 +100,9 @@ return [
     | Cache Key Prefix
     |--------------------------------------------------------------------------
     |
-    | When utilizing the APC, database, memcached, Redis, or DynamoDB cached
-    | stores there might be other applications using the same cached. For
-    | that reason, you may prefix every cached key to avoid collisions.
+    | When utilizing the APC, database, memcached, Redis, or DynamoDB cachedAttribute
+    | stores there might be other applications using the same cachedAttribute. For
+    | that reason, you may prefix every cachedAttribute key to avoid collisions.
     |
     */
 
