@@ -27,14 +27,14 @@ return [
 
     'features' => [
 
-        // Cache usage stats and cachedAttribute queries including results
-        'cachedAttribute' => [
+        // Cache usage stats and cache queries including results
+        'cache' => [
             'enabled' => env('CLOCKWORK_CACHE_ENABLED', true),
 
-            // Collect cachedAttribute queries
+            // Collect cache queries
             'collect_queries' => env('CLOCKWORK_CACHE_QUERIES', true),
 
-            // Collect values from cachedAttribute queries (high performance impact with a very high number of queries)
+            // Collect values from cache queries (high performance impact with a very high number of queries)
             'collect_values' => env('CLOCKWORK_CACHE_COLLECT_VALUES', false)
         ],
 
