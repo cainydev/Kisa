@@ -48,57 +48,57 @@ class Herb extends Model
 
     protected function dailyUsageStats(): Attribute
     {
-        return $this->cached('daily', default: collect());
+        return $this->cachedAttribute('daily', default: collect())();
     }
 
     protected function weeklyUsageStats(): Attribute
     {
-        return $this->cached('weekly', default: collect());
+        return $this->cachedAttribute('weekly', default: collect())();
     }
 
     protected function monthlyUsageStats(): Attribute
     {
-        return $this->cached('monthly', default: collect());
+        return $this->cachedAttribute('monthly', default: collect())();
     }
 
     protected function yearlyUsageStats(): Attribute
     {
-        return $this->cached('yearly', default: collect());
+        return $this->cachedAttribute('yearly', default: collect())();
     }
 
     protected function averageDailyUsage(): Attribute
     {
-        return $this->cached('daily:avg', default: 0.0);
+        return $this->cachedAttribute('daily:avg', default: 0.0)();
     }
 
     protected function averageWeeklyUsage(): Attribute
     {
-        return $this->cached('weekly:avg', default: 0.0);
+        return $this->cachedAttribute('weekly:avg', default: 0.0)();
     }
 
     protected function averageMonthlyUsage(): Attribute
     {
-        return $this->cached('monthly:avg', default: 0.0);
+        return $this->cachedAttribute('monthly:avg', default: 0.0)();
     }
 
     protected function averageYearlyUsage(): Attribute
     {
-        return $this->cached('yearly:avg', default: 0.0);
+        return $this->cachedAttribute('yearly:avg', default: 0.0)();
     }
 
     protected function currentStock(): Attribute
     {
-        return $this->cached('current', default: 0.0);
+        return $this->cachedAttribute('current', default: 0.0)();
     }
 
     protected function totalUsage(): Attribute
     {
-        return $this->cached('total', default: 0.0);
+        return $this->cachedAttribute('total', default: 0.0)();
     }
 
     protected function estimatedDepletionDate(): Attribute
     {
-        return $this->cached('depleted');
+        return $this->cachedAttribute('depleted')();
 
         /*
         $cacheKey = $this->getCacheKey('depleted');

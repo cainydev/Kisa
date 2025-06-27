@@ -157,7 +157,7 @@ abstract class AbstractStatistics
     }
 
     /**
-     * Invalidate cached for a specific key
+     * Invalidate cachedAttribute for a specific key
      *
      * @param string|array $key
      * @return bool

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\CachedAttributes;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +16,7 @@ use function str;
  */
 class Bottle extends Model
 {
-    use HasFactory;
+    use HasFactory, CachedAttributes;
 
     protected $casts = [
         'date' => 'datetime:d.m.Y',
@@ -26,12 +28,10 @@ class Bottle extends Model
     {
         static::created(function (self $bottle) {
             $bottle->description = $bottle->generateDescription();
-            $bottle->saveQuietly();
         });
 
         static::updated(function (self $bottle) {
             $bottle->description = $bottle->generateDescription();
-            $bottle->saveQuietly();
         });
     }
 
@@ -67,6 +67,16 @@ class Bottle extends Model
         return $this->hasMany(BottlePosition::class);
     }
 
+    public function description(): Attribute
+    {
+        return $this->cachedAttribute(
+            key: 'description',
+            default: fn() => $this->generateDescription(),
+            cacheDuration: 60 * 60 * 24 * 31, // 31 days
+            saveOnMiss: true
+        )();
+    }
+
     /**
      * The user fulfilling the bottle
      * @return BelongsTo
@@ -82,9 +92,6 @@ class Bottle extends Model
      */
     public function finished(): bool
     {
-        foreach ($this->positions as $pos)
-            if (!$pos->hasAllBags()) return false;
-
-        return true;
+        return array_all($this->positions, fn($pos) => $pos->hasAllBags());
     }
 }

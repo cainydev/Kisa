@@ -60,8 +60,10 @@ class PositionsRelationManager extends RelationManager
             ->recordTitle(function (BottlePosition $record) {
                 return "{$record->variant->product->name} {$record->variant->size}g";
             })
+            ->paginated(false)
             ->columns([
                 TextColumn::make('count')
+                    ->alignEnd()
                     ->label(''),
                 TextColumn::make('times')->state('×')->label(''),
                 TextColumn::make('variant.product.name')

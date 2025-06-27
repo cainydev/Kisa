@@ -88,6 +88,7 @@ class BottleResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('description')
                     ->label('Positionen')
+                    ->wrap()
                     ->searchable(),
                 Tables\Columns\IconColumn::make('finished')
                     ->label('Alle abgefüllt')
