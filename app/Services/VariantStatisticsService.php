@@ -60,7 +60,7 @@ class VariantStatisticsService extends AbstractStatistics
             $variant->yearly_sales = $yearly;
             $variant->average_yearly_sales = $yearlyAvg;
 
-            $recentCap = now()->subMonths(3);
+            $recentCap = now()->subMonths(6);
             $recentSalesPerDay = $daily->filter(fn($_, $key) => Carbon::parse($key) >= $recentCap)->avg();
 
             $depletedDate = self::extrapolateDate($variant->stock, $recentSalesPerDay);
