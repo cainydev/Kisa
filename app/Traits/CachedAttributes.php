@@ -2,7 +2,11 @@
 
 namespace App\Traits;
 
+use BackedEnum;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Closure;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -57,6 +61,7 @@ trait CachedAttributes
     public function cachedAttribute(
         string   $key,
         mixed    $default = null,
+        ?string  $cast = null,
         ?Closure $onChange = null,
         ?int     $cacheDuration = null,
         bool     $saveOnMiss = false,
@@ -65,6 +70,8 @@ trait CachedAttributes
         $duration = $cacheDuration ?? $this->getDefaultAttributeCacheDuration();
 
         $key = $this->getCacheKey($key);
+
+        $this->mergeCasts([$key => $cast ?: $this->guessCastType($default) ?: 'string']);
 
         return fn() => Attribute::make(
             get: function ($value, array $attributes) use ($default, $key, $onChange, $duration, $saveOnMiss) {
@@ -78,10 +85,9 @@ trait CachedAttributes
                             $onChange($value, null);
                         }
                     }
-
                 }
 
-                return $value;
+                return $this->castAttribute($key, $value);
             },
             set: function ($value) use ($onChange, $key, $duration) {
                 $old = Cache::get($key);
@@ -101,7 +107,7 @@ trait CachedAttributes
      */
     public function getDefaultAttributeCacheDuration(): int|null
     {
-        return Cache::getDefaultCacheTime();
+        return 60 * 60 * 24; // 24h
     }
 
     /**
@@ -125,5 +131,23 @@ trait CachedAttributes
         $identifier = once(fn() => $this->getKey());
 
         return "{$modelName}:{$identifier}:{$trimmedMetric}";
+    }
+
+    /**
+     * Tries to guess the cast type, based on a value
+     */
+    public function guessCastType(mixed $value): string
+    {
+        return match (true) {
+            is_int($value) => 'int',
+            is_float($value) => 'float',
+            is_bool($value) => 'bool',
+            is_array($value) => 'array',
+            $value instanceof Carbon ||
+            $value instanceof CarbonImmutable => 'datetime',
+            $value instanceof DateTimeInterface => 'datetime',
+            $value instanceof BackedEnum => get_class($value),
+            default => 'string',
+        };
     }
 }

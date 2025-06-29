@@ -175,13 +175,26 @@ class Variant extends Model
         return $this->cachedAttribute('monthly:avg', 0.0)();
     }
 
+    /**
+     * @return Attribute<float>
+     */
     public function averageYearlySales(): Attribute
     {
         return $this->cachedAttribute('yearly:avg', 0.0)();
     }
 
+    public function test(): Attribute
+    {
+        return Attribute::make(get: fn() => "test")->shouldCache();
+    }
+
     public function depletedDate(): Attribute
     {
         return $this->cachedAttribute('depleted', Carbon::endOfTime())();
+    }
+
+    public function nextSale(): Attribute
+    {
+        return $this->cachedAttribute('next_sale', Carbon::endOfTime())();
     }
 }

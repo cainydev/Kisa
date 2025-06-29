@@ -23,6 +23,7 @@ class NextBottles extends Widget implements HasForms, HasActions
     public bool $groupSimilar = true;
     public int $coverMonths = 3;
     public int $maxPositions = 5;
+    public int $minItems = 5;
     public array $groups = [];
     protected int|string|array $columnSpan = 'full';
 
@@ -33,13 +34,18 @@ class NextBottles extends Widget implements HasForms, HasActions
 
     protected function getViewData(): array
     {
-        $variants = Variant::where('size', '<=', $this->maxSize)
-            ->get()->sortBy->depletedDate->take($this->maxPositions * 5);
+        /** @var Collection<Variant> $variants */
+        $variants = Variant::where('size', '<=', $this->maxSize)->get();
 
-        $positions = $variants->map(fn(Variant $v) => new BottlePosition([
+        [$noStock, $hasStock] = $variants->partition('stock', '<=', 0);
+
+        $noStockSorted = $noStock->sortBy->next_sale->take($this->maxPositions * $this->minItems);
+
+        $positions = $noStockSorted->map(fn(Variant $v) => new BottlePosition([
             'variant_id' => $v->id,
-            'count' => max(1, intval($this->coverMonths * $v->average_monthly_sales - $v->stock))
+            'count' => max($this->minItems, intval($this->coverMonths * $v->average_monthly_sales - $v->stock))
         ]));
+
 
         $this->groups = $this->groupModels($positions, $this->maxPositions, $this->groupSimilar);
 

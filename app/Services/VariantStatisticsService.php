@@ -65,6 +65,17 @@ class VariantStatisticsService extends AbstractStatistics
 
             $depletedDate = self::extrapolateDate($variant->stock, $recentSalesPerDay);
             $variant->depleted_date = $depletedDate->toDateString();
+
+            $lastSaleDate = null;
+            if ($dailyRaw->isNotEmpty()) {
+                $lastSaleDate = Carbon::parse($dailyRaw->keys()->last())->endOfDay();
+            }
+
+            if ($lastSaleDate && $recentSalesPerDay > 0) {
+                $intervalDays = 1 / $recentSalesPerDay;
+                $nextSaleDateTime = $lastSaleDate->copy()->addDays($intervalDays);
+                $variant->next_sale = $nextSaleDateTime->toDateTimeString();
+            }
         }
     }
 }
