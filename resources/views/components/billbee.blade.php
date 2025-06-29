@@ -1,4 +1,4 @@
-<svg id="Ebene_1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
+<svg {{ $attributes }} id="Ebene_1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
      viewBox="0 0 750 750" xml:space="preserve">
 <style type="text/css">
     .st0 {

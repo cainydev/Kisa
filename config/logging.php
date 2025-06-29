@@ -76,7 +76,7 @@ return [
         'discord' => [
             'driver' => 'custom',
             'via' => App\Logging\DiscordWebhookLogger::class,
-            'level' => env('LOG_DISCORD_LEVEL', 'error'),
+            'level' => env('LOG_DISCORD_LEVEL', 'info'),
         ],
 
         'slack' => [

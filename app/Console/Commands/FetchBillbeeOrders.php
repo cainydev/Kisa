@@ -84,6 +84,7 @@ class FetchBillbeeOrders extends Command
             $orderModel = Order::updateOrCreate(
                 ['billbee_id' => $order->id],
                 [
+                    'status' => $order->state,
                     'order_number' => $order->orderNumber,
                     'date' => $order->createdAt,
                     'shipped_at' => $order->shippedAt,
