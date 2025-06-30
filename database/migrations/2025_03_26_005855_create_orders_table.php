@@ -14,7 +14,6 @@ return new class extends Migration {
             $table->id();
 
             $table->string('billbee_id');
-            $table->integer('status');
             $table->dateTime('date');
             $table->string('order_number')->nullable();
             $table->dateTime('shipped_at')->nullable();
