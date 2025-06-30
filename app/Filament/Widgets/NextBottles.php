@@ -39,13 +39,12 @@ class NextBottles extends Widget implements HasForms, HasActions
 
         [$noStock, $hasStock] = $variants->partition('stock', '<=', 0);
 
-        $noStockSorted = $noStock->sortBy->next_sale->take($this->maxPositions * $this->minItems);
+        $noStockSorted = $noStock->sortBy->next_sale->take($this->maxPositions * 5);
 
         $positions = $noStockSorted->map(fn(Variant $v) => new BottlePosition([
             'variant_id' => $v->id,
             'count' => max($this->minItems, intval($this->coverMonths * $v->average_monthly_sales - $v->stock))
         ]));
-
 
         $this->groups = $this->groupModels($positions, $this->maxPositions, $this->groupSimilar);
 
