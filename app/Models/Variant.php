@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Facades\Billbee;
 use App\Traits\CachedAttributes;
 use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
+use BillbeeDe\BillbeeAPI\Model\Product as BillbeeProduct;
 use BillbeeDe\BillbeeAPI\Type\ProductLookupBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -35,7 +36,12 @@ class Variant extends Model
     {
         static::created(function (Variant $variant) {
             try {
-                $variant->fetchBillbee();
+                if ($billbeeProduct = $variant->fetchBillbeeProduct()) {
+                    $this->stock = $billbeeProduct->stockCurrent;
+                    $this->sku = $billbeeProduct->sku;
+                    $this->ean = $billbeeProduct->ean;
+                    $this->saveQuietly();
+                }
             } catch (QuotaExceededException $e) {
                 Log::warning("Billbee quota exceeded while initializing variant {$variant->id}: {$e->getMessage()}");
             } catch (\Throwable $e) {
@@ -45,14 +51,11 @@ class Variant extends Model
     }
 
     /**
-     * Try to find the billbee product data and set billbee_id.
-     * This also updates the local EAN.
-     * The initial stock setting via $this->stock will be handled by the stock attribute's logic.
+     * Try to find the billbee product.
      *
-     * @return bool If the operation was successful
      * @throws QuotaExceededException
      */
-    public function fetchBillbee(): bool
+    public function fetchBillbeeProduct(): ?BillbeeProduct
     {
         $billbeeProductData = null;
 
@@ -75,39 +78,24 @@ class Variant extends Model
                 if ($response->errorCode === 0 && $response->data !== null) {
                     $billbeeProductData = $response->data;
                     $this->billbee_id = $billbeeProductData->id; // Set/update billbee_id
+                    $this->saveQuietly();
                 } else {
                     Log::info("Billbee product not found by SKU {$this->sku} for variant {$this->id}. Error code: {$response->errorCode}");
-                    return false;
+                    return null;
                 }
             } catch (QuotaExceededException $e) {
                 throw $e; // Re-throw
             } catch (\Throwable $e) {
                 Log::error("Error fetching Billbee product by SKU {$this->sku} for variant {$this->id}: {$e->getMessage()}");
-                return false;
+                return null;
             }
         }
 
         if ($billbeeProductData === null) {
-            return false;
+            return null;
         }
 
-        $this->ean = $billbeeProductData->ean;
-        $this->stock = $billbeeProductData->stockCurrent ?? 0;
-        $this->billbee = $billbeeProductData;
-
-        $this->save();
-
-        return true;
-    }
-
-    /**
-     * The billbee product data. Expensive operation. Fetches if necessary.
-     *
-     * @return Attribute
-     */
-    public function billbee(): Attribute
-    {
-        return $this->cachedAttribute('billbee', fn() => $this->fetchBillbee() ? $this->billbee : null)();
+        return $billbeeProductData;
     }
 
     public function product(): BelongsTo
@@ -135,11 +123,7 @@ class Variant extends Model
         return $this->belongsToMany(Order::class, 'order_positions');
     }
 
-    public function stock(): Attribute
-    {
-        return $this->cachedAttribute('stock', 0)();
-    }
-
+    /* -------------------- Cached attributes -------------------- */
     public function dailySales(): Attribute
     {
         return $this->cachedAttribute('daily', collect())();
@@ -175,17 +159,9 @@ class Variant extends Model
         return $this->cachedAttribute('monthly:avg', 0.0)();
     }
 
-    /**
-     * @return Attribute<float>
-     */
     public function averageYearlySales(): Attribute
     {
         return $this->cachedAttribute('yearly:avg', 0.0)();
-    }
-
-    public function test(): Attribute
-    {
-        return Attribute::make(get: fn() => "test")->shouldCache();
     }
 
     public function depletedDate(): Attribute
