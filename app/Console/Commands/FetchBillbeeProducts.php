@@ -74,8 +74,8 @@ class FetchBillbeeProducts extends Command
             if ($billbeeData instanceof Product) {
                 $variant->billbee_id = $billbeeData->id;
                 $variant->ean = $billbeeData->ean;
-                $variant->save();
                 $variant->stock = $billbeeData->stockCurrent;
+                $variant->save();
             }
 
             $bar->advance();

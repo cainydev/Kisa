@@ -62,6 +62,7 @@ class BillbeeController extends Controller
         $variant = $variants->first();
         $oldStock = $variant->stock;
         $variant->stock = $newStock;
+        $variant->save();
 
         $productName = $variant->product->name;
         Log::info("[BillbeeController.setStock]: Updated stock of $productName ({$variant->size}g) from $oldStock => $newStock");

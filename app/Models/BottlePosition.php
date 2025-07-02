@@ -111,9 +111,9 @@ class BottlePosition extends Model
             return false;
         }
 
-        if ($this->variant->fetchBillbee()) {
+        if ($billbeeProduct = $this->variant->fetchBillbeeProduct()) {
             try {
-                $newStock = Stock::fromProduct($this->variant->billbee)
+                $newStock = Stock::fromProduct($billbeeProduct)
                     ->setDeltaQuantity($this->count)
                     ->setReason("Einlagerung $this->charge");
 
@@ -137,7 +137,7 @@ class BottlePosition extends Model
             } catch (Exception $e) {
                 Notification::make()
                     ->title('Einlagern fehlgeschlagen')
-                    ->body('Bitte warte etwas zwischen deinen Anfragen.')
+                    ->body('Es ist ein Fehler aufgetreten: ' . $e->getMessage())
                     ->danger()
                     ->send();
 
