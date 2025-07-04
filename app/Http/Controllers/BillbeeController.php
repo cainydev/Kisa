@@ -39,7 +39,6 @@ class BillbeeController extends Controller
             return response('Bad Request', 400);
         }
 
-
         $productId = $request->get('ProductId');
         $newStock = $request->get('AvailableStock');
 
@@ -81,6 +80,8 @@ class BillbeeController extends Controller
 
     private function getOrders(): JsonResponse
     {
+        Log::info("[BillbeeController.getOrders]: Got getOrders request. Returning empty.");
+
         return response()->json([
             'paging' => [
                 'page' => 1,
@@ -88,14 +89,24 @@ class BillbeeController extends Controller
                 'totalPages' => 1
             ],
             'orders' => []
-        ], 200);
+        ]);
     }
 
     private function setOrderState(Request $request)
     {
         if (!$request->has('OrderId') && !$request->has('NewStateId')) {
+            Log::info("[BillbeeController.setOrderState]: Got setOrderState request with bad parameters.", [
+                'OrderId' => $request->get('OrderId'),
+                'NewStateId' => $request->get('NewStateId')
+            ]);
+
             return response()->json('Bad Request', 400);
         }
+
+        Log::info("[BillbeeController.setOrderState]: Got setOrderState request.", [
+            'OrderId' => $request->get('OrderId'),
+            'NewStateId' => $request->get('NewStateId')
+        ]);
 
         $order = Order::where('billbee_id', $request->get('OrderId'))->firstOrFail();
 
@@ -106,5 +117,4 @@ class BillbeeController extends Controller
 
         return response('Order state updated');
     }
-
 }
