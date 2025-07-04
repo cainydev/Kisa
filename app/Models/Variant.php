@@ -127,7 +127,7 @@ class Variant extends Model
 
     public function name(): Attribute
     {
-        return new Attribute(get: fn() => "{$this->product->name} {$this->variant->size}g");
+        return new Attribute(get: fn() => "{$this->product->name} {$this->size}g");
     }
 
     public function dailySales(): Attribute
