@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use function response;
 
 class BillbeeController extends Controller
@@ -76,8 +77,11 @@ class BillbeeController extends Controller
 
     public function get(Request $request): JsonResponse|Response
     {
-        if ($request->query('Action') && $request->query('Action') === 'GetOrders') {
-            return $this->getOrders();
+        if ($request->query('Action')) {
+            return match (Str::trim($request->query('Action'))) {
+                'GetOrders' => $this->getOrders(),
+                'GetProduct' => $this->getProduct($request),
+            };
         } else {
             return response('Bad Request', 400);
         }
@@ -94,6 +98,32 @@ class BillbeeController extends Controller
                 'totalPages' => 1
             ],
             'orders' => []
+        ]);
+    }
+
+    private function getProduct(Request $request): JsonResponse
+    {
+        if (!$request->has('ProductId') || $request->get('ProductId') === '') {
+            Log::info("[BillbeeController.getProduct]: Got getProduct request with bad parameters.", [
+                'ProductId' => $request->get('ProductId')
+            ]);
+
+            return response()->json('Bad Request', 400);
+        }
+
+        $productId = $request->get('ProductId');
+        Log::info("[BillbeeController.getProduct]: Got getProduct request for {$productId}.");
+
+        $variant = Variant::with('product')
+            ->where('billbee_id', $productId)
+            ->orWhere('sku', $productId)
+            ->firstOrFail();
+
+        return response()->json([
+            'id' => $variant->billbee_id,
+            'title' => "{$variant->product->name} {$variant->size}g",
+            'quantity' => $variant->stock,
+            'sku' => $variant->sku,
         ]);
     }
 
