@@ -124,6 +124,12 @@ class Variant extends Model
     }
 
     /* -------------------- Cached attributes -------------------- */
+
+    public function name(): Attribute
+    {
+        return new Attribute(get: fn() => "{$this->product->name} {$this->variant->size}g");
+    }
+
     public function dailySales(): Attribute
     {
         return $this->cachedAttribute('daily', collect())();

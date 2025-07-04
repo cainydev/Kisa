@@ -117,11 +117,18 @@ class BillbeeController extends Controller
         $variant = Variant::with('product')
             ->where('billbee_id', $productId)
             ->orWhere('sku', $productId)
-            ->firstOrFail();
+            ->first();
+
+        if (!$variant) {
+            Log::warning("[BillbeeController.getProduct]: Could find variant for {$productId}.");
+            return response()->json('Bad Request', 400);
+        }
+
+        Log::info("[BillbeeController.getProduct]: Returning product details for {$variant->name}.");
 
         return response()->json([
             'id' => $variant->billbee_id,
-            'title' => "{$variant->product->name} {$variant->size}g",
+            'title' => $variant->name,
             'quantity' => $variant->stock,
             'sku' => $variant->sku,
         ]);
