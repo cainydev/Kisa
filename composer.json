@@ -18,7 +18,7 @@
         "php": "^8.4",
         "ext-curl": "*",
         "billbee/billbee-api": "v2.1.0",
-        "cainy/custom-shop-api": "^3.0.0",
+        "cainy/custom-shop-api": "^3.1",
         "codeat3/blade-carbon-icons": "^2.18",
         "filament/filament": "^3.2",
         "filament/spatie-laravel-media-library-plugin": "^3.2",
