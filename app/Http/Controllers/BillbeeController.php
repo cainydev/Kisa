@@ -6,6 +6,7 @@ use App\Facades\Billbee;
 use App\Models\Order;
 use App\Models\Variant;
 use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -48,8 +49,12 @@ class BillbeeController extends Controller
         $variants = Variant::where('billbee_id', $productId)->get();
 
         if ($variants->isEmpty()) {
-            $billbeeProduct = Billbee::products()->getProduct($productId);
-            $variants = Variant::where('sku', $billbeeProduct->data->sku)->get();
+            try {
+                $billbeeProduct = Billbee::products()->getProduct($productId);
+                $variants = Variant::where('sku', $billbeeProduct->data->sku)->get();
+            } catch (Exception) {
+                return response('Product not found', 400);
+            }
         }
 
         if ($variants->isEmpty()) {
