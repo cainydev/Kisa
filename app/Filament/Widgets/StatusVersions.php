@@ -38,7 +38,7 @@ class StatusVersions extends BaseWidget
             Stat::make('Laravel Version', app()->version())
                 ->description('Enviroment: ' . $env)
                 ->descriptionIcon(in_array($env, ['prod', 'production']) ? 'heroicon-m-check-circle' : 'heroicon-m-information-circle')
-                ->color(in_array($env, ['prod', 'production']) ? 'primary' : 'gray'),
+                ->color(in_array($env, ['prod', 'production']) ? 'success' : 'gray'),
 
             Stat::make('PHP Version', PHP_VERSION)
                 ->description('Ini: ' . ($ini ?: 'Unknown'))
@@ -53,7 +53,7 @@ class StatusVersions extends BaseWidget
             Stat::make('Uptime', $uptime)
                 ->description('Since last boot')
                 ->descriptionIcon('heroicon-m-clock')
-                ->color('info'),
+                ->color('success'),
         ];
     }
 }
