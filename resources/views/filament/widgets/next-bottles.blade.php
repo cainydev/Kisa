@@ -1,4 +1,6 @@
 @php
+    use App\Models\Variant;
+    use Carbon\Carbon;
     use Filament\Actions\Action;
     use Filament\Tables\Actions\HeaderActionsPosition;
 @endphp
@@ -30,12 +32,13 @@
         <div class="flex flex-col gap-3">
             @foreach($groups as $key => $group)
                 <x-filament::section
+                    wire:key="group-{{ $key }}"
                     class="[&_.fi-section-content]:p-0 overflow-clip"
                     heading="Vorschlag {{$loop->iteration}}"
                     :compact="true"
                     :collapsible="true"
                     :collapsed="!$loop->first"
-                    :header-actions="[Action::make('create-' . $loop->index)->label('Erstellen')->action(fn () => $this->createGroup($loop->index))]">
+                    :header-actions="[($this->createAction)(['index' => $loop->index])]">
                     <table
                         class="fi-ta-table w-full table-auto divide-y divide-gray-200 text-start dark:divide-white/5">
                         <thead class="divide-y divide-gray-200 dark:divide-white/5">
@@ -63,33 +66,38 @@
                             </x-filament-tables::header-cell>
                         </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200 whitespace-nowrap dark:divide-white/5">
+
+                        <tbody
+                            class="divide-y divide-gray-200 whitespace-nowrap dark:divide-white/5 relative overflow-hidden before:transition-all"
+                            wire:loading.class="before:absolute before:inset-0 dark:before:bg-gray-900 before:bg-white">
                         @foreach($group as $position)
-                            <x-filament-tables::row class="px-6">
+                            @php $variant = Variant::find($position['variant_id']) @endphp
+                            <x-filament-tables::row class="px-6"
+                                                    wire:key="group-{{ $key }}-item-{{ $position['variant_id'] }}">
                                 <x-filament-tables::cell>
                                     <div class="px-3 py-4">
-                                        {{$position->count}}
+                                        {{ $position['count'] }}
                                     </div>
                                 </x-filament-tables::cell>
                                 <x-filament-tables::cell>
                                     <div class="px-3 py-4">
-                                        {{$position->variant->product->name}}
+                                        {{$variant->product->name}}
                                     </div>
                                 </x-filament-tables::cell>
                                 <x-filament-tables::cell>
                                     <div class="px-3 py-4">
-                                        {{$position->variant->size}}g
+                                        {{$variant->size}}g
                                     </div>
                                 </x-filament-tables::cell>
                                 <x-filament-tables::cell>
                                     <div class="px-3 py-4">
-                                        {{$position->variant->stock}}
+                                        {{$variant->stock}}
                                     </div>
                                 </x-filament-tables::cell>
                                 <x-filament-tables::cell>
                                     <div class="px-3 py-4">
                                         @php
-                                            $date = \Carbon\Carbon::parse($position->variant->depleted_date);
+                                            $date = Carbon::parse($variant->depleted_date);
                                             if ($date < now()) $date = null;
                                         @endphp
                                         {{$date?->diffForHumans() ?: "Jetzt"}}
@@ -98,7 +106,7 @@
                                 <x-filament-tables::cell>
                                     <div class="px-3 py-4">
                                         @php
-                                            $date = \Carbon\Carbon::parse($position->variant->next_sale);
+                                            $date = Carbon::parse($variant->next_sale);
                                             if ($date < now()) $date = null;
                                         @endphp
                                         {{$date?->diffForHumans() ?: "Jetzt"}}
@@ -112,4 +120,5 @@
             @endforeach
         </div>
     </x-filament::section>
+    <x-filament-actions::modals/>
 </x-filament-widgets::widget>
