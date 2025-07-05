@@ -2,8 +2,10 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\BottlePosition;
+use App\Filament\Resources\BottleResource;
+use App\Models\Bottle;
 use App\Models\Variant;
+use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -24,12 +26,32 @@ class NextBottles extends Widget implements HasForms, HasActions
     public int $coverMonths = 3;
     public int $maxPositions = 5;
     public int $minItems = 5;
-    public array $groups = [];
+    public Collection $groups;
     protected int|string|array $columnSpan = 'full';
+
+    public function createAction(): Action
+    {
+        return Action::make('create')
+            ->action(fn(array $arguments) => $this->createGroup($arguments['index']));
+    }
 
     public function createGroup(int $index): void
     {
+        /** @var Bottle $bottle */
+        $bottle = Bottle::create([
+            'user_id' => auth()->id(),
+            'date' => now(),
+        ]);
 
+        foreach ($this->groups[$index] as $pos) {
+            $bottle->positions()->create([
+                'bottle_id' => $bottle->id,
+                'variant_id' => $pos['variant_id'],
+                'count' => $pos['count'],
+            ]);
+        }
+
+        $this->redirect(BottleResource\Pages\EditBottle::getUrl(['record' => $bottle->id]), true);
     }
 
     protected function getViewData(): array
@@ -41,62 +63,58 @@ class NextBottles extends Widget implements HasForms, HasActions
 
         $noStockSorted = $noStock->sortBy->next_sale->take($this->maxPositions * 5);
 
-        $positions = $noStockSorted->map(fn(Variant $v) => new BottlePosition([
+        $variantGroups = $this->groupVariants($noStockSorted, $this->maxPositions, $this->groupSimilar);
+
+        $this->groups = $variantGroups->map->map(fn(Variant $v) => [
             'variant_id' => $v->id,
             'count' => max($this->minItems, intval($this->coverMonths * $v->average_monthly_sales - $v->stock))
-        ]));
-
-        $this->groups = $this->groupModels($positions, $this->maxPositions, $this->groupSimilar);
+        ]);
 
         return [
             'sizes' => Variant::pluck('size')->unique()->sort(),
         ];
     }
 
-    function groupModels(Collection $models, int $maxPositions, bool $groupSimilar): array
+    /**
+     * Group variants by product id while trying to preserve initial ordering
+     *
+     * @param Collection<Variant> $variants
+     * @param int $maxPositions
+     * @param bool $groupSimilar
+     * @return Collection<Collection<Variant>>
+     */
+    function groupVariants(Collection $variants, int $maxPositions, bool $groupSimilar): Collection
     {
-        $groups = [];
+        $groups = collect();
 
         if (!$groupSimilar) {
             // Just chunk in order
-            return $models->chunk($maxPositions)->values()->all();
+            return $variants->chunk($maxPositions);
         }
 
-        // 1. Group by product_id, preserve order within each group
-        $buckets = $models->groupBy('variant.product_id')->map(function ($bucket) {
-            return $bucket->values();
-        });
+        $buckets = $variants->groupBy('product_id')->map->keyBy('id');
+        $variants = $variants->keyBy('id');
 
-        // 2. Prepare a working copy of all items, preserving order
-        $remaining = $models->values();
+        $group = 0;
+        $elems = 0;
+        while ($variants->isNotEmpty()) {
+            $groups[$group] = collect();
+            while ($elems < $maxPositions && $variants->isNotEmpty()) {
+                $model = $variants->first();
 
-        while ($remaining->isNotEmpty()) {
-            // Try to find the product_id with the most remaining items at the start of the list
-            $firstProductId = $remaining->first()->product_id;
-            $bucket = $buckets->get($firstProductId, collect());
-
-            // Pull as many as possible from the same product_id at the head
-            $group = $bucket->splice(0, $maxPositions);
-
-            // Remove these from remaining
-            $idsToRemove = $group->pluck('id')->all();
-            $remaining = $remaining->reject(function ($item) use ($idsToRemove) {
-                return in_array($item->id, $idsToRemove);
-            })->values();
-
-            // If not enough, fill with the next-in-line items (regardless of product_id)
-            if ($group->count() < $maxPositions && $remaining->isNotEmpty()) {
-                $toFill = $maxPositions - $group->count();
-                $fillers = $remaining->splice(0, $toFill);
-                $group = $group->concat($fillers);
-
-                // Remove fillers from buckets too
-                foreach ($fillers as $filler) {
-                    $buckets[$filler->variant->product_id] = $buckets[$filler->variant->product_id]->reject(fn($item) => $item->id === $filler->id)->values();
+                if ($elems > 0) {
+                    $lastBucket = $buckets->get($groups[$group][$elems - 1]->product_id);
+                    if ($lastBucket->isNotEmpty()) $model = $lastBucket->first();
                 }
+
+                $variants->forget($model->id);
+                $buckets[$model->product_id]->forget($model->id);
+
+                $groups[$group][$elems++] = $model;
             }
 
-            $groups[] = $group->all();
+            $group++;
+            $elems = 0;
         }
 
         return $groups;

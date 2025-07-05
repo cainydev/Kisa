@@ -35,6 +35,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(Vite::asset('resources/images/favicon.svg'))
             ->sidebarCollapsibleOnDesktop()
             ->login()
+            ->spa()
             ->colors([
                 'primary' => '#a2bb94',
             ])
