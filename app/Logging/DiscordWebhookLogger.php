@@ -2,7 +2,6 @@
 
 namespace App\Logging;
 
-use App\Alerts\DiscordAlert;
 use Monolog\Level;
 use Monolog\Logger;
 use function is_string;

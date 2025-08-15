@@ -123,7 +123,13 @@ class Variant extends Model
         return $this->belongsToMany(Order::class, 'order_positions');
     }
 
-    /* -------------------- Cached attributes -------------------- */
+    public function herbsNeededFor(int $amount): iterable
+    {
+        return $this->product
+            ->recipeIngredients
+            ->pluck('percentage', 'herb_id')
+            ->map(fn($percentage) => $this->size * ($percentage / 100.0) * $amount);
+    }
 
     public function name(): Attribute
     {

@@ -57,11 +57,14 @@ class NextBottles extends Widget implements HasForms, HasActions
     protected function getViewData(): array
     {
         /** @var Collection<Variant> $variants */
-        $variants = Variant::where('size', '<=', $this->maxSize)->get();
+        $variants = Variant::where('size', '<=', $this->maxSize)
+            ->whereRelation('product', 'exclude_from_statistics', false)
+            ->whereRelation('product.type', 'exclude_from_statistics', false)
+            ->get();
 
         [$noStock, $hasStock] = $variants->partition('stock', '<=', 0);
 
-        $noStockSorted = $noStock->sortBy->next_sale->take($this->maxPositions * 5);
+        $noStockSorted = $noStock->sortBy->next_sale->take($this->maxPositions * 3);
 
         $variantGroups = $this->groupVariants($noStockSorted, $this->maxPositions, $this->groupSimilar);
 
