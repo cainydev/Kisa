@@ -11,6 +11,7 @@ use BillbeeDe\BillbeeAPI\Model\OrderItem as BillbeeOrderItem;
 use BillbeeDe\BillbeeAPI\Model\Payment;
 use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 
 class FetchBillbeeOrders extends Command
 {
@@ -19,7 +20,7 @@ class FetchBillbeeOrders extends Command
      *
      * @var string
      */
-    protected $signature = 'billbee:orders {--perpage=250 : Page size when fetching}';
+    protected $signature = 'billbee:orders {--perpage=250 : Page size when fetching} {--after=null : Only orders after this date}';
 
     /**
      * The console command description.
@@ -34,20 +35,26 @@ class FetchBillbeeOrders extends Command
      */
     public function handle(): void
     {
-        $this->info('Fetching all orders from Billbee...');
-        $this->newLine();
-
         $orders = collect();
         $page = 1;
         $pageSize = intval($this->option('perpage'));
-        $pagingInfo = Billbee::orders()->getOrders($page, $pageSize)->paging;
+
+        $minOrderDate = $this->option('after') ? Carbon::parse($this->option('after')) : null;
+        if ($minOrderDate) {
+            $this->info('Fetching orders from Billbee since ' . $minOrderDate->toDateTimeString());
+        } else {
+            $this->info('Fetching all orders from Billbee...');
+        }
+        $this->newLine();
+
+        $pagingInfo = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate)->paging;
 
         $bar = $this->output->createProgressBar($pagingInfo['TotalRows']);
         $bar->start();
 
         while ($page) {
             try {
-                $response = Billbee::orders()->getOrders($page, $pageSize);
+                $response = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate);
                 $orders->push(...$response->data);
                 $page = $response->paging['TotalPages'] == $page ? false : $page + 1;
                 $bar->advance(count($response->data));

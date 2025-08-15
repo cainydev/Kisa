@@ -43,7 +43,15 @@ class ProductResource extends Resource
                         Forms\Components\Select::make('product_type_id')
                             ->relationship('type', 'name')
                             ->label("Produktgruppe")
-                            ->required()
+                            ->required(),
+                        Forms\Components\Toggle::make('exclude_from_statistics')
+                            ->label("Von Statistiken ausschließen")
+                            ->disabled(fn(Product $product) => $product->type->exclude_from_statistics)
+                            ->formatStateUsing(fn(Product $product, mixed $state) => $product->type->exclude_from_statistics ?: $state)
+                            ->beforeStateDehydrated(fn(Product $product, mixed $state) => $product->type->exclude_from_statistics ? $product->exclude_from_statistics : $state)
+                            ->hint(fn(Product $product) => $product->type->exclude_from_statistics ? "Die ganze Produktgruppe '{$product->type->name}' ist von den Statistiken ausgeschlossen." : false)
+                            ->hintIcon('heroicon-o-exclamation-triangle')
+                            ->required(),
                     ]),
                     Tabs\Tab::make("Varianten")->schema([
                         Repeater::make('variants')
@@ -141,6 +149,10 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('type.name')
                     ->label("Produktgruppe")
                     ->sortable(),
+                Tables\Columns\IconColumn::make('exclude_from_statistics')
+                    ->label("Von Statistiken ausschließen")
+                    ->getStateUsing(fn(Product $record) => $record->exclude_from_statistics || $record->type->exclude_from_statistics)
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

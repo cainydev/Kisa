@@ -54,13 +54,18 @@ class EditStatsSettings extends Component implements HasForms
                             ->color('primary')
                             ->action('save')
                     ]),
+                Section::make('Empfohlene Abfüllungen')
+                    ->schema([
+
+                    ])
             ])->statePath('data');
     }
 
     public function save(StatsSettings $settings): void
     {
-        $data = $this->form->getState();
+        $this->form->validate();
 
+        $settings->fill($this->form->getState());
         $settings->save();
 
         Notification::make()

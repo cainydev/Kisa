@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Facades\Billbee;
 use App\Models\Order;
 use App\Models\Variant;
-use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,22 +17,33 @@ use function response;
 class BillbeeController extends Controller
 {
     /**
-     * @throws QuotaExceededException
+     * Handle incoming post request and delegate to responsible handler
+     *
+     * @param Request $request
+     * @return Response
      */
     public function post(Request $request): Response
     {
         if ($request->query('Action')) {
+            if (!in_array($request->query('Action'), ['SetStock', 'SetOrderState'])) {
+                Log::info("[BillbeeController.post]: Invalid action '{$request->query('Action')}'");
+                return response('Not implemented', 501);
+            }
+
             return match ($request->query('Action')) {
                 'SetStock' => $this->setStock($request),
                 'SetOrderState' => $this->setOrderState($request)
             };
         } else {
-            return response('Bad Request', 400);
+            return response('Bad Request: missing Action query parameter.', 400);
         }
     }
 
     /**
-     * @throws QuotaExceededException
+     * Update the stock quantity of a variant
+     *
+     * @param Request $request
+     * @return Response
      */
     private function setStock(Request $request): Response
     {
@@ -75,18 +85,34 @@ class BillbeeController extends Controller
         return response('Stock updated');
     }
 
+    /**
+     * Handle incoming get requests and delegate to responsible handler
+     *
+     * @param Request $request
+     * @return JsonResponse|Response
+     */
     public function get(Request $request): JsonResponse|Response
     {
         if ($request->query('Action')) {
+            if (!in_array($request->query('Action'), ['GetOrders', 'GetProduct'])) {
+                Log::info("[BillbeeController.get]: Invalid action '{$request->query('Action')}'");
+                return response('Not implemented', 501);
+            }
+
             return match (Str::trim($request->query('Action'))) {
                 'GetOrders' => $this->getOrders(),
                 'GetProduct' => $this->getProduct($request),
             };
         } else {
-            return response('Bad Request', 400);
+            return response('Bad Request: missing Action query parameter.', 400);
         }
     }
 
+    /**
+     * Get all orders
+     *
+     * @return JsonResponse
+     */
     private function getOrders(): JsonResponse
     {
         Log::info("[BillbeeController.getOrders]: Got getOrders request. Returning empty.");
@@ -101,6 +127,12 @@ class BillbeeController extends Controller
         ]);
     }
 
+    /**
+     * Get a specific product. Only implemented in order for setStock to work.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     private function getProduct(Request $request): JsonResponse
     {
         if (!$request->has('ProductId') || $request->get('ProductId') === '') {
@@ -134,7 +166,13 @@ class BillbeeController extends Controller
         ]);
     }
 
-    private function setOrderState(Request $request)
+    /**
+     * Update the state of an order
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    private function setOrderState(Request $request): JsonResponse
     {
         if (!$request->has('OrderId') && !$request->has('NewStateId')) {
             Log::info("[BillbeeController.setOrderState]: Got setOrderState request with bad parameters.", [
@@ -157,6 +195,6 @@ class BillbeeController extends Controller
 
         Log::info("[BillbeeController.setOrderState]: Updated order state of order #{$order->order_number} to {$order->status}");
 
-        return response('Order state updated');
+        return response()->json('Order state updated');
     }
 }

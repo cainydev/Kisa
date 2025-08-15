@@ -34,6 +34,9 @@ class ProductTypeResource extends Resource
                 Forms\Components\Toggle::make('compound')
                     ->label("Verbundmischung")
                     ->required(),
+                Forms\Components\Toggle::make('exclude_from_statistics')
+                    ->label("Von Statistiken ausschließen")
+                    ->required(),
             ]);
     }
 
@@ -43,6 +46,12 @@ class ProductTypeResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\IconColumn::make('compound')
+                    ->label("Verbundmischung")
+                    ->boolean(),
+                Tables\Columns\IconColumn::make('exclude_from_statistics')
+                    ->label("Von Statistiken ausschließen")
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -51,9 +60,6 @@ class ProductTypeResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\IconColumn::make('compound')
-                    ->label("Verbundmischung")
-                    ->boolean(),
             ])
             ->filters([
                 //
