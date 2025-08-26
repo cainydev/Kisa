@@ -1,4 +1,4 @@
-<div class="flex items-center gap-3">
+<div class="flex items-center justify-center gap-3 w-full py-2">
     <div class="flex items-stretch gap-1 w-full">
         <div class="min-w-max">
             <x-filament::badge color="gray" icon="heroicon-s-calendar">

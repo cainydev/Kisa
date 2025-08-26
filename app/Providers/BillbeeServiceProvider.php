@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Exception;
 use App\Settings\BillbeeSettings;
 use BillbeeDe\BillbeeAPI\Client;
 use Illuminate\Contracts\Support\DeferrableProvider;
@@ -22,7 +23,7 @@ class BillbeeServiceProvider extends ServiceProvider implements DeferrableProvid
             $apiKey = $settings->key ?? config('services.billbee.api_key');
 
             if (empty($user) || empty($apiPassword) || empty($apiKey)) {
-                throw new \Exception('Billbee API credentials are missing.');
+                throw new Exception('Billbee API credentials are missing.');
             }
 
             return new Client($user, $apiPassword, $apiKey);

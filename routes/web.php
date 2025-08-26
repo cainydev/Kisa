@@ -19,5 +19,5 @@ Route::get('/test', function () {
     //\App\Jobs\GenerateVariantSalesStatistics::dispatch();
     //\App\Services\VariantStatisticsService::generateAll();
 
-    return "Generating...";
+    return view('test');
 });

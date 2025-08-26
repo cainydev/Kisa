@@ -30,7 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('/')
-            ->viteTheme('resources/css/app.css')
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->favicon(Vite::asset('resources/images/favicon.svg'))
             ->brandLogo(Vite::asset('resources/images/favicon.svg'))
             ->sidebarCollapsibleOnDesktop()

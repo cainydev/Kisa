@@ -5,7 +5,7 @@ namespace App\Livewire;
 use App\Models\Bag;
 use App\Models\BottlePosition;
 use App\Models\Herb;
-use Filament\Forms\Components\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Field;
 use Illuminate\Support\Collection;
 
@@ -112,12 +112,12 @@ class PositionBagSelector extends Field
         $this->hiddenLabel();
         $this->default(null);
 
-        $this->registerListeners([
+        /*$this->registerListeners([
             'position-bag-selector::select' => [
                 function (PositionBagSelector $component, string $statePath, int $bag): void {
                     $this->selectBag($bag);
                 },
             ],
-        ]);
+        ]);*/
     }
 }

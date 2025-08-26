@@ -7,10 +7,10 @@ use Illuminate\Support\Facades\Cache;
 
 class StatusLoad extends ChartWidget
 {
-    protected static ?string $pollingInterval = '5s';
-    protected static ?string $heading = 'CPU & RAM Usage';
-    protected static ?string $maxHeight = '280px';
-    protected static ?array $options = [
+    protected ?string $pollingInterval = '5s';
+    protected ?string $heading = 'CPU & RAM Usage';
+    protected ?string $maxHeight = '280px';
+    protected ?array $options = [
         'animation' => [
             'duration' => 600,
             'easing' => 'easeOutQuart',

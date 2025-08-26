@@ -2,7 +2,8 @@
 
 namespace App\Filament\Widgets;
 
-use App\Filament\Resources\BottleResource;
+use App\Filament\Resources\Bottles\Pages\EditBottle;
+use App\Filament\Resources\Bottles\BottleResource;
 use App\Models\Bottle;
 use App\Models\Variant;
 use Filament\Actions\Action;
@@ -18,7 +19,7 @@ class NextBottles extends Widget implements HasForms, HasActions
     use InteractsWithForms;
     use InteractsWithActions;
 
-    protected static string $view = 'filament.widgets.next-bottles';
+    protected string $view = 'filament.widgets.next-bottles';
 
     protected static ?int $sort = 1;
     public int $maxSize = 200;
@@ -51,7 +52,7 @@ class NextBottles extends Widget implements HasForms, HasActions
             ]);
         }
 
-        $this->redirect(BottleResource\Pages\EditBottle::getUrl(['record' => $bottle->id]), true);
+        $this->redirect(EditBottle::getUrl(['record' => $bottle->id]), true);
     }
 
     protected function getViewData(): array
