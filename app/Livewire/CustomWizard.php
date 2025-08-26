@@ -4,18 +4,19 @@ namespace App\Livewire;
 
 use App\Livewire\CustomWizard\Step;
 use Closure;
-use Filament\Forms\Components\Wizard;
+use Filament\Schemas\Components\Wizard;
+use Filament\Support\Components\Component;
 use Illuminate\Contracts\Support\Htmlable;
-use function app;
 
 class CustomWizard extends Wizard
 {
-    protected string|Htmlable|null $footerContent = null;
-
     protected string $view = 'livewire.custom-wizard.wizard';
 
+    /** @var string|Htmlable|Component|Closure|null */
+    protected string|Htmlable|Component|Closure|null $footerContent = null;
+
     /**
-     * @param array<Step> | Closure $steps
+     * @param array<Step>|Closure $steps
      */
     public static function make(array|Closure $steps = []): static
     {
@@ -26,24 +27,30 @@ class CustomWizard extends Wizard
     }
 
     /**
-     * @param array<Step> | Closure $steps
+     * Keep parent initialization for internal container setup.
+     *
+     * @param array<Step>|Closure $steps
      */
     public function steps(array|Closure $steps): static
     {
-        $this->childComponents($steps);
-
-        return $this;
+        return parent::steps($steps);
     }
 
-    public function footerContent(string|Htmlable|null $content): static
+    /**
+     * Accept arbitrary content (string, Htmlable, Closure returning content, or a schema Component).
+     */
+    public function footerContent(string|Htmlable|Component|Closure|null $content): static
     {
         $this->footerContent = $content;
 
         return $this;
     }
 
-    public function getFooterContent(): string|Htmlable|null
+    /**
+     * Resolve footer content.
+     */
+    public function getFooterContent(): mixed
     {
-        return $this->footerContent;
+        return $this->evaluate($this->footerContent);
     }
 }

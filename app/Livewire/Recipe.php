@@ -2,43 +2,49 @@
 
 namespace App\Livewire;
 
-use App\Livewire\CustomWizard\Step;
+use App\Filament\Forms\Components\TableSelect;
+use App\Filament\Tables\BagTable;
 use App\Models\BottlePosition;
+use App\Models\Herb;
 use App\Models\RecipeIngredient;
-use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\ViewField;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
-use Filament\Support\Enums\IconPosition;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
-use function dd;
 
-class Recipe extends Component implements HasForms
+class Recipe extends Component implements HasSchemas
 {
-    use InteractsWithForms;
+    use InteractsWithSchemas;
 
-    public ?array $selectedBag = [];
-
+    /** @var Collection<BottlePosition> */
     public Collection $positions;
 
-    public int|null $activeTab;
+    /** @var array<int, int> */
+    public array $bags = [];
 
     public function mount(Collection $positions): void
     {
         $this->positions = $positions;
-        $this->activeTab = $this->ingredients->first()?->herb_id;
 
-        $this->selectedBag = [];
         foreach ($this->ingredients as $ingredient) {
-            $this->selectedBag[$ingredient->herb_id] = $this->positions->first()?->getBagFor($ingredient->herb)?->id;
+            $herbId = (string)$ingredient->herb_id;
+            $pre = $this->positions->first()?->getBagFor($ingredient->herb)?->id;
+            if ($pre) {
+                $this->bags[$herbId] = $pre;
+            }
         }
+
+        $this->form->fill([
+            'bags' => $this->bags,
+        ]);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
         $startStep = $this->ingredients->takeWhile(function (RecipeIngredient $i) {
                 return $this->positions->every(function (BottlePosition $p) use ($i) {
@@ -50,42 +56,38 @@ class Recipe extends Component implements HasForms
             $startStep = 1;
         }
 
-        $steps = $this->ingredients->map(function (RecipeIngredient $i) {
-            return Step::make($i->herb->name)
-                ->description($this->totalGramms * $i->percentage / 100.0 . 'g')
-                ->completedWhen(fn($state) => $state !== null)
-                ->live(true)
-                ->completedIcon('heroicon-s-check')
-                ->schema([
-                    PositionBagSelector::make('')
-                        ->statePath(null)
-                        ->live()
-                        ->afterStateUpdated(fn($state) => dd("afterStateUpdated", $state))
-                        ->afterStateHydrated(fn($state) => dd("afterStateHydrated", $state))
-                        ->forHerb($i->herb)
-                        ->applyToPositions($this->positions)
-                        ->default(fn($herb, $positions) => $positions->first()->getBagFor($herb)?->id)
-                ])->statePath($i->herb_id);
-        })->all();
+        return $schema
+            ->components([
+                Tabs::make()
+                    ->components(
+                        $this->ingredients->map(fn(RecipeIngredient $i) => Tabs\Tab::make($i->herb->name)
+                            ->id("tab-{$i->herb_id}")
+                            ->model(Herb::class)
+                            ->lazy()
+                            ->badge($this->totalGramms * $i->percentage / 100.0 . 'g')
+                            ->badgeIcon(fn($state) => $state !== null ? Heroicon::Check : Heroicon::XMark)
+                            ->badgeColor(fn($state) => $state !== null ? 'success' : 'gray')
+                            ->statePath("bags.{$i->herb->id}")
+                            ->schema([
+                                TableSelect::make('bag_id')
+                                    ->statePath(null)
+                                    ->live()
+                                    ->hiddenLabel()
+                                    ->belowContent(Schema::center([view('components.bag-amount-bar-legend')]))
+                                    ->tableConfiguration(BagTable::class)
+                                    ->tableArguments(['herb_id' => $i->herb->id]),
+                            ])
+                        )->all())
+            ]);
+    }
 
-        return $form
-            ->schema([
-                CustomWizard::make($steps)
-                    ->footerContent(ViewField::make('footer')->view('components.bag-amount-bar-legend'))
-                    ->startOnStep($startStep)
-                    ->previousAction(function (Action $action) {
-                        $action->color('gray')
-                            ->icon('heroicon-s-arrow-left')
-                            ->iconPosition(IconPosition::Before);
-                    })
-                    ->nextAction(function (Action $action) {
-                        $action->color('gray')
-                            ->icon('heroicon-s-arrow-right')
-                            ->iconPosition(IconPosition::After);
-                    })
-                    ->live(true)
-                    ->skippable()
-            ])->statePath('selectedBag');
+    #[Computed]
+    public function ingredients(): Collection
+    {
+        if ($this->positions->isEmpty()) {
+            return collect();
+        }
+        return $this->positions->first()->variant->product->recipeIngredients->sortByDesc('percentage');
     }
 
     #[Computed]
@@ -94,16 +96,6 @@ class Recipe extends Component implements HasForms
         return $this->positions
             ->map(fn(BottlePosition $p) => $p->variant->size * $p->count)
             ->sum();
-    }
-
-    #[Computed]
-    public function ingredients(): Collection
-    {
-        if ($this->positions->isEmpty()) {
-            return collect();
-        } else {
-            return $this->positions->first()->variant->product->recipeIngredients->sortByDesc('percentage');
-        }
     }
 
     public function render(): View

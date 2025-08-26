@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use Throwable;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
@@ -10,8 +11,8 @@ use Illuminate\Support\Facades\Queue;
 
 class Status extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-command-line';
-    protected static string $view = 'filament.pages.status';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-command-line';
+    protected string $view = 'filament.pages.status';
     protected static ?string $navigationLabel = 'Status';
 
     public function getViewData(): array
@@ -36,7 +37,7 @@ class Status extends Page
         try {
             DB::connection()->getPdo();
             return 'Connected';
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return 'Error: ' . $e->getMessage();
         }
     }
@@ -47,7 +48,7 @@ class Status extends Page
             $testKey = '_status_page_test';
             Cache::put($testKey, 'ok', 10);
             return Cache::get($testKey) === 'ok' ? 'OK' : 'Error';
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return 'Error: ' . $e->getMessage();
         }
     }
@@ -56,7 +57,7 @@ class Status extends Page
     {
         try {
             return Queue::size();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return null;
         }
     }

@@ -1,20 +1,20 @@
 {{-- Stop trying to control. --}}
 
-<x-filament-tables::table>
+<x-table.table>
     @php
         $allActiveBags = $getHerb()->bags;
         $selectedBag = $getHerb()->bags()->withTrashed()->find($getState());
         if($selectedBag !== null) $allActiveBags->push($selectedBag);
     @endphp
     @forelse($allActiveBags->unique('id')->sortByDesc('bestbefore') as $bag)
-        <x-filament-tables::row wire:key="{{ $bag->id }}">
-            <x-filament-tables::cell>
+        <x-table.tr wire:key="{{ $bag->id }}">
+            <x-table.td>
                 <div class="fi-ta-text grid w-full gap-y-1 px-3 py-4">
                     <span class="text-sm font-semibold">{{ $getHerb()->name }}</span>
                     <span class="text-xs text-gray-500 dark:text-gray-400">{{ $bag->specification }}</span>
                 </div>
-            </x-filament-tables::cell>
-            <x-filament-tables::cell>
+            </x-table.td>
+            <x-table.td>
                 <div class="fi-ta-text grid gap-y-1 px-3 py-4 min-w-max">
                     <x-filament::badge tooltip="{{ $bag->bestbefore->format('d.m.Y') }}"
                                        :color="$bag->bestbefore->isPast() ? 'danger' : 'gray'">
@@ -22,31 +22,31 @@
                                           :color="$bag->bestbefore->isPast() ? 'danger' : 'gray'"/>
                     </x-filament::badge>
                 </div>
-            </x-filament-tables::cell>
-            <x-filament-tables::cell>
+            </x-table.td>
+            <x-table.td>
                 <div class="fi-ta-text grid gap-y-1 px-3 py-4 min-w-max">
                     <x-filament::badge icon="heroicon-s-hashtag">
                         {{ $bag->charge }}
                     </x-filament::badge>
                 </div>
-            </x-filament-tables::cell>
-            <x-filament-tables::cell class="w-full px-3 py-4">
+            </x-table.td>
+            <x-table.td class="w-full px-3 py-4">
                 <livewire:bag-amount-bar wire:key="bag-amount-bar-{{ $bag->id }}" :$bag class="grow"/>
-            </x-filament-tables::cell>
-            <x-filament-tables::actions.cell class="">
+            </x-table.td>
+            <x-table.td>
                 {{ $getAction("select-bag-$bag->id") }}
-            </x-filament-tables::actions.cell>
-            <x-filament-tables::actions.cell class="">
+            </x-table.td>
+            <x-table.td>
                 <x-filament::icon-button
                     tag="a"
                     icon="heroicon-s-arrow-top-right-on-square"
                     color="gray"
                     :href="route('filament.admin.resources.bags.edit', $bag->id)"/>
-            </x-filament-tables::actions.cell>
-        </x-filament-tables::row>
+            </x-table.td>
+        </x-table.tr>
     @empty
-        <x-filament-tables::row>
-            <x-filament-tables::cell class="pt-4">
+        <x-table.tr>
+            <x-table.td class="pt-4">
                 <section
                     class="fi-section rounded-xl w-full grow bg-white shadow-xs ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 fi-collapsed">
                     <div class="fi-section-header flex gap-3 px-6 py-4">
@@ -61,7 +61,7 @@
                         </div>
                     </div>
                 </section>
-            </x-filament-tables::cell>
-        </x-filament-tables::row>
+            </x-table.td>
+        </x-table.tr>
     @endforelse
-</x-filament-tables::table>
+</x-table.table>

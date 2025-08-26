@@ -19,7 +19,7 @@ class NecessaryBottle extends Widget implements HasForms, HasActions
     use InteractsWithForms;
     use InteractsWithActions;
 
-    protected static string $view = 'filament.widgets.necessary-bottle';
+    protected string $view = 'filament.widgets.necessary-bottle';
     public Carbon $maxDate;
     public int $extrapolateMaxSize;
     public int $extrapolateMonths;

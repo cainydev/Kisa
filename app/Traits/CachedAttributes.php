@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use RuntimeException;
 use BackedEnum;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -119,7 +120,7 @@ trait CachedAttributes
     public function getCacheKey(string $metric): string
     {
         if (!$this->exists()) {
-            throw new \RuntimeException('Cannot generate cachedAttribute key for non-existing model instance.');
+            throw new RuntimeException('Cannot generate cachedAttribute key for non-existing model instance.');
         }
 
         $modelName = Str::snake(class_basename($this));

@@ -2,13 +2,13 @@
 
 namespace App\Livewire;
 
-use Filament\Forms\Components\Grid;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Forms\Components\Split;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -28,11 +28,11 @@ class EditUserSettings extends Component implements HasForms
         ]);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Split::make([
+        return $schema
+            ->components([
+                Flex::make([
                     SpatieMediaLibraryFileUpload::make('avatar')
                         ->collection('avatar')
                         ->label('Profilbild')

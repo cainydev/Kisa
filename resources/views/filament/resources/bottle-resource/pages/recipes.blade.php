@@ -28,12 +28,14 @@
                 @endforeach
             @endif
         </x-filament::tabs>
-    
+
         @php($ids = $this->positions->pluck('id')->implode('-'))
+
         <div wire:loading.remove wire:target="grouped, activeGroupedTab, activeTab">
             <livewire:bottle-position-list :positions="$this->positions"
                                            wire:key="list-{{ $ids }}"/>
         </div>
+
 
         <div wire:loading.remove wire:target="grouped, activeGroupedTab, activeTab">
             <livewire:recipe :positions="$this->positions"
