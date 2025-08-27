@@ -150,6 +150,7 @@ class DeliveryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->searchable()
             ->columns([
                 Tables\Columns\TextColumn::make('supplier.shortname')
                     ->label("Lieferant")

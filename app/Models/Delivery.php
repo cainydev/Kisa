@@ -54,7 +54,7 @@ class Delivery extends Model implements HasMedia
     {
         $bags = '';
         foreach ($this->bags as $bag) {
-            $bags .= $bag->herb->name . '-' . $bag->getSizeInKilo() . ', ';
+            $bags .= $bag->herb->name . '-' . $bag->charge . '-' . $bag->getSizeInKilo() . ', ';
         }
         $bags = substr($bags, 0, strlen($bags) - 2);
 
