@@ -50,14 +50,13 @@ class Delivery extends Model implements HasMedia
             ->performOnCollections();
     }
 
-    public function toSearchableArray()
+    public function toSearchableArray(): array
     {
         $bags = '';
         foreach ($this->bags as $bag) {
             $bags .= $bag->herb->name . '-' . $bag->charge . '-' . $bag->getSizeInKilo() . ', ';
         }
         $bags = substr($bags, 0, strlen($bags) - 2);
-
         return [
             'id' => $this->id,
             'supplier' => $this->supplier->shortname,

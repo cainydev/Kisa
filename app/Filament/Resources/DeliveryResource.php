@@ -7,6 +7,7 @@ use App\Filament\Resources\DeliveryResource\RelationManagers;
 use App\Models\Delivery;
 use App\Models\Supplier;
 use App\Models\User;
+use Exception;
 use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
@@ -14,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class DeliveryResource extends Resource
@@ -147,11 +149,15 @@ class DeliveryResource extends Resource
             ]);
     }
 
+    /**
+     * @throws Exception
+     */
     public static function table(Table $table): Table
     {
         return $table
             ->searchable()
             ->columns([
+
                 Tables\Columns\TextColumn::make('supplier.shortname')
                     ->label("Lieferant")
                     ->sortable(),
@@ -159,9 +165,20 @@ class DeliveryResource extends Resource
                     ->date('d.m.Y')
                     ->label("Lieferdatum")
                     ->sortable(),
+                Tables\Columns\TextColumn::make('Chargen')
+                    ->getStateUsing(function (Model $record) {
+                        return $record->bags->implode('charge', ', ');
+                    })
+                    ->searchable(query: function (Builder $query, string $search) {
+                        $query->whereHas('bags', function (Builder $query) use ($search) {
+                            $query->where('charge', 'like', "%{$search}%");
+                        });
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label("Empfänger")
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -172,7 +189,6 @@ class DeliveryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
