@@ -11,6 +11,9 @@
     $usedPercentage = ($used / $total) * 100;
 @endphp
 
+@persist("bag-amount-bar-$bag->id")
+
+@endpersist
 <div {{ $getExtraAttributeBag() }} class="grow">
     <div class="flex items-stretch gap-0.5 w-full">
         @if($total > 0)
