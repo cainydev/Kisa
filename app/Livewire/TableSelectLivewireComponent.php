@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use Exception;
-use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -81,16 +80,7 @@ class TableSelectLivewireComponent extends Component implements HasForms, HasTab
         $tableConfiguration::configure($table);
 
         $table
-            ->headerActions([
-                Action::make('select')
-                    ->action(function (Model $record, Component $livewire) {
-                        $selected = collect($livewire->table->selectedTableRecords);
-                        if ($selected->contains($record)) {
-
-                        }
-                    })
-            ])
-            ->recordAction('select')
+            ->headerActions([])
             ->emptyStateActions([])
             ->selectable()
             ->trackDeselectedRecords(false)

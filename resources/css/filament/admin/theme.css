@@ -23,3 +23,15 @@
 .fi-fo-wizard-step .fi-ta-ctn {
     @apply rounded-none ring-0;
 }
+
+.fi-ta-content-header:not(:has(*)) {
+    @apply sr-only;
+}
+
+.fi-ta-record[data-row-select-listener] {
+    @apply cursor-pointer;
+}
+
+.fi-badge.fi-color-primary > .fi-icon {
+    @apply text-primary-400;
+}
