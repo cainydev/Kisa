@@ -2,9 +2,6 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\BottlePosition;
-use App\Models\Herb;
-use App\Models\Order;
 use App\Models\Variant;
 use Carbon\Carbon;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -38,7 +35,7 @@ class NecessaryBottle extends Widget implements HasForms, HasActions
 
     protected function getViewData(): array
     {
-        $positions = Order::with('positions')
+        /*$positions = Order::with('positions')
             ->whereNotNull('paid_at')
             ->whereNull('shipped_at')
             ->where('created_at', '>=', $this->maxDate)
@@ -84,7 +81,7 @@ class NecessaryBottle extends Widget implements HasForms, HasActions
             }
         }
 
-        $this->positions = $positionsGrouped;
+        $this->positions = $positionsGrouped;*/
 
         return [
             'sizes' => Variant::pluck('size')->unique()->sort(),
