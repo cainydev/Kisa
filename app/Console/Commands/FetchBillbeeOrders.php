@@ -49,27 +49,40 @@ class FetchBillbeeOrders extends Command
 
         $pagingInfo = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate)->paging;
 
-        $bar = $this->output->createProgressBar($pagingInfo['TotalRows']);
-        $bar->start();
-
-        while ($page) {
+        if ($pagingInfo === null) {
             try {
                 $response = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate);
                 $orders->push(...$response->data);
-                $page = $response->paging['TotalPages'] == $page ? false : $page + 1;
-                $bar->advance(count($response->data));
             } catch (QuotaExceededException $e) {
                 $this->warn('Billbee API quota exceeded. Let\'s wait a second.');
                 sleep(1);
-                continue;
             } catch (Exception $e) {
                 $this->error($e->getMessage());
-                continue;
             }
-        }
+        } else {
 
-        $bar->finish();
-        $this->newLine(2);
+            $bar = $this->output->createProgressBar($pagingInfo['TotalRows']);
+            $bar->start();
+
+            while ($page) {
+                try {
+                    $response = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate);
+                    $orders->push(...$response->data);
+                    $page = $response->paging['TotalPages'] == $page ? false : $page + 1;
+                    $bar->advance(count($response->data));
+                } catch (QuotaExceededException $e) {
+                    $this->warn('Billbee API quota exceeded. Let\'s wait a second.');
+                    sleep(1);
+                    continue;
+                } catch (Exception $e) {
+                    $this->error($e->getMessage());
+                    continue;
+                }
+            }
+
+            $bar->finish();
+            $this->newLine(2);
+        }
 
         $this->info('Updating orders...');
         $this->newLine();
