@@ -4,9 +4,20 @@ namespace App\Filament\Resources\Bottles\Pages;
 
 use App\Filament\Resources\Bottles\BottleResource;
 use App\Models\Bottle;
+use App\Models\BottlePosition;
+use Exception;
 use Filament\Actions\Action;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Support\Enums\IconSize;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -14,12 +25,18 @@ use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use function route;
 
-class Recipes extends Page
+class Recipes extends Page implements HasActions, HasSchemas, HasTable
 {
+    use InteractsWithActions;
+    use InteractsWithSchemas;
+    use InteractsWithTable;
+
     protected static string $resource = BottleResource::class;
 
     /** @var Bottle */
     public Bottle $bottle;
+
+    public array $bags = [];
 
     #[Url(as: 'grouped', keep: true)]
     public bool $grouped = true;
@@ -71,11 +88,56 @@ class Recipes extends Page
         }
     }
 
-    #[On('positions.updated')]
-    public function refreshPositions(): void
+    /**
+     * @throws Exception
+     */
+    public function table(Table $table): Table
     {
-        unset($this->positions, $this->groups);
-        $this->recalculateTabs();
+        return $table
+            ->query(fn() => BottlePosition::whereIn('id', $this->positions()->pluck('id'))->with(['variant.product']))
+            ->columnManager(false)
+            ->paginated(false)
+            ->columns([
+                TextColumn::make('count')
+                    ->alignEnd()
+                    ->label(''),
+                TextColumn::make('times')->state('×')->label(''),
+                TextColumn::make('variant.product.name')
+                    ->label('Produkt'),
+                TextColumn::make('variant.size')
+                    ->label('')
+                    ->formatStateUsing(fn($state) => "{$state}g")
+                    ->grow()
+                    ->badge(),
+                TextColumn::make('variant.stock')
+                    ->label('Bestand'),
+                TextColumn::make('charge')
+                    ->grow(),
+            ])
+            ->recordActions([
+                Action::make('refresh')
+                    ->label('Aktualisieren')
+                    ->iconButton()
+                    ->iconSize(IconSize::Large)
+                    ->icon('heroicon-s-arrow-path')
+                    ->action(function (BottlePosition $record) {
+                        $record->refresh();
+                        $record->charge = $record->getCharge();
+                        $record->save();
+                    }),
+                Action::make('upload')
+                    ->disabled(fn(BottlePosition $position) => $position->uploaded)
+                    ->label(function (BottlePosition $position) {
+                        return $position->uploaded ? 'Eingelagert' : 'Einlagern';
+                    })
+                    ->action(function (BottlePosition $record) {
+                        $record->upload();
+                    })
+                    ->button()
+                    ->color('gray')
+                    ->icon('icon-billbee')
+                    ->iconSize(IconSize::Large)
+            ]);
     }
 
     #[Computed]
@@ -90,6 +152,13 @@ class Recipes extends Page
         } else {
             return $this->bottle->positions->where('id', $this->activeTab);
         }
+    }
+
+    #[On('positions.updated')]
+    public function refreshPositions(): void
+    {
+        unset($this->positions, $this->groups);
+        $this->recalculateTabs();
     }
 
     #[Computed]

@@ -1,1 +1,345 @@
-function d(){return{checkboxClickController:null,collapsedGroups:[],isLoading:!1,selectedRecords:[],shouldCheckUniqueSelection:!0,lastCheckedRecord:null,livewireId:null,init:function(){this.livewireId=this.$root.closest("[wire\\:id]").attributes["wire:id"].value,this.$wire.$on("deselectAllTableRecords",()=>this.deselectAllRecords()),this.$watch("selectedRecords",()=>{if(!this.shouldCheckUniqueSelection){this.shouldCheckUniqueSelection=!0;return}this.selectedRecords=[...new Set(this.selectedRecords)],this.shouldCheckUniqueSelection=!1}),this.$nextTick(()=>this.watchForCheckboxClicks()),Livewire.hook("element.init",({component:e})=>{e.id===this.livewireId&&this.watchForCheckboxClicks()})},mountAction:function(e,t=null){this.$wire.set("selectedTableRecords",this.selectedRecords,!1),this.$wire.mountTableAction(e,t)},mountBulkAction:function(e){this.$wire.set("selectedTableRecords",this.selectedRecords,!1),this.$wire.mountTableBulkAction(e)},toggleSelectRecordsOnPage:function(){let e=this.getRecordsOnPage();if(this.areRecordsSelected(e)){this.deselectRecords(e);return}this.selectRecords(e)},toggleSelectRecordsInGroup:async function(e){this.isLoading=!0;let t=await this.$wire.getGroupedSelectableTableRecordKeys(e);this.areRecordsSelected(this.getRecordsInGroupOnPage(e))?this.deselectRecords(t):this.selectRecords(t),this.isLoading=!1},getRecordsInGroupOnPage:function(e){let t=[];for(let s of this.$root?.getElementsByClassName("fi-ta-record-checkbox")??[])s.dataset.group===e&&t.push(s.value);return t},getRecordsOnPage:function(){let e=[];for(let t of this.$root?.getElementsByClassName("fi-ta-record-checkbox")??[])e.push(t.value);return e},selectRecords:function(e){for(let t of e)this.isRecordSelected(t)||this.selectedRecords.push(t)},deselectRecords:function(e){for(let t of e){let s=this.selectedRecords.indexOf(t);s!==-1&&this.selectedRecords.splice(s,1)}},selectAllRecords:async function(){this.isLoading=!0,this.selectedRecords=await this.$wire.getAllSelectableTableRecordKeys(),this.isLoading=!1},deselectAllRecords:function(){this.selectedRecords=[]},isRecordSelected:function(e){return this.selectedRecords.includes(e)},areRecordsSelected:function(e){return e.every(t=>this.isRecordSelected(t))},toggleCollapseGroup:function(e){if(this.isGroupCollapsed(e)){this.collapsedGroups.splice(this.collapsedGroups.indexOf(e),1);return}this.collapsedGroups.push(e)},isGroupCollapsed:function(e){return this.collapsedGroups.includes(e)},resetCollapsedGroups:function(){this.collapsedGroups=[]},watchForCheckboxClicks:function(){this.checkboxClickController&&this.checkboxClickController.abort(),this.checkboxClickController=new AbortController;let{signal:e}=this.checkboxClickController;this.$root?.addEventListener("click",t=>t.target?.matches(".fi-ta-record-checkbox")&&this.handleCheckboxClick(t,t.target),{signal:e})},handleCheckboxClick:function(e,t){if(!this.lastChecked){this.lastChecked=t;return}if(e.shiftKey){let s=Array.from(this.$root?.getElementsByClassName("fi-ta-record-checkbox")??[]);if(!s.includes(this.lastChecked)){this.lastChecked=t;return}let l=s.indexOf(this.lastChecked),r=s.indexOf(t),o=[l,r].sort((c,n)=>c-n),i=[];for(let c=o[0];c<=o[1];c++)s[c].checked=t.checked,i.push(s[c].value);t.checked?this.selectRecords(i):this.deselectRecords(i)}this.lastChecked=t}}}export{d as default};
+export default ({
+                    canTrackDeselectedRecords,
+                    currentSelectionLivewireProperty,
+                    maxSelectableRecords,
+                    selectsCurrentPageOnly,
+                    $wire,
+                }) => ({
+    checkboxClickController: null,
+
+    collapsedGroups: [],
+
+    isLoading: false,
+
+    selectedRecords: new Set(),
+
+    deselectedRecords: new Set(),
+
+    isTrackingDeselectedRecords: false,
+
+    shouldCheckUniqueSelection: true,
+
+    lastCheckedRecord: null,
+
+    livewireId: null,
+
+    entangledSelectedRecords: currentSelectionLivewireProperty
+        ? $wire.$entangle(currentSelectionLivewireProperty).live
+        : null,
+
+    init() {
+        this.livewireId =
+            this.$root.closest('[wire\\:id]')?.attributes['wire:id'].value
+
+        $wire.$on('deselectAllTableRecords', () => this.deselectAllRecords())
+
+        if (currentSelectionLivewireProperty) {
+            if (maxSelectableRecords !== 1) {
+                this.selectedRecords = new Set(this.entangledSelectedRecords)
+            } else {
+                this.selectedRecords = new Set(
+                    this.entangledSelectedRecords
+                        ? [this.entangledSelectedRecords]
+                        : [],
+                )
+            }
+        }
+
+        this.$nextTick(() => this.watchForCheckboxClicks())
+
+        Livewire.hook('element.init', ({component}) => {
+            if (component.id === this.livewireId) {
+                this.watchForCheckboxClicks()
+            }
+        })
+    },
+
+    mountAction(...args) {
+        $wire.set(
+            'isTrackingDeselectedTableRecords',
+            this.isTrackingDeselectedRecords,
+            false,
+        )
+        $wire.set('selectedTableRecords', [...this.selectedRecords], false)
+        $wire.set('deselectedTableRecords', [...this.deselectedRecords], false)
+
+        $wire.mountAction(...args)
+    },
+
+    toggleSelectRecordsOnPage() {
+        const keys = this.getRecordsOnPage()
+
+        if (this.areRecordsSelected(keys)) {
+            this.deselectRecords(keys)
+
+            return
+        }
+
+        this.selectRecords(keys)
+    },
+
+    toggleSelectRecords(keys) {
+        if (this.areRecordsSelected(keys)) {
+            this.deselectRecords(keys)
+        } else {
+            this.selectRecords(keys)
+        }
+    },
+
+    getSelectedRecordsCount() {
+        if (this.isTrackingDeselectedRecords) {
+            return (
+                (this.$refs.allSelectableRecordsCount?.value ??
+                    this.deselectedRecords.size) - this.deselectedRecords.size
+            )
+        }
+
+        return this.selectedRecords.size
+    },
+
+    getRecordsOnPage() {
+        const keys = []
+
+        for (let checkbox of this.$root?.getElementsByClassName(
+            'fi-ta-record-checkbox',
+        ) ?? []) {
+            keys.push(checkbox.value)
+        }
+
+        return keys
+    },
+
+    selectRecords(keys) {
+        if (maxSelectableRecords === 1) {
+            this.deselectAllRecords()
+
+            keys = keys.slice(0, 1)
+        }
+
+        for (let key of keys) {
+            if (this.isRecordSelected(key)) {
+                continue
+            }
+
+            if (this.isTrackingDeselectedRecords) {
+                this.deselectedRecords.delete(key)
+
+                continue
+            }
+
+            this.selectedRecords.add(key)
+        }
+
+        this.updatedSelectedRecords()
+    },
+
+    deselectRecords(keys) {
+        for (let key of keys) {
+            if (this.isTrackingDeselectedRecords) {
+                this.deselectedRecords.add(key)
+
+                continue
+            }
+
+            this.selectedRecords.delete(key)
+        }
+
+        this.updatedSelectedRecords()
+    },
+
+    updatedSelectedRecords() {
+        if (maxSelectableRecords !== 1) {
+            this.entangledSelectedRecords = [...this.selectedRecords]
+
+            return
+        }
+
+        this.entangledSelectedRecords = [...this.selectedRecords][0] ?? null
+    },
+
+    toggleSelectedRecord(key) {
+        if (this.isRecordSelected(key)) {
+            this.deselectRecords([key])
+
+            return
+        }
+
+        this.selectRecords([key])
+    },
+
+    async selectAllRecords() {
+        if (!canTrackDeselectedRecords || selectsCurrentPageOnly) {
+            this.isLoading = true
+
+            this.selectedRecords = new Set(
+                await $wire.getAllSelectableTableRecordKeys(),
+            )
+
+            this.updatedSelectedRecords()
+
+            this.isLoading = false
+
+            return
+        }
+
+        this.isTrackingDeselectedRecords = true
+        this.selectedRecords = new Set()
+        this.deselectedRecords = new Set()
+
+        this.updatedSelectedRecords()
+    },
+
+    canSelectAllRecords() {
+        if (selectsCurrentPageOnly) {
+            const recordsOnPage = this.getRecordsOnPage()
+
+            return (
+                !this.areRecordsSelected(recordsOnPage) &&
+                this.areRecordsToggleable(recordsOnPage)
+            )
+        }
+
+        const allSelectableRecordsCount = parseInt(
+            this.$refs.allSelectableRecordsCount?.value,
+        )
+
+        if (!allSelectableRecordsCount) {
+            return false
+        }
+
+        const selectedRecordsCount = this.getSelectedRecordsCount()
+
+        if (allSelectableRecordsCount === selectedRecordsCount) {
+            return false
+        }
+
+        return (
+            maxSelectableRecords === null ||
+            allSelectableRecordsCount <= maxSelectableRecords
+        )
+    },
+
+    deselectAllRecords() {
+        this.isTrackingDeselectedRecords = false
+        this.selectedRecords = new Set()
+        this.deselectedRecords = new Set()
+
+        this.updatedSelectedRecords()
+    },
+
+    isRecordSelected(key) {
+        if (this.isTrackingDeselectedRecords) {
+            return !this.deselectedRecords.has(key)
+        }
+
+        return this.selectedRecords.has(key)
+    },
+
+    areRecordsSelected(keys) {
+        return keys.every((key) => this.isRecordSelected(key))
+    },
+
+    areRecordsToggleable(keys) {
+        if (maxSelectableRecords === null) {
+            return true
+        }
+
+        if (maxSelectableRecords === 1) {
+            return true
+        }
+
+        const selectedRecords = keys.filter((key) => this.isRecordSelected(key))
+
+        if (selectedRecords.length === keys.length) {
+            return true
+        }
+
+        return (
+            this.getSelectedRecordsCount() +
+            (keys.length - selectedRecords.length) <=
+            maxSelectableRecords
+        )
+    },
+
+    toggleCollapseGroup(group) {
+        if (this.isGroupCollapsed(group)) {
+            this.collapsedGroups.splice(this.collapsedGroups.indexOf(group), 1)
+
+            return
+        }
+
+        this.collapsedGroups.push(group)
+    },
+
+    isGroupCollapsed(group) {
+        return this.collapsedGroups.includes(group)
+    },
+
+    resetCollapsedGroups() {
+        this.collapsedGroups = []
+    },
+
+    watchForCheckboxClicks() {
+        if (this.checkboxClickController) {
+            this.checkboxClickController.abort()
+        }
+
+        this.checkboxClickController = new AbortController()
+
+        const {signal} = this.checkboxClickController
+
+        this.$root?.addEventListener(
+            'click',
+            (event) =>
+                event.target?.matches('.fi-ta-record-checkbox') &&
+                this.handleCheckboxClick(event, event.target),
+            {signal},
+        )
+    },
+
+    handleCheckboxClick(event, checkbox) {
+        if (!this.lastChecked) {
+            this.lastChecked = checkbox
+
+            return
+        }
+
+        if (event.shiftKey) {
+            let checkboxes = Array.from(
+                this.$root?.getElementsByClassName('fi-ta-record-checkbox') ??
+                [],
+            )
+
+            if (!checkboxes.includes(this.lastChecked)) {
+                this.lastChecked = checkbox
+
+                return
+            }
+
+            let start = checkboxes.indexOf(this.lastChecked)
+            let end = checkboxes.indexOf(checkbox)
+
+            let range = [start, end].sort((a, b) => a - b)
+            let values = []
+
+            for (let i = range[0]; i <= range[1]; i++) {
+                values.push(checkboxes[i].value)
+            }
+
+            if (checkbox.checked) {
+                if (!this.areRecordsToggleable(values)) {
+                    checkbox.checked = false
+                    this.deselectRecords([checkbox.value])
+
+                    return
+                }
+
+                this.selectRecords(values)
+            } else {
+                this.deselectRecords(values)
+            }
+        }
+
+        this.lastChecked = checkbox
+    },
+})
