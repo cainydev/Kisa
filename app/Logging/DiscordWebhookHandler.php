@@ -38,7 +38,8 @@ class DiscordWebhookHandler extends AbstractProcessingHandler
             '%s **%s** %s',
             $emoji,
             $record->level->getName(),
-            $record->message
+            $record->message,
+            json_encode($record->context)
         );
 
         DiscordAlert::message($message);
