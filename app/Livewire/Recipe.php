@@ -2,24 +2,16 @@
 
 namespace App\Livewire;
 
-use App\Filament\Forms\Components\TableSelect;
-use App\Filament\Tables\BagTable;
 use App\Models\BottlePosition;
 use App\Models\Ingredient;
 use App\Models\RecipeIngredient;
-use Exception;
-use Filament\Schemas\Concerns\InteractsWithSchemas;
-use Filament\Schemas\Contracts\HasSchemas;
-use Filament\Schemas\Schema;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
-class Recipe extends Component implements HasSchemas
+class Recipe extends Component
 {
-    use InteractsWithSchemas;
-
     /** @var Collection<BottlePosition> */
     public Collection $positions;
 
@@ -32,58 +24,36 @@ class Recipe extends Component implements HasSchemas
     {
         $this->positions = $positions;
 
-        foreach ($this->ingredients as $ingredient) {
-            $herbId = (string)$ingredient->herb_id;
-            $pre = $this->positions->first()?->getBagFor($ingredient->herb)?->id;
-            if ($pre) {
-                $this->bags[$herbId] = $pre;
-            }
-        }
-
-        $this->herb = $this->ingredients->first()?->herb->id;
-
-        $this->form->fill([
-            'bags' => $this->bags,
-        ]);
-    }
-
-    public function updatedBags($value): void
-    {
-        $old = Ingredient::whereIn('bottle_position_id', $this->positions->pluck('id'))
-            ->where('herb_id', $this->herb)
+        $this->bags = Ingredient::whereIn('bottle_position_id', $this->positions->pluck('id'))
             ->pluck('bag_id', 'herb_id')
             ->toArray();
 
-        if (empty(array_diff_assoc($this->bags, $old))) return;
-
-        Ingredient::whereIn('bottle_position_id', $this->positions->pluck('id'))
-            ->where('herb_id', $this->herb)
-            ->delete();
-
-        if ($value !== null) {
-            Ingredient::insert($this->positions->map(fn(BottlePosition $position) => [
-                'bottle_position_id' => $position->id,
-                'herb_id' => $this->herb,
-                'bag_id' => $value
-            ])->all());
+        foreach ($this->ingredients as $ingredient) {
+            if (!array_key_exists($ingredient->herb_id, $this->bags))
+                $this->bags[$ingredient->herb_id] = null;
         }
+
+        $this->herb = $this->ingredients->first()?->herb_id ?? null;
     }
 
-    /**
-     * @throws Exception
-     */
-    public function form(Schema $schema): Schema
+    public function select(int $herb, ?int $bag): void
     {
-        if (!$this->herb) return $schema;
+        $old = $this->bags[$herb];
+        $this->bags[$herb] = $bag;
 
-        return $schema
-            ->components([
-                TableSelect::make("bags.{$this->herb}")
-                    ->live()
-                    ->hiddenLabel()
-                    ->tableConfiguration(BagTable::class)
-                    ->tableArguments(['herb_id' => $this->herb])
-            ]);
+        if ($this->bags[$herb] !== $old) {
+            Ingredient::whereIn('bottle_position_id', $this->positions->pluck('id'))
+                ->where('herb_id', $this->herb)
+                ->delete();
+
+            if ($bag !== null) {
+                Ingredient::insert($this->positions->map(fn(BottlePosition $position) => [
+                    'bottle_position_id' => $position->id,
+                    'herb_id' => $this->herb,
+                    'bag_id' => $bag
+                ])->all());
+            }
+        }
     }
 
     #[Computed]
@@ -93,6 +63,22 @@ class Recipe extends Component implements HasSchemas
             return collect();
         }
         return $this->positions->first()->variant->product->recipeIngredients->sortByDesc('percentage');
+    }
+
+    #[Computed]
+    public function steps(): array
+    {
+        return $this->ingredients->map(fn(RecipeIngredient $i) => [
+            'key' => $i->herb_id,
+            'label' => $i->herb->name,
+            'description' => "{$this->amounts[$i->herb_id]}g"
+        ])->all();
+    }
+
+    #[Computed]
+    public function completedSteps(): array
+    {
+        return array_keys(array_filter($this->bags));
     }
 
     #[Computed]
@@ -109,17 +95,6 @@ class Recipe extends Component implements HasSchemas
         return $this->positions->first()->variant->product->recipeIngredients->mapWithKeys(function (RecipeIngredient $i) {
             return [$i->herb_id => $this->positions->sum(fn(BottlePosition $p) => $p->count * $p->variant->size * ($i->percentage / 100.))];
         })->all();
-    }
-
-    public function firstStep(): int
-    {
-        $startStep = $this->ingredients->takeWhile(function (RecipeIngredient $i) {
-                return $this->positions->every(function (BottlePosition $p) use ($i) {
-                    return $p->hasBagFor($i->herb);
-                });
-            })->count() + 1;
-
-        return $startStep >= $this->ingredients->count() ? 1 : $startStep;
     }
 
     public function render(): View

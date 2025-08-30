@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -38,7 +40,7 @@ class Delivery extends Model implements HasMedia
             ->singleFile();
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('small')
             ->width(595)
@@ -50,7 +52,7 @@ class Delivery extends Model implements HasMedia
             ->performOnCollections();
     }
 
-    public function toSearchableArray()
+    public function toSearchableArray(): array
     {
         $bags = '';
         foreach ($this->bags as $bag) {
@@ -66,22 +68,22 @@ class Delivery extends Model implements HasMedia
         ];
     }
 
-    public function addBag(Bag $bag)
+    public function addBag(Bag $bag): void
     {
         $this->bags->push($bag);
     }
 
-    public function supplier()
+    public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
     }
 
-    public function bags()
+    public function bags(): HasMany
     {
         return $this->hasMany(Bag::class);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

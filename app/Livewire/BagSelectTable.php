@@ -1,38 +1,58 @@
 <?php
 
-namespace App\Filament\Tables;
+namespace App\Livewire;
 
 use App\Filament\Tables\Columns\BagAmountColumn;
-use App\Models\Bag;
+use App\Models\Herb;
 use Carbon\Carbon;
 use Exception;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
+use Livewire\Attributes\Locked;
+use Livewire\Attributes\Modelable;
+use Livewire\Attributes\Reactive;
+use Livewire\Component;
+use Livewire\WithoutUrlPagination;
 
-class BagTable
+class BagSelectTable extends Component implements HasActions, HasSchemas, HasTable
 {
+    use InteractsWithActions;
+    use InteractsWithSchemas;
+    use InteractsWithTable;
+    use WithoutUrlPagination;
+
+    #[Reactive, Locked]
+    public ?int $herb = null;
+
+    #[Modelable]
+    public ?string $selected = null;
+
     /**
      * @throws Exception
      */
-    public static function configure(Table $table): Table
+    public function table(Table $table): Table
     {
+        if (!$this->herb) return $table;
+
         return $table
-            ->emptyStateHeading('Keine Gebinde gefunden')
-            ->query(fn(): Builder => Bag::query())
-            ->modifyQueryUsing(function (Builder $query) use ($table): Builder {
-                $arguments = $table->getArguments();
-
-                if ($herbId = $arguments['herb_id'] ?? null) {
-                    $query->where('herb_id', $herbId);
-                }
-
-                return $query;
-            })
+            ->relationship(fn() => Herb::find($this->herb)->bags())
+            ->inverseRelationship('herb')
+            ->selectable()
+            ->maxSelectableRecords(1)
+            ->trackDeselectedRecords(false)
+            ->deselectAllRecordsWhenFiltered(false)
+            ->currentSelectionLivewireProperty('selected')
+            ->disabledSelection(false)
             ->paginated(false)
             ->columns([
                 Split::make([
@@ -59,5 +79,14 @@ class BagTable
                         ->grow(),
                 ])
             ]);
+    }
+
+    public function render(): string
+    {
+        return <<<'BLADE'
+            <div wire:key="bag-select-table-wrapper-{{ $this->getId() }}">
+                {{ $this->table }}
+            </div>
+        BLADE;
     }
 }

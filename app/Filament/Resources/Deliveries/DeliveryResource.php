@@ -2,32 +2,33 @@
 
 namespace App\Filament\Resources\Deliveries;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\TextInput;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\Deliveries\RelationManagers\BagsRelationManager;
-use App\Filament\Resources\Deliveries\Pages\ListDeliveries;
 use App\Filament\Resources\Deliveries\Pages\CreateDelivery;
 use App\Filament\Resources\Deliveries\Pages\EditDelivery;
+use App\Filament\Resources\Deliveries\Pages\ListDeliveries;
+use App\Filament\Resources\Deliveries\RelationManagers\BagsRelationManager;
 use App\Filament\Resources\DeliveryResource\Pages;
 use App\Filament\Resources\DeliveryResource\RelationManagers;
 use App\Models\Delivery;
 use App\Models\Supplier;
 use App\Models\User;
-use Filament\Forms;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
@@ -42,8 +43,8 @@ class DeliveryResource extends Resource
     protected static ?string $recordTitleAttribute = 'title';
 
     protected static ?int $navigationSort = 30;
-    protected static string | \UnitEnum | null $navigationGroup = 'Bestand';
-    protected static string | \BackedEnum | null $navigationIcon = 'carbon-delivery';
+    protected static string|\UnitEnum|null $navigationGroup = 'Bestand';
+    protected static string|\BackedEnum|null $navigationIcon = 'carbon-delivery';
 
     public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
     {
@@ -52,7 +53,7 @@ class DeliveryResource extends Resource
 
     public static function getGloballySearchableAttributes(): array
     {
-        return ['delivered_date', 'supplier.shortname'];
+        return ['delivered_date', 'supplier.shortname', 'bags.charge'];
     }
 
     public static function getGlobalSearchResultDetails(Model $record): array
@@ -89,18 +90,21 @@ class DeliveryResource extends Resource
                             ->hintIcon('heroicon-s-document-text')
                             ->acceptedFileTypes(['application/pdf'])
                             ->collection('invoice')
+                            ->downloadable()
                             ->maxFiles(1),
                         SpatieMediaLibraryFileUpload::make('deliveryNote')
                             ->label("Lieferschwein")
                             ->hintIcon('heroicon-s-clipboard-document-check')
                             ->acceptedFileTypes(['application/pdf'])
                             ->collection('deliveryNote')
+                            ->downloadable()
                             ->maxFiles(1),
                         SpatieMediaLibraryFileUpload::make('certificate')
                             ->label("Zertifikat")
                             ->hintIcon('heroicon-s-shield-check')
                             ->acceptedFileTypes(['application/pdf'])
                             ->collection('certificate')
+                            ->downloadable()
                             ->maxFiles(1)
                     ])->columns(['md' => 3]),
                     Tab::make('Eingangskontrolle')->schema([
@@ -169,10 +173,12 @@ class DeliveryResource extends Resource
             ->columns([
                 TextColumn::make('supplier.shortname')
                     ->label("Lieferant")
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('delivered_date')
                     ->date('d.m.Y')
                     ->label("Lieferdatum")
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('user.name')
                     ->label("Empfänger")
@@ -185,10 +191,35 @@ class DeliveryResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('charges')
+                    ->getStateUsing(fn(Delivery $record) => $record->bags->pluck('charge')->unique()->join(', '))
+                    ->hidden()
+                    ->searchable()
             ])
             ->filters([
-                //
-            ])
+                SelectFilter::make('supplier')
+                    ->label("Lieferant")
+                    ->relationship('supplier', 'shortname'),
+                TernaryFilter::make('has_files')
+                    ->label('Hat Dokumente')
+                    ->trueLabel('Ja')
+                    ->falseLabel('Nein')
+                    ->queries(
+                        true: fn($query) => $query->whereHas('media'),
+                        false: fn($query) => $query->whereDoesntHave('media'),
+                    ),
+                SelectFilter::make('herbs')
+                    ->label("Enthält Rohstoff")
+                    ->multiple()
+                    ->searchable()
+                    ->relationship('bags.herb', 'name'),
+                SelectFilter::make('charges')
+                    ->label('Enthält Charge')
+                    ->multiple()
+                    ->searchable()
+                    ->relationship('bags', 'charge'),
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->recordActions([
                 EditAction::make(),
             ])
