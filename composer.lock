@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "af3eb4db07137b665d4a6abf22195c62",
+    "content-hash": "cdc985d6748b91d2aefe16561002679a",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -74,11 +74,17 @@
         },
         {
             "name": "billbee/billbee-api",
-            "version": "v2.2.2",
+            "version": "v2.2.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/cainydev/billbee-php-sdk.git",
-                "reference": "dba658aa90ac8a5c310f6a04974ef58a88bc3c2e"
+                "url": "https://github.com/billbeeio/billbee-php-sdk.git",
+                "reference": "ad5c72dc93797a3050dff68a59b29d4f04d50805"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/billbeeio/billbee-php-sdk/zipball/ad5c72dc93797a3050dff68a59b29d4f04d50805",
+                "reference": "ad5c72dc93797a3050dff68a59b29d4f04d50805",
+                "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
@@ -100,21 +106,7 @@
                     "BillbeeDe\\Tests\\BillbeeAPI\\": "tests/"
                 }
             },
-            "archive": {
-                "exclude": [
-                    "/tests",
-                    "/doc"
-                ]
-            },
-            "scripts": {
-                "fix-cs": [
-                    "php-cs-fixer fix ./src/ --using-cache=no --rules=@PSR2",
-                    "php-cs-fixer fix ./tests/ --using-cache=no --rules=@PSR2"
-                ],
-                "analyse": [
-                    "phpstan analyse"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -125,7 +117,11 @@
                 }
             ],
             "description": "The official Billbee API SDK for PHP",
-            "time": "2025-08-30T20:36:08+00:00"
+            "support": {
+                "issues": "https://github.com/billbeeio/billbee-php-sdk/issues",
+                "source": "https://github.com/billbeeio/billbee-php-sdk/tree/v2.2.1"
+            },
+            "time": "2023-10-10T09:50:26+00:00"
         },
         {
             "name": "blade-ui-kit/blade-heroicons",
@@ -2779,16 +2775,16 @@
         },
         {
             "name": "laravel/framework",
-            "version": "v12.26.4",
+            "version": "v12.27.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "085a367a32ba86fcfa647bfc796098ae6f795b09"
+                "reference": "3fdcf8f3788fcb154df12ebf1fe0dd4a199e92a8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/085a367a32ba86fcfa647bfc796098ae6f795b09",
-                "reference": "085a367a32ba86fcfa647bfc796098ae6f795b09",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/3fdcf8f3788fcb154df12ebf1fe0dd4a199e92a8",
+                "reference": "3fdcf8f3788fcb154df12ebf1fe0dd4a199e92a8",
                 "shasum": ""
             },
             "require": {
@@ -2992,7 +2988,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2025-08-29T14:15:53+00:00"
+            "time": "2025-09-02T15:32:28+00:00"
         },
         {
             "name": "laravel/octane",
@@ -9919,16 +9915,16 @@
         },
         {
             "name": "filament/upgrade",
-            "version": "v4.0.4",
+            "version": "v4.0.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/filamentphp/upgrade.git",
-                "reference": "5b04a3d9052a3bc1d886aee965fb3140475fdfc2"
+                "reference": "21a3da29b7ebc4e85372b9a6dd39e391cbc47fdb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/filamentphp/upgrade/zipball/5b04a3d9052a3bc1d886aee965fb3140475fdfc2",
-                "reference": "5b04a3d9052a3bc1d886aee965fb3140475fdfc2",
+                "url": "https://api.github.com/repos/filamentphp/upgrade/zipball/21a3da29b7ebc4e85372b9a6dd39e391cbc47fdb",
+                "reference": "21a3da29b7ebc4e85372b9a6dd39e391cbc47fdb",
                 "shasum": ""
             },
             "require": {
@@ -9962,7 +9958,7 @@
                 "issues": "https://github.com/filamentphp/filament/issues",
                 "source": "https://github.com/filamentphp/filament"
             },
-            "time": "2025-08-19T09:14:39+00:00"
+            "time": "2025-09-02T11:01:30+00:00"
         },
         {
             "name": "filp/whoops",
