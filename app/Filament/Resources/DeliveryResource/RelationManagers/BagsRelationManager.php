@@ -53,12 +53,15 @@ class BagsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function ($query) {
+                $query->withTrashed();
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('herb.fullname')
                     ->label("Rohstoff"),
                 Tables\Columns\TextColumn::make('size')
                     ->label("Gebinde")
-                    ->formatStateUsing(fn ($state) => "{$state}g"),
+                    ->formatStateUsing(fn($state) => "{$state}g"),
                 Tables\Columns\TextColumn::make('charge')
                     ->label("Charge"),
                 Tables\Columns\IconColumn::make('bio')
@@ -72,12 +75,9 @@ class BagsRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()->label('Entsorgen'),
+                Tables\Actions\RestoreAction::make()->label('Aus dem Müll holen'),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->bulkActions([]);
     }
 }
