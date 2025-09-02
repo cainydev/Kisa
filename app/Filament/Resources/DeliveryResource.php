@@ -75,18 +75,24 @@ class DeliveryResource extends Resource
                             ->hintIcon('heroicon-s-document-text')
                             ->acceptedFileTypes(['application/pdf'])
                             ->collection('invoice')
+                            ->downloadable()
+                            ->previewable()
                             ->maxFiles(1),
                         SpatieMediaLibraryFileUpload::make('deliveryNote')
                             ->label("Lieferschwein")
                             ->hintIcon('heroicon-s-clipboard-document-check')
                             ->acceptedFileTypes(['application/pdf'])
                             ->collection('deliveryNote')
+                            ->downloadable()
+                            ->previewable()
                             ->maxFiles(1),
                         SpatieMediaLibraryFileUpload::make('certificate')
                             ->label("Zertifikat")
                             ->hintIcon('heroicon-s-shield-check')
                             ->acceptedFileTypes(['application/pdf'])
                             ->collection('certificate')
+                            ->downloadable()
+                            ->previewable()
                             ->maxFiles(1)
                     ])->columns(['md' => 3]),
                     Forms\Components\Tabs\Tab::make('Eingangskontrolle')->schema([

@@ -60,7 +60,6 @@ class FetchBillbeeOrders extends Command
                 $this->error($e->getMessage());
             }
         } else {
-
             $bar = $this->output->createProgressBar($pagingInfo['TotalRows']);
             $bar->start();
 
