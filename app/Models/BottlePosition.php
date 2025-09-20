@@ -113,14 +113,16 @@ class BottlePosition extends Model
 
         if ($billbeeProduct = $this->variant->fetchBillbeeProduct()) {
             try {
-                $newStock = Stock::fromProduct($billbeeProduct)
-                    ->setDeltaQuantity($this->count)
-                    ->setReason("Einlagerung $this->charge");
+                $newStock = Stock::fromProduct($billbeeProduct);
+                $newStock->deltaQuantity = $this->count;
+                $newStock->newQuantity = $newStock->oldQuantity + $this->count;
+                $newStock->reason = "Einlagerung $this->charge";
 
-                Billbee::products()->updateStock($newStock);
+                $response = Billbee::products()->updateStock($newStock);
+                $newStock = $response->data->currentStock;
 
                 $this->variant->update([
-                    'stock' => $newStock->getNewQuantity()
+                    'stock' => $newStock
                 ]);
 
                 $this->update([
@@ -129,7 +131,7 @@ class BottlePosition extends Model
 
                 Notification::make()
                     ->title('Einlagern erfolgreich')
-                    ->body('Neuer Bestand in Billbee: ' . $newStock->getNewQuantity())
+                    ->body('Neuer Bestand in Billbee: ' . $newStock)
                     ->success()
                     ->send();
 

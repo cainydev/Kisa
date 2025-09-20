@@ -39,14 +39,14 @@ class FetchBillbeeProducts extends Command
         $pageSize = intval($this->option('perpage'));
         $pagingInfo = Billbee::products()->getProducts($page, $pageSize)->paging;
 
-        $bar = $this->output->createProgressBar($pagingInfo['TotalRows']);
+        $bar = $this->output->createProgressBar($pagingInfo->totalRows);
         $bar->start();
 
         while ($page) {
             try {
                 $response = Billbee::products()->getProducts($page, $pageSize);
                 $products->push(...$response->data);
-                $page = $response->paging['TotalPages'] == $page ? false : $page + 1;
+                $page = $response->paging->totalPages == $page ? false : $page + 1;
                 $bar->advance(count($response->data));
             } catch (QuotaExceededException $e) {
                 $this->warn('Billbee API quota exceeded. Let\'s wait a second.');

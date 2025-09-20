@@ -20,7 +20,7 @@ class FetchBillbeeOrders extends Command
      *
      * @var string
      */
-    protected $signature = 'billbee:orders {--perpage=250 : Page size when fetching} {--after=null : Only orders after this date}';
+    protected $signature = 'billbee:orders {--perpage=250 : Page size when fetching} {--after : Only orders after this date}';
 
     /**
      * The console command description.
@@ -60,14 +60,14 @@ class FetchBillbeeOrders extends Command
                 $this->error($e->getMessage());
             }
         } else {
-            $bar = $this->output->createProgressBar($pagingInfo['TotalRows']);
+            $bar = $this->output->createProgressBar($pagingInfo->totalRows);
             $bar->start();
 
             while ($page) {
                 try {
                     $response = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate);
                     $orders->push(...$response->data);
-                    $page = $response->paging['TotalPages'] == $page ? false : $page + 1;
+                    $page = $response->paging->totalPages == $page ? false : $page + 1;
                     $bar->advance(count($response->data));
                 } catch (QuotaExceededException $e) {
                     $this->warn('Billbee API quota exceeded. Let\'s wait a second.');
