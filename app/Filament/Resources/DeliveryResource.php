@@ -4,15 +4,20 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\DeliveryResource\Pages;
 use App\Filament\Resources\DeliveryResource\RelationManagers;
+use App\Models\Bag;
 use App\Models\Delivery;
+use App\Models\Herb;
 use App\Models\Supplier;
 use App\Models\User;
 use Exception;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,6 +51,100 @@ class DeliveryResource extends Resource
         return [
             'Gebinde' => $record->bags->count(),
         ];
+    }
+
+    /**
+     * @throws Exception
+     */
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->searchable()
+            ->columns([
+
+                Tables\Columns\TextColumn::make('supplier.shortname')
+                    ->label("Lieferant")
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('delivered_date')
+                    ->date('d.m.Y')
+                    ->label("Lieferdatum")
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('Chargen')
+                    ->getStateUsing(function (Model $record) {
+                        return $record->bags->implode('charge', ', ');
+                    })
+                    ->searchable(query: function (Builder $query, string $search) {
+                        $query->whereHas('bags', function (Builder $query) use ($search) {
+                            $query->where('charge', 'like', "%{$search}%");
+                        });
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label("Empfänger")
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                SelectFilter::make('bag')
+                    ->label('Enthält Gebinde')
+                    ->options(Bag::all()->mapWithKeys(function (Bag $bag) {
+                        return [$bag->id => "{$bag->herb->name} ({$bag->charge})"];
+                    }))
+                    ->searchable()
+                    ->query(function ($query, $state) {
+                        if ($state === null || $state['value'] == null) return;
+                        $query->whereHas('bags', function ($q) use ($state) {
+                            $q->where('id', $state);
+                        });
+                    }),
+                SelectFilter::make('herb')
+                    ->label('Enthält Rohstoff')
+                    ->options(Herb::pluck('name', 'id'))
+                    ->searchable()
+                    ->multiple()
+                    ->query(function ($query, $state) {
+                        if ($state === null || empty($state['values'])) return;
+                        $query->whereHas('bags', function ($q) use ($state) {
+                            $q->whereIn('herb_id', $state['values']);
+                        });
+                    }),
+                Filter::make('created_at')
+                    ->form([
+                        Forms\Components\Split::make([
+                            DatePicker::make('created_from')->label('Erstellt nach'),
+                            DatePicker::make('created_until')->label('Erstellt vor'),
+                        ])
+                    ])
+                    ->columnSpan(2)
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+            ], layout: Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(['sm' => 2, 'xl' => 4])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
     }
 
     public static function form(Form $form): Form
@@ -152,57 +251,6 @@ class DeliveryResource extends Resource
                         ])
                     ]),
                 ])->columnSpan('full')
-            ]);
-    }
-
-    /**
-     * @throws Exception
-     */
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->searchable()
-            ->columns([
-
-                Tables\Columns\TextColumn::make('supplier.shortname')
-                    ->label("Lieferant")
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('delivered_date')
-                    ->date('d.m.Y')
-                    ->label("Lieferdatum")
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('Chargen')
-                    ->getStateUsing(function (Model $record) {
-                        return $record->bags->implode('charge', ', ');
-                    })
-                    ->searchable(query: function (Builder $query, string $search) {
-                        $query->whereHas('bags', function (Builder $query) use ($search) {
-                            $query->where('charge', 'like', "%{$search}%");
-                        });
-                    })
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label("Empfänger")
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ]);
     }
 

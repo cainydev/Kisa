@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Widgets\NecessaryBottle;
 use App\Filament\Widgets\NextBottles;
 
 class Dashboard extends \Filament\Pages\Dashboard
@@ -10,7 +9,7 @@ class Dashboard extends \Filament\Pages\Dashboard
     public function getWidgets(): array
     {
         return [
-            NecessaryBottle::make(),
+            /*NecessaryBottle::make(),*/
             NextBottles::make(),
         ];
     }

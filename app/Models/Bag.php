@@ -37,6 +37,11 @@ class Bag extends Model
         });
     }
 
+    public function title(): Attribute
+    {
+        return new Attribute(get: fn() => $this->herb->name . ' ' . $this->specification . ' (' . $this->charge . ')');
+    }
+
     public function discard(): bool
     {
         $this->update(['trashed' => $this->getCurrent()]);

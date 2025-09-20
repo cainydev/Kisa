@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Settings\BillbeeSettings;
 use BillbeeDe\BillbeeAPI\Client;
+use BillbeeDe\BillbeeAPI\ClientConfiguration;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,7 +26,7 @@ class BillbeeServiceProvider extends ServiceProvider implements DeferrableProvid
                 throw new \Exception('Billbee API credentials are missing.');
             }
 
-            return new Client($user, $apiPassword, $apiKey);
+            return new Client(ClientConfiguration::create($user, $apiPassword, $apiKey));
         });
     }
 
