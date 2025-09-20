@@ -30,14 +30,26 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('/')
-            ->viteTheme('resources/css/app.css')
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->favicon(Vite::asset('resources/images/favicon.svg'))
             ->brandLogo(Vite::asset('resources/images/favicon.svg'))
             ->sidebarCollapsibleOnDesktop()
             ->login()
             ->spa()
             ->colors([
-                'primary' => '#a2bb94',
+                'primary' => [
+                    '50' => '#f6f8f5',
+                    '100' => '#eaf1e7',
+                    '200' => '#d7e2d0',
+                    '300' => '#a2bb94',
+                    '400' => '#8eaa7e',
+                    '500' => '#6d8b5c',
+                    '600' => '#577148',
+                    '700' => '#455a3b',
+                    '800' => '#3a4932',
+                    '900' => '#303d2a',
+                    '950' => '#181f14',
+                ],
             ])
             ->navigationGroups([
                 NavigationGroup::make()

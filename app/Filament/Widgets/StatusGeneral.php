@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use Throwable;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Cache;
@@ -31,7 +32,7 @@ class StatusGeneral extends BaseWidget
             $dbStatus = 'Connected';
             $dbColor = 'success';
             $dbStatusIcon = 'heroicon-m-check-circle';
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $dbStatus = 'Error';
             $dbColor = 'danger';
             $dbStatusIcon = 'heroicon-m-x-circle';
@@ -54,7 +55,7 @@ class StatusGeneral extends BaseWidget
             $queueDesc = $queueSize > 0 ? "$queueSize pending" : "Idle";
             $queueColor = $queueSize > 10 ? 'warning' : 'success';
             $queueStatusIcon = $queueSize > 10 ? 'heroicon-m-exclamation-triangle' : 'heroicon-m-check-circle';
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $queueDesc = 'Unavailable';
             $queueColor = 'danger';
             $queueStatusIcon = 'heroicon-m-x-circle';
@@ -79,7 +80,7 @@ class StatusGeneral extends BaseWidget
             $cacheStatus = Cache::get($cacheTestKey) === 'ok' ? 'Working' : 'Problem';
             $cacheColor = $cacheStatus === 'Working' ? 'success' : 'danger';
             $cacheStatusIcon = $cacheStatus === 'Working' ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle';
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $cacheStatus = 'Error';
             $cacheColor = 'danger';
             $cacheStatusIcon = 'heroicon-m-x-circle';

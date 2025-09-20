@@ -1,5 +1,6 @@
 <?php
 
+use App\Logging\DiscordWebhookLogger;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -75,7 +76,7 @@ return [
 
         'discord' => [
             'driver' => 'custom',
-            'via' => App\Logging\DiscordWebhookLogger::class,
+            'via' => DiscordWebhookLogger::class,
             'level' => env('LOG_DISCORD_LEVEL', 'info'),
         ],
 

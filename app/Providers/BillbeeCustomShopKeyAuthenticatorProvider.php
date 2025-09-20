@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Exception;
 use App\Settings\BillbeeSettings;
 use Billbee\CustomShopApi\Security\KeyAuthenticator;
 use Illuminate\Support\ServiceProvider;
@@ -19,7 +20,7 @@ class BillbeeCustomShopKeyAuthenticatorProvider extends ServiceProvider
             $key = $settings->customShopKey ?? config('billbee-custom-shop.key');
 
             if (empty($key)) {
-                throw new \Exception('Billbee Custom Shop Key is missing.');
+                throw new Exception('Billbee Custom Shop Key is missing.');
             }
 
             return new KeyAuthenticator($key);

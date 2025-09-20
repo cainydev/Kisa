@@ -1,5 +1,14 @@
 <?php
 
+use App\Providers\BillbeeServiceProvider;
+use App\Providers\BillbeeCustomShopKeyAuthenticatorProvider;
+use App\Providers\AppServiceProvider;
+use App\Providers\AuthServiceProvider;
+use App\Providers\EventServiceProvider;
+use App\Providers\Filament\AdminPanelProvider;
+use App\Providers\RouteServiceProvider;
+use App\Providers\TelescopeServiceProvider;
+use App\Facades\Billbee;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\ServiceProvider;
 
@@ -161,19 +170,19 @@ return [
         /*
          * Package Service Providers...
          */
-        App\Providers\BillbeeServiceProvider::class,
-        App\Providers\BillbeeCustomShopKeyAuthenticatorProvider::class,
+        BillbeeServiceProvider::class,
+        BillbeeCustomShopKeyAuthenticatorProvider::class,
 
         /*
          * Application Service Providers...
          */
-        App\Providers\AppServiceProvider::class,
-        App\Providers\AuthServiceProvider::class,
+        AppServiceProvider::class,
+        AuthServiceProvider::class,
         // App\Providers\BroadcastServiceProvider::class,
-        App\Providers\EventServiceProvider::class,
-        App\Providers\Filament\AdminPanelProvider::class,
-        App\Providers\RouteServiceProvider::class,
-        App\Providers\TelescopeServiceProvider::class,
+        EventServiceProvider::class,
+        AdminPanelProvider::class,
+        RouteServiceProvider::class,
+        TelescopeServiceProvider::class,
     ])->toArray(),
 
     /*
@@ -188,7 +197,7 @@ return [
     */
 
     'aliases' => Facade::defaultAliases()->merge([
-        'Billbee' => App\Facades\Billbee::class
+        'Billbee' => Billbee::class
     ])->toArray(),
 
 ];

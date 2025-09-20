@@ -68,7 +68,7 @@ abstract class AbstractStatistics
             : CarbonInterval::make($interval)->optimize();
 
         if ($interval->totalMicroseconds === 0.0) {
-            throw new \InvalidArgumentException("Interval cannot be zero.");
+            throw new InvalidArgumentException("Interval cannot be zero.");
         }
 
         $start = Carbon::create($start);
