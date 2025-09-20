@@ -2,90 +2,83 @@
 
 namespace App\Livewire;
 
-use App\Livewire\CustomWizard\Step;
 use App\Models\BottlePosition;
+use App\Models\Ingredient;
 use App\Models\RecipeIngredient;
-use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\ViewField;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
-use Filament\Support\Enums\IconPosition;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
-use function dd;
 
-class Recipe extends Component implements HasForms
+class Recipe extends Component
 {
-    use InteractsWithForms;
-
-    public ?array $selectedBag = [];
-
+    /** @var Collection<BottlePosition> */
     public Collection $positions;
 
-    public int|null $activeTab;
+    /** @var array<int, int> */
+    public array $bags = [];
+
+    public ?int $herb = null;
 
     public function mount(Collection $positions): void
     {
         $this->positions = $positions;
-        $this->activeTab = $this->ingredients->first()?->herb_id;
 
-        $this->selectedBag = [];
+        $this->bags = Ingredient::whereIn('bottle_position_id', $this->positions->pluck('id'))
+            ->pluck('bag_id', 'herb_id')
+            ->toArray();
+
         foreach ($this->ingredients as $ingredient) {
-            $this->selectedBag[$ingredient->herb_id] = $this->positions->first()?->getBagFor($ingredient->herb)?->id;
+            if (!array_key_exists($ingredient->herb_id, $this->bags))
+                $this->bags[$ingredient->herb_id] = null;
+        }
+
+        $this->herb = $this->ingredients->first()?->herb_id ?? null;
+    }
+
+    public function select(int $herb, ?int $bag): void
+    {
+        $old = $this->bags[$herb];
+        $this->bags[$herb] = $bag;
+
+        if ($this->bags[$herb] !== $old) {
+            Ingredient::whereIn('bottle_position_id', $this->positions->pluck('id'))
+                ->where('herb_id', $this->herb)
+                ->delete();
+
+            if ($bag !== null) {
+                Ingredient::insert($this->positions->map(fn(BottlePosition $position) => [
+                    'bottle_position_id' => $position->id,
+                    'herb_id' => $this->herb,
+                    'bag_id' => $bag
+                ])->all());
+            }
         }
     }
 
-    public function form(Form $form): Form
+    #[Computed]
+    public function ingredients(): Collection
     {
-        $startStep = $this->ingredients->takeWhile(function (RecipeIngredient $i) {
-                return $this->positions->every(function (BottlePosition $p) use ($i) {
-                    return $p->hasBagFor($i->herb);
-                });
-            })->count() + 1;
-
-        if ($startStep > $this->ingredients->count()) {
-            $startStep = 1;
+        if ($this->positions->isEmpty()) {
+            return collect();
         }
+        return $this->positions->first()->variant->product->recipeIngredients->sortByDesc('percentage');
+    }
 
-        $steps = $this->ingredients->map(function (RecipeIngredient $i) {
-            return Step::make($i->herb->name)
-                ->description($this->totalGramms * $i->percentage / 100.0 . 'g')
-                ->completedWhen(fn($state) => $state !== null)
-                ->live(true)
-                ->completedIcon('heroicon-s-check')
-                ->schema([
-                    PositionBagSelector::make('')
-                        ->statePath(null)
-                        ->live()
-                        ->afterStateUpdated(fn($state) => dd("afterStateUpdated", $state))
-                        ->afterStateHydrated(fn($state) => dd("afterStateHydrated", $state))
-                        ->forHerb($i->herb)
-                        ->applyToPositions($this->positions)
-                        ->default(fn($herb, $positions) => $positions->first()->getBagFor($herb)?->id)
-                ])->statePath($i->herb_id);
-        })->all();
+    #[Computed]
+    public function steps(): array
+    {
+        return $this->ingredients->map(fn(RecipeIngredient $i) => [
+            'key' => $i->herb_id,
+            'label' => $i->herb->name,
+            'description' => "{$this->amounts[$i->herb_id]}g"
+        ])->all();
+    }
 
-        return $form
-            ->schema([
-                CustomWizard::make($steps)
-                    ->footerContent(ViewField::make('footer')->view('components.bag-amount-bar-legend'))
-                    ->startOnStep($startStep)
-                    ->previousAction(function (Action $action) {
-                        $action->color('gray')
-                            ->icon('heroicon-s-arrow-left')
-                            ->iconPosition(IconPosition::Before);
-                    })
-                    ->nextAction(function (Action $action) {
-                        $action->color('gray')
-                            ->icon('heroicon-s-arrow-right')
-                            ->iconPosition(IconPosition::After);
-                    })
-                    ->live(true)
-                    ->skippable()
-            ])->statePath('selectedBag');
+    #[Computed]
+    public function completedSteps(): array
+    {
+        return array_keys(array_filter($this->bags));
     }
 
     #[Computed]
@@ -97,13 +90,11 @@ class Recipe extends Component implements HasForms
     }
 
     #[Computed]
-    public function ingredients(): Collection
+    public function amounts(): array
     {
-        if ($this->positions->isEmpty()) {
-            return collect();
-        } else {
-            return $this->positions->first()->variant->product->recipeIngredients->sortByDesc('percentage');
-        }
+        return $this->positions->first()->variant->product->recipeIngredients->mapWithKeys(function (RecipeIngredient $i) {
+            return [$i->herb_id => $this->positions->sum(fn(BottlePosition $p) => $p->count * $p->variant->size * ($i->percentage / 100.))];
+        })->all();
     }
 
     public function render(): View

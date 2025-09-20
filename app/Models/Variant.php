@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Throwable;
 use App\Facades\Billbee;
 use App\Traits\CachedAttributes;
 use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
@@ -44,7 +45,7 @@ class Variant extends Model
                 }
             } catch (QuotaExceededException $e) {
                 Log::warning("Billbee quota exceeded while initializing variant {$variant->id}: {$e->getMessage()}");
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::error("Error initializing variant {$variant->id} with Billbee: {$e->getMessage()}");
             }
         });
@@ -67,7 +68,7 @@ class Variant extends Model
                 }
             } catch (QuotaExceededException $e) {
                 throw $e;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::warning("Error fetching Billbee product by ID {$this->billbee_id} for variant {$this->id}: {$e->getMessage()}");
             }
         }
@@ -85,7 +86,7 @@ class Variant extends Model
                 }
             } catch (QuotaExceededException $e) {
                 throw $e; // Re-throw
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::error("Error fetching Billbee product by SKU {$this->sku} for variant {$this->id}: {$e->getMessage()}");
                 return null;
             }

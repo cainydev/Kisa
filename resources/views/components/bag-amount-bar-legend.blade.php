@@ -1,19 +1,19 @@
-<div class="flex items-center gap-3">
-    <div class="flex items-stretch gap-1 w-full">
+<div class="flex items-center justify-center gap-3 py-2">
+    <div class="hidden md:flex items-stretch gap-1">
         <div class="min-w-max">
             <x-filament::badge color="gray" icon="heroicon-s-calendar">
                 MHD
             </x-filament::badge>
         </div>
     </div>
-    <div class="flex items-stretch gap-1 w-full">
+    <div class="hidden md:flex items-stretch gap-1">
         <div class="min-w-max">
             <x-filament::badge icon="heroicon-s-hashtag">
                 Charge
             </x-filament::badge>
         </div>
     </div>
-    <div class="flex items-stretch gap-1 w-full">
+    <div class="flex items-stretch gap-1">
         <div class="min-w-max">
             <x-filament::badge icon="heroicon-s-trash" color="danger"
                                class="rounded-sm rounded-l-md min-w-max">

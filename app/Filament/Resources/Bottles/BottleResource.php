@@ -1,0 +1,196 @@
+<?php
+
+namespace App\Filament\Resources\Bottles;
+
+use App\Filament\Resources\BottleResource\Pages;
+use App\Filament\Resources\BottleResource\RelationManagers;
+use App\Filament\Resources\Bottles\Pages\CreateBottle;
+use App\Filament\Resources\Bottles\Pages\EditBottle;
+use App\Filament\Resources\Bottles\Pages\ListBottles;
+use App\Filament\Resources\Bottles\Pages\Recipes;
+use App\Filament\Resources\Bottles\RelationManagers\PositionsRelationManager;
+use App\Models\Bag;
+use App\Models\Bottle;
+use App\Models\Herb;
+use App\Models\Product;
+use App\Models\Variant;
+use Exception;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Grouping\Group;
+use Filament\Tables\Table;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use function auth;
+use function now;
+
+class BottleResource extends Resource
+{
+    protected static ?string $model = Bottle::class;
+    protected static ?string $modelLabel = 'Abfüllung';
+    protected static ?string $pluralModelLabel = 'Abfüllungen';
+
+    protected static ?string $recordTitleAttribute = 'date';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Bestand';
+    protected static ?int $navigationSort = 10;
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-inbox';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['date', 'description', 'note', 'id'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Anzahl' => $record->positions->count(),
+            'Positionen' => $record->description,
+        ];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
+    {
+        return "Abfüllung {$record->date}";
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Select::make('user_id')
+                    ->label('Abfüller')
+                    ->required()
+                    ->relationship('user', 'name')
+                    ->default(auth()->id()),
+                DatePicker::make('date')
+                    ->label('Abfülldatum')
+                    ->required()
+                    ->default(now()->format('Y-m-d')),
+            ])->columns();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->defaultSort('date', 'desc')
+            ->columns([
+                TextColumn::make('description')
+                    ->label('Positionen')
+                    ->wrap()
+                    ->searchable(),
+                IconColumn::make('finished')
+                    ->label('Alle abgefüllt')
+                    ->boolean()
+                    ->getStateUsing(fn(Bottle $record) => $record->positions->every(fn($pos) => $pos->hasAllBags())),
+                IconColumn::make('uploaded')
+                    ->label('Alle hochgeladen')
+                    ->boolean()
+                    ->getStateUsing(fn(Bottle $record) => $record->positions->every(fn($pos) => $pos->uploaded)),
+            ])
+            ->filters([
+                SelectFilter::make('product')
+                    ->label('Enthält Produkt')
+                    ->options(Product::pluck('name', 'id'))
+                    ->searchable()
+                    ->query(function ($query, $state) {
+                        if ($state === null || $state['value'] == null) return;
+                        $query->whereHas('positions.variant', function ($q) use ($state) {
+                            $q->where('product_id', $state);
+                        });
+                    }),
+                SelectFilter::make('variant')
+                    ->label('Enthält Variante')
+                    ->options(Variant::all()->mapWithKeys(function (Variant $variant) {
+                        return [$variant->id => "{$variant->product->name} {$variant->size}g"];
+                    }))
+                    ->searchable()
+                    ->query(function ($query, $state) {
+                        if ($state === null || $state['value'] == null) return;
+                        $query->whereHas('positions', function ($q) use ($state) {
+                            $q->where('variant_id', $state);
+                        });
+                    }),
+                SelectFilter::make('herb')
+                    ->label('Rohstoff in Rezept')
+                    ->options(Herb::pluck('name', 'id'))
+                    ->searchable()
+                    ->query(function ($query, $state) {
+                        if ($state === null || $state['value'] == null) return;
+                        $query->whereHas('positions.variant.product.recipeIngredients', function ($q) use ($state) {
+                            $q->where('herb_id', $state);
+                        });
+                    }),
+                SelectFilter::make('bag')
+                    ->label('Sack zugewiesen')
+                    ->options(Bag::all()->mapWithKeys(function (Bag $bag) {
+                        return [$bag->id => "{$bag->herb->name} ({$bag->charge})"];
+                    }))
+                    ->searchable()
+                    ->query(function ($query, $state) {
+                        if ($state === null || $state['value'] == null) return;
+                        $query->whereHas('positions.ingredients', function ($q) use ($state) {
+                            $q->where('bag_id', $state);
+                        });
+                    }),
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
+            ->recordActions([
+                EditAction::make(),
+                Action::make('recipes')
+                    ->label('Rezepte')
+                    ->color('gray')
+                    ->button()
+                    ->icon('heroicon-o-clipboard-document-list')
+                    ->url(fn(Bottle $record) => route('filament.admin.resources.bottles.recipes', $record->id)),
+            ])
+            ->defaultGroup(
+                Group::make('date')
+                    ->label('')
+                    ->getTitleFromRecordUsing(function (Bottle $bottle) {
+                        if ($bottle->date->isToday()) {
+                            return 'Heute';
+                        } else if ($bottle->date->isYesterday()) {
+                            return 'Gestern';
+                        } else {
+                            return $bottle->date->format('d.m.Y');
+                        }
+                    })
+                    ->orderQueryUsing(fn(Builder $query) => $query->orderBy('date', 'desc'))
+            );
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            PositionsRelationManager::class
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ListBottles::route('/'),
+            'create' => CreateBottle::route('/create'),
+            'edit' => EditBottle::route('/{record}/edit'),
+            'recipes' => Recipes::route('/{record}/recipes'),
+        ];
+    }
+
+    public static function getRecordTitle(?Model $record): string
+    {
+        return "Abfüllung {$record->date->format('d.m.Y')}";
+    }
+}

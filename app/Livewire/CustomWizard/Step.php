@@ -3,43 +3,39 @@
 namespace App\Livewire\CustomWizard;
 
 use Closure;
-use Filament\Forms\Components\Wizard\Step as FilamentStep;
 
-class Step extends FilamentStep
+class Step extends \Filament\Schemas\Components\Wizard\Step
 {
     protected string $view = 'livewire.custom-wizard.step';
 
-    protected bool $isCompleted = false;
-    protected bool|Closure|null $completedWhen = null;
+    protected ?Closure $completedWhen = null;
 
-    public function completedWhen(bool|Closure $condition = true): static
+    /**
+     * Define a condition that returns true when the step should be considered completed.
+     *
+     * The closure receives:
+     *  - state: the step's current state value (if any)
+     *  - step: the step instance
+     */
+    public function completedWhen(?Closure $callback): static
     {
-        $this->completedWhen = $condition;
+        $this->completedWhen = $callback;
 
         return $this;
     }
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // Initialize state during setup
-        $this->afterStateHydrated(function (Step $step, $state) {
-            $this->isCompleted = $this->isCompleted();
-        });
-
-        // Listen for child form field updates
-        $this->registerListeners([
-            'stepField::updated' => [
-                function () {
-                    $this->isCompleted = $this->isCompleted();
-                },
-            ],
-        ]);
-    }
-
     public function isCompleted(): bool
     {
-        return (bool)$this->evaluate($this->completedWhen, ['state' => $this->getState()]);
+        if (!$this->completedWhen) {
+            return false;
+        }
+
+        // getState() should return the step's (possibly scalar) state value.
+        $state = method_exists($this, 'getState') ? $this->getState() : null;
+
+        return (bool)$this->evaluate($this->completedWhen, [
+            'state' => $state,
+            'step' => $this,
+        ]);
     }
 }

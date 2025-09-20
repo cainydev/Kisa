@@ -3,10 +3,13 @@
 namespace App\Livewire;
 
 use App\Models\BottlePosition;
+use Exception;
+use Filament\Actions\Action;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Support\Enums\IconSize;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -15,13 +18,17 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
-class BottlePositionList extends Component implements HasForms, HasTable
+class BottlePositionList extends Component implements HasForms, HasTable, HasActions
 {
+    use InteractsWithActions;
     use InteractsWithTable;
     use InteractsWithForms;
 
     public Collection $positions;
 
+    /**
+     * @throws Exception
+     */
     public function table(Table $table): Table
     {
         $ids = $this->positions->pluck('id');
@@ -46,7 +53,7 @@ class BottlePositionList extends Component implements HasForms, HasTable
                     ->label('Charge')
                     ->copyable(),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('refresh')
                     ->label('Aktualisieren')
                     ->iconButton()
