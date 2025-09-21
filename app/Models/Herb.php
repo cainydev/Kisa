@@ -99,19 +99,5 @@ class Herb extends Model
     protected function estimatedDepletionDate(): Attribute
     {
         return $this->cachedAttribute('depleted')();
-
-        /*
-        $cacheKey = $this->getCacheKey('depleted');
-        $duration = $this->getDefaultAttributeCacheDuration();
-
-        return Attribute::make(
-            get: function () use ($cacheKey) { // Eloquent value and attributes not used
-                $cachedDateString = Cache::get($cacheKey);
-                return $cachedDateString ? Carbon::parse($cachedDateString) : null;
-            },
-            set: function (?Carbon $carbonValue) use ($cacheKey, $duration) {
-                Cache::put($cacheKey, $carbonValue?->toIso8601String(), $duration);
-            }
-        );*/
     }
 }
