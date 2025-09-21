@@ -2,18 +2,21 @@
 
 namespace App\Filament\Pages;
 
-use Throwable;
+use App\Enums\NavigationGroup;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Throwable;
+use UnitEnum;
 
 class Status extends Page
 {
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-command-line';
-    protected string $view = 'filament.pages.status';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-command-line';
     protected static ?string $navigationLabel = 'Status';
+    protected static string|null|UnitEnum $navigationGroup = NavigationGroup::System;
+    protected string $view = 'filament.pages.status';
 
     public function getViewData(): array
     {

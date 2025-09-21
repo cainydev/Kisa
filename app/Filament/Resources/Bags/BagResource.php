@@ -2,36 +2,35 @@
 
 namespace App\Filament\Resources\Bags;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Livewire;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Components\Flex;
-use Filament\Schemas\Components\Actions;
-use Filament\Actions\Action;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
-use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables\Enums\FiltersLayout;
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\BagResource\Pages;
+use App\Filament\Resources\Bags\Pages\EditBag;
 use App\Filament\Resources\Bags\Pages\ListBags;
 use App\Filament\Resources\Bags\Pages\ViewBag;
-use App\Filament\Resources\Bags\Pages\EditBag;
-use App\Filament\Resources\BagResource\Pages;
 use App\Livewire\BagAmountBar;
 use App\Models\Bag;
 use Exception;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Livewire;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
@@ -50,8 +49,8 @@ class BagResource extends Resource
     protected static ?string $recordTitleAttribute = 'herb.name';
 
     protected static ?int $navigationSort = 20;
-    protected static string | \UnitEnum | null $navigationGroup = 'Bestand';
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shopping-bag';
+    protected static string|\UnitEnum|null $navigationGroup = 'Bestand';
+    protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingBag;
 
     public static function getGlobalSearchResultDetails(Model $record): array
     {

@@ -2,21 +2,20 @@
 
 namespace App\Filament\Resources\Deliveries\RelationManagers;
 
-use Filament\Schemas\Schema;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\RestoreAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Toggle;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Actions\CreateAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class BagsRelationManager extends RelationManager
@@ -72,7 +71,7 @@ class BagsRelationManager extends RelationManager
                     ->label("Rohstoff"),
                 TextColumn::make('size')
                     ->label("Gebinde")
-                    ->formatStateUsing(fn ($state) => "{$state}g"),
+                    ->formatStateUsing(fn($state) => "{$state}g"),
                 TextColumn::make('charge')
                     ->label("Charge"),
                 IconColumn::make('bio')
@@ -86,12 +85,8 @@ class BagsRelationManager extends RelationManager
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make(),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()->label('Entsorgen'),
-                Tables\Actions\RestoreAction::make()->label('Aus dem Müll holen'),
+                DeleteAction::make()->label('Entsorgen'),
+                RestoreAction::make()->label('Aus dem Müll holen')
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

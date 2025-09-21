@@ -52,14 +52,15 @@ class AdminPanelProvider extends PanelProvider
                 ],
             ])
             ->navigationGroups([
-                NavigationGroup::make()
-                    ->label('Bestand')
+                NavigationGroup::fromEnum(\App\Enums\NavigationGroup::Overview)
                     ->collapsible(false),
-                NavigationGroup::make()
-                    ->label('Produkte')
+                NavigationGroup::fromEnum(\App\Enums\NavigationGroup::System)
+                    ->collapsed(),
+                NavigationGroup::fromEnum(\App\Enums\NavigationGroup::Stock)
                     ->collapsible(false),
-                NavigationGroup::make()
-                    ->label('Metadaten')
+                NavigationGroup::fromEnum(\App\Enums\NavigationGroup::Products)
+                    ->collapsible(false),
+                NavigationGroup::fromEnum(\App\Enums\NavigationGroup::Metadata)
                     ->collapsed(),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
