@@ -2,32 +2,30 @@
 
 namespace App\Filament\Resources\Products;
 
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Flex;
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Utilities\Set;
-use Filament\Actions\Action;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\Products\Pages\ListProducts;
-use App\Filament\Resources\Products\Pages\CreateProduct;
-use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
+use App\Filament\Resources\Products\Pages\CreateProduct;
+use App\Filament\Resources\Products\Pages\EditProduct;
+use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Models\Product;
 use App\Tables\Columns\VariantColumn;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class ProductResource extends Resource
@@ -39,8 +37,8 @@ class ProductResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Produkte';
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cube';
+    protected static string|\UnitEnum|null $navigationGroup = 'Produkte';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cube';
 
     public static function form(Schema $schema): Schema
     {
@@ -58,11 +56,11 @@ class ProductResource extends Resource
                             ->required(),
                         Toggle::make('exclude_from_statistics')
                             ->label("Von Statistiken ausschließen")
-                            ->disabled(fn(Product $product) => $product->type->exclude_from_statistics)
-                            ->formatStateUsing(fn(Product $product, mixed $state) => $product->type->exclude_from_statistics ?: $state)
-                            ->beforeStateDehydrated(fn(Product $product, mixed $state) => $product->type->exclude_from_statistics ? $product->exclude_from_statistics : $state)
-                            ->hint(fn(Product $product) => $product->type->exclude_from_statistics ? "Die ganze Produktgruppe '{$product->type->name}' ist von den Statistiken ausgeschlossen." : false)
-                            ->hintIcon('heroicon-o-exclamation-triangle')
+                            ->disabled(fn(?Product $record) => $record?->type?->exclude_from_statistics)
+                            ->formatStateUsing(fn(?Product $record, mixed $state) => $record?->type->exclude_from_statistics ?: $state)
+                            ->beforeStateDehydrated(fn(?Product $record, mixed $state) => $record?->type->exclude_from_statistics ? $record?->exclude_from_statistics : $state)
+                            ->hint(fn(?Product $record) => $record?->type->exclude_from_statistics ? "Die ganze Produktgruppe '{$record?->type->name}' ist von den Statistiken ausgeschlossen." : false)
+                            ->hintIcon(fn(?Product $record) => $record?->type->exclude_from_statistics ? 'heroicon-o-exclamation-triangle' : null)
                             ->required(),
                     ]),
                     Tab::make("Varianten")->schema([
