@@ -10,10 +10,11 @@ use App\Livewire\BagAmountBar;
 use App\Models\Bag;
 use Exception;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -24,6 +25,7 @@ use Filament\Schemas\Components\Flex;
 use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\TextSize;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -77,6 +79,110 @@ class BagResource extends Resource
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
+            ]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('charge')
+                    ->copyable()
+                    ->badge()
+                    ->size(TextSize::Large)
+                    ->searchable(),
+                TextColumn::make('herb.name')
+                    ->label("Inhalt")
+                    ->html()
+                    ->formatStateUsing(function (Bag $record) {
+                        $herb = str($record->herb->name)->limit(20);
+                        return "<p class='font-semibold'>$herb</p><p class='text-gray-700 dark:text-gray-300'>$record->specification</p>";
+                    })
+                    ->sortable()
+                    ->searchable(),
+                IconColumn::make('bio')
+                    ->sortable()
+                    ->boolean(),
+                TextColumn::make('size')
+                    ->label('Gebinde')
+                    ->numeric()
+                    ->formatStateUsing(function (Bag $record) {
+                        return $record->getSizeInKilo();
+                    })
+                    ->sortable(),
+                TextColumn::make('redisCurrent')
+                    ->label("Gewicht aktuell")
+                    ->formatStateUsing(function ($state) {
+                        return $state . 'g';
+                    }),
+                TextColumn::make('delivery.supplier.shortname')
+                    ->placeholder("Nicht zugeordnet")
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->label("Lieferant"),
+                TextColumn::make('bestbefore')
+                    ->toggleable()
+                    ->label("MHD")
+                    ->date("d.m.Y")
+                    ->sortable(),
+            ])
+            ->filters([
+                SelectFilter::make('herb')
+                    ->relationship('herb', 'name')
+                    ->label('Enthält Rohstoff')
+                    ->searchable(),
+                TrashedFilter::make()
+                    ->label('Entsorgte Säcke')
+                    ->placeholder('Ohne entsorgte Säcke')
+                    ->trueLabel('Mit entsorgten Säcken')
+                    ->falseLabel('Nur entsorgte Säcke'),
+                TernaryFilter::make('bio')
+                    ->label('Bio spezifiziert')
+                    ->placeholder('Bio/Nicht-Bio')
+                    ->trueLabel('Bio')
+                    ->falseLabel('Nicht-Bio'),
+                TernaryFilter::make('bestbefore')
+                    ->label('Haltbarkeit')
+                    ->placeholder('Egal')
+                    ->trueLabel('Abgelaufen')
+                    ->falseLabel('Nicht abgelaufen')
+                    ->query(function ($query, $state) {
+                        if ($state === null || $state['value'] === null) return $query;
+                        return $query->whereDate('bestbefore', $state['value'] ? '<' : '>=', now());
+                    }),
+            ], layout: FiltersLayout::AboveContent)
+            ->deferFilters(false)
+            ->filtersFormColumns(4)
+            ->recordActions([
+                EditAction::make()
+                    ->button()
+                    ->label('Bearbeiten'),
+                DeleteAction::make()
+                    ->button()
+                    ->label('Entsorgen')
+                    ->color('danger')
+                    ->modalHeading('Sack entsorgen?')
+                    ->modalDescription('Der Sack kann danach nicht mehr in der Abfüllung verwenden werden.')
+                    ->requiresConfirmation()
+                    ->successNotificationTitle('Sack entsorgt'),
+                RestoreAction::make()
+                    ->button()
+                    ->label('Wiederherstellen')
+                    ->successNotificationTitle('Sack wiederhergestellt')
+            ])
+            ->toolbarActions([
+                DeleteBulkAction::make()
+                    ->label('Alle Entsorgen')
+                    ->color('danger')
+                    ->modalHeading('Säcke entsorgen?')
+                    ->modalDescription('Die Säcke können danach nicht mehr in der Abfüllung verwenden werden.')
+                    ->requiresConfirmation()
+                    ->successNotificationTitle('Säcke entsorgt'),
+                RestoreBulkAction::make()
+                    ->label('Alle wiederherstellen')
+                    ->successNotificationTitle('Säcke wiederhergestellt'),
             ]);
     }
 
@@ -137,88 +243,10 @@ class BagResource extends Resource
             ]);
     }
 
-    /**
-     * @throws Exception
-     */
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->columns([
-                TextColumn::make('charge')
-                    ->searchable(),
-                TextColumn::make('herb.name')
-                    ->label("Inhalt")
-                    ->formatStateUsing(function (Bag $record) {
-                        $herb = $record->herb;
-                        return "$herb->name $record->specification";
-                    })
-                    ->sortable()
-                    ->searchable(),
-                IconColumn::make('bio')
-                    ->sortable()
-                    ->boolean(),
-                TextColumn::make('size')
-                    ->label('Gebinde')
-                    ->numeric()
-                    ->formatStateUsing(function (Bag $record) {
-                        return $record->getSizeInKilo();
-                    })
-                    ->sortable(),
-                TextColumn::make('redisCurrent')
-                    ->label("Gewicht aktuell")
-                    ->formatStateUsing(function ($state) {
-                        return $state . 'g';
-                    }),
-                TextColumn::make('delivery.supplier.shortname')
-                    ->placeholder("Nicht zugeordnet")
-                    ->label("Lieferant"),
-                TextColumn::make('bestbefore')
-                    ->label("MHD")
-                    ->date("d.m.Y")
-                    ->sortable(),
-            ])
-            ->filters([
-                SelectFilter::make('herb')
-                    ->relationship('herb', 'name')
-                    ->label('Enthält Rohstoff')
-                    ->searchable(),
-                TrashedFilter::make()
-                    ->label('Entsorgte Säcke')
-                    ->placeholder('Ohne entsorgte Säcke')
-                    ->trueLabel('Mit entsorgten Säcken')
-                    ->falseLabel('Nur entsorgte Säcke'),
-                TernaryFilter::make('bio')
-                    ->label('Bio spezifiziert')
-                    ->placeholder('Bio/Nicht-Bio')
-                    ->trueLabel('Bio')
-                    ->falseLabel('Nicht-Bio'),
-                TernaryFilter::make('bestbefore')
-                    ->label('Haltbarkeit')
-                    ->placeholder('Egal')
-                    ->trueLabel('Abgelaufen')
-                    ->falseLabel('Nicht abgelaufen')
-                    ->query(function ($query, $state) {
-                        if ($state === null || $state['value'] === null) return $query;
-                        return $query->whereDate('bestbefore', $state['value'] ? '<' : '>=', now());
-                    }),
-            ], layout: FiltersLayout::AboveContent)
-            ->filtersFormColumns(4)
-            ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
-    }
-
     public static function getPages(): array
     {
         return [
             'index' => ListBags::route('/'),
-            'view' => ViewBag::route('/{record}'),
             'edit' => EditBag::route('/{record}/edit'),
         ];
     }
