@@ -44,21 +44,17 @@ class SupplierResource extends Resource
                     ->maxLength(255),
                 TextInput::make('contact')
                     ->label("Kontaktperson")
-                    ->required()
                     ->maxLength(255),
                 TextInput::make('email')
                     ->label("Email")
                     ->email()
-                    ->required()
                     ->maxLength(255),
                 TextInput::make('phone')
                     ->label("Telefon")
                     ->tel()
-                    ->required()
                     ->maxLength(255),
                 TextInput::make('website')
                     ->label("Webseite")
-                    ->required()
                     ->maxLength(255),
                 Select::make('bio_inspector_id')
                     ->label("Kontrollstelle")
