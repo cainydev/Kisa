@@ -2,22 +2,20 @@
 
 namespace App\Filament\Resources\Suppliers;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use App\Filament\Resources\Suppliers\Pages\ManageSuppliers;
 use App\Filament\Resources\SupplierResource\Pages;
 use App\Filament\Resources\SupplierResource\RelationManagers;
+use App\Filament\Resources\Suppliers\Pages\ManageSuppliers;
 use App\Models\BioInspector;
 use App\Models\Supplier;
-use Filament\Forms;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class SupplierResource extends Resource
@@ -29,8 +27,8 @@ class SupplierResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'company';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Metadaten';
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-user-group';
+    protected static string|\UnitEnum|null $navigationGroup = 'Metadaten';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
 
     public static function form(Schema $schema): Schema
     {
@@ -64,9 +62,8 @@ class SupplierResource extends Resource
                     ->maxLength(255),
                 Select::make('bio_inspector_id')
                     ->label("Kontrollstelle")
-                    ->relationship('inspector')
-                    ->getOptionLabelFromRecordUsing(fn (BioInspector $record): string
-                        => "{$record->company} ({$record->label})")
+                    ->relationship('bioInspector')
+                    ->getOptionLabelFromRecordUsing(fn(BioInspector $record): string => "{$record->company} ({$record->label})")
                     ->required()
             ]);
     }
@@ -89,11 +86,11 @@ class SupplierResource extends Resource
                     ->searchable(),
                 TextColumn::make('website')
                     ->label("Webseite")
-                    ->url(fn (Supplier $record): string => str($record->website)->start("https://"))
+                    ->url(fn(Supplier $record): string => str($record->website)->start("https://"))
                     ->openUrlInNewTab()
-                    ->formatStateUsing(fn (Supplier $record): string => str($record->website)->replaceFirst('www.', ''))
+                    ->formatStateUsing(fn(Supplier $record): string => str($record->website)->replaceFirst('www.', ''))
                     ->searchable(),
-                TextColumn::make('inspector.company')
+                TextColumn::make('bioInspector.company')
                     ->label("Kontrollstelle")
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

@@ -10,7 +10,7 @@ class BioInspector extends Model
     protected $guarded = [];
 
     /**
-     * Returns all suppliers supervised by the inspector
+     * Returns all suppliers supervised by the bioInspector
      * @return HasMany The relationship
      */
     public function suppliers(): HasMany
