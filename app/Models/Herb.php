@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Stats\HerbStats;
 use App\Traits\CachedAttributes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -46,58 +47,8 @@ class Herb extends Model
         return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
-    protected function dailyUsageStats(): Attribute
-    {
-        return $this->cachedAttribute('daily', default: collect())();
-    }
-
-    protected function weeklyUsageStats(): Attribute
-    {
-        return $this->cachedAttribute('weekly', default: collect())();
-    }
-
-    protected function monthlyUsageStats(): Attribute
-    {
-        return $this->cachedAttribute('monthly', default: collect())();
-    }
-
-    protected function yearlyUsageStats(): Attribute
-    {
-        return $this->cachedAttribute('yearly', default: collect())();
-    }
-
-    protected function averageDailyUsage(): Attribute
-    {
-        return $this->cachedAttribute('daily:avg', default: 0.0)();
-    }
-
-    protected function averageWeeklyUsage(): Attribute
-    {
-        return $this->cachedAttribute('weekly:avg', default: 0.0)();
-    }
-
-    protected function averageMonthlyUsage(): Attribute
-    {
-        return $this->cachedAttribute('monthly:avg', default: 0.0)();
-    }
-
-    protected function averageYearlyUsage(): Attribute
-    {
-        return $this->cachedAttribute('yearly:avg', default: 0.0)();
-    }
-
     protected function currentStock(): Attribute
     {
-        return $this->cachedAttribute('current', default: 0.0)();
-    }
-
-    protected function totalUsage(): Attribute
-    {
-        return $this->cachedAttribute('total', default: 0.0)();
-    }
-
-    protected function estimatedDepletionDate(): Attribute
-    {
-        return $this->cachedAttribute('depleted')();
+        return Attribute::make(get: fn() => HerbStats::for($this)->currentStock());
     }
 }

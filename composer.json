@@ -24,10 +24,9 @@
         "cainy/billbee-api": "dev-master",
         "cainy/custom-shop-api": "^3.1",
         "codeat3/blade-carbon-icons": "^2.18",
-        "dvarilek/livewire-closure-synthesizer": "^1.1",
-        "filament/filament": "^4.0",
-        "filament/spatie-laravel-media-library-plugin": "^4.0",
-        "filament/spatie-laravel-settings-plugin": "^4.0",
+        "filament/filament": "^5.0",
+        "filament/spatie-laravel-media-library-plugin": "^5.0",
+        "filament/spatie-laravel-settings-plugin": "^5.0",
         "guzzlehttp/guzzle": "^7.2",
         "itsgoingd/clockwork": "^5.3",
         "laravel/framework": "^12.0",
@@ -40,11 +39,12 @@
         "spatie/laravel-medialibrary": "^11.0.0",
         "spatie/laravel-settings": "^3.2",
         "spatie/temporary-directory": "^2.3",
-        "symfony/psr-http-message-bridge": "^7.2"
+        "symfony/psr-http-message-bridge": "^7.2",
+        "ext-pdo": "*"
     },
     "require-dev": {
         "ext-xdebug": "*",
-        "barryvdh/laravel-debugbar": "^3.15",
+        "barryvdh/laravel-debugbar": "^4.0",
         "fakerphp/faker": "^1.9.1",
         "laravel/boost": "^1.2",
         "laravel/pail": "^1.2",
@@ -53,8 +53,7 @@
         "laravel/telescope": "^5.5",
         "mockery/mockery": "^1.4.4",
         "nunomaduro/collision": "^8.1",
-        "phpunit/phpunit": "^11.0",
-        "spatie/laravel-ignition": "^2.0"
+        "phpunit/phpunit": "^11.0"
     },
     "autoload": {
         "psr-4": {

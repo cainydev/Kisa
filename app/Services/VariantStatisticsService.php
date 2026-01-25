@@ -4,78 +4,109 @@ namespace App\Services;
 
 use App\Models\Variant;
 use App\Settings\StatsSettings;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class VariantStatisticsService extends AbstractStatistics
 {
-    /**
-     * Generate statistics for all variants.
-     *
-     * @return void
-     */
+    public const string CACHE_PREFIX = 'variant_stats';
+
     public static function generateAll(): void
     {
-        self::generate(Variant::all());
+        Variant::chunk(100, fn($variants) => (new self)->generate($variants));
     }
 
-    /**
-     * Generate statistics for all the given variants.
-     *
-     * @param Collection<Variant> $models The collection of variants to generate statistics for
-     * @return void
-     */
     public static function generate(Collection $models): void
     {
         $startDate = app(StatsSettings::class)->startDate;
+        $period = self::days($startDate);
 
         foreach ($models as $variant) {
-            $dailyRaw = $variant->orderPositions()
-                ->selectRaw('DATE(created_at) as time, SUM(quantity) as sales')
-                ->where('created_at', '>=', $startDate->startOfDay())
-                ->groupBy('time')
-                ->orderBy('time')
-                ->pluck('sales', 'time');
+            // --- 1. SALES (Usage/Outgoing) ---
+            $dailySales = static::calculateDailySales($variant, $startDate);
 
-            $daily = self::generateDataset(
-                fn($start) => $dailyRaw[$start->toDateString()] ?? 0,
-                self::days(since: $startDate)
-            );
-            $dailyAvg = $daily->avg();
-            $variant->daily_sales = $daily;
-            $variant->average_daily_sales = $dailyAvg;
+            // --- 2. PRODUCTION (Restock/Incoming) ---
+            $dailyRestock = static::calculateDailyRestocks($variant, $startDate);
 
-            $weekly = self::aggregateData($daily, self::weeks(since: $startDate));
-            $weeklyAvg = $weekly->avg();
-            $variant->weekly_sales = $weekly;
-            $variant->average_weekly_sales = $weeklyAvg;
+            // --- 3. STOCK HISTORY (Reconstruction) ---
+            $currentStock = $variant->stock ?? 0;
 
-            $monthly = self::aggregateData($daily, self::months(since: $startDate));
-            $monthlyAvg = $monthly->avg();
-            $variant->monthly_sales = $monthly;
-            $variant->average_monthly_sales = $monthlyAvg;
+            $netChanges = collect();
+            foreach ($period as $date) {
+                $d = $date->toDateString();
+                $sales = $dailySales[$d] ?? 0;
+                $production = $dailyRestock[$d] ?? 0;
 
-            $yearly = self::aggregateData($daily, self::years(since: $startDate));
-            $yearlyAvg = $yearly->avg();
-            $variant->yearly_sales = $yearly;
-            $variant->average_yearly_sales = $yearlyAvg;
-
-            $recentCap = now()->subMonths(6);
-            $recentSalesPerDay = $daily->filter(fn($_, $key) => Carbon::parse($key) >= $recentCap)->avg();
-
-            $depletedDate = self::extrapolateDate($variant->stock, $recentSalesPerDay);
-            $variant->depleted_date = $depletedDate->toDateString();
-
-            $lastSaleDate = null;
-            if ($dailyRaw->isNotEmpty()) {
-                $lastSaleDate = Carbon::parse($dailyRaw->keys()->last())->endOfDay();
+                // If we sold 5 and produced 20, net change is +15
+                if ($sales > 0 || $production > 0) {
+                    $netChanges[$d] = $production - $sales;
+                }
             }
 
-            if ($lastSaleDate && $recentSalesPerDay > 0) {
-                $intervalDays = 1 / $recentSalesPerDay;
-                $nextSaleDateTime = $lastSaleDate->copy()->addDays($intervalDays);
-                $variant->next_sale = $nextSaleDateTime->toDateTimeString();
+            $dailyStock = static::reconstructHistory($netChanges, $currentStock, $period);
+
+            // --- 4. CALCULATE METRICS ---
+            // Metric: Recent Sales Rate (Last 6 Months)
+            $recentCapDate = now()->subMonths(6);
+            $recentSales = $dailySales->filter(fn($val, $date) => $date >= $recentCapDate->toDateString());
+            $recentRate = $recentSales->avg() ?: 0;
+
+            // Metric: Estimated Depletion
+            $depletionDate = static::extrapolateDate($currentStock, $recentRate);
+
+            // Metric: Next Sale Prediction
+            $nextSaleDate = null;
+            $lastSaleDate = $dailySales->filter(fn($v) => $v > 0)->keys()->last();
+
+            if ($lastSaleDate && $recentRate > 0) {
+                $daysUntilNext = 1 / $recentRate;
+                $nextSaleDate = \Carbon\Carbon::parse($lastSaleDate)->addDays($daysUntilNext);
             }
+
+            // --- 5. STORE IN REDIS ---
+            $baseKey = static::CACHE_PREFIX . ":{$variant->id}";
+
+            Cache::putMany([
+                "{$baseKey}:sales:daily" => $dailySales,
+                "{$baseKey}:restock:daily" => $dailyRestock, // Optional: Store if you want to graph production too
+                "{$baseKey}:stock:daily" => $dailyStock,
+                "{$baseKey}:stock:current" => $currentStock,
+                "{$baseKey}:sales:total" => $dailySales->sum(),
+                "{$baseKey}:sales:avg_recent" => $recentRate,
+                "{$baseKey}:depletion_date" => $depletionDate->toIso8601String(),
+                "{$baseKey}:next_sale_date" => $nextSaleDate?->toIso8601String(),
+                "{$baseKey}:generated_at" => now()->toIso8601String(),
+            ], self::CACHE_LONG);
         }
+    }
+
+    protected static function calculateDailySales(Variant $variant, $startDate): Collection
+    {
+        $dailyRaw = $variant->orderPositions()
+            ->selectRaw('DATE(created_at) as time, SUM(quantity) as sales')
+            ->where('created_at', '>=', $startDate->startOfDay())
+            ->groupBy('time')
+            ->pluck('sales', 'time');
+
+        return self::generateDataset(
+            fn($s) => $dailyRaw[$s->toDateString()] ?? 0,
+            self::days($startDate)
+        );
+    }
+
+    protected static function calculateDailyRestocks(Variant $variant, $startDate): Collection
+    {
+        $dailyRaw = $variant->positions()
+            ->join('bottles', 'bottle_positions.bottle_id', '=', 'bottles.id')
+            ->where('bottle_positions.uploaded', true)
+            ->where('bottles.date', '>=', $startDate->startOfDay())
+            ->selectRaw('DATE(bottles.date) as time, SUM(bottle_positions.count) as produced')
+            ->groupBy('time')
+            ->pluck('produced', 'time');
+
+        return self::generateDataset(
+            fn($s) => $dailyRaw[$s->toDateString()] ?? 0,
+            self::days($startDate)
+        );
     }
 }

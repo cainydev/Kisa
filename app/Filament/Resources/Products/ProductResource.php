@@ -26,7 +26,11 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 
 class ProductResource extends Resource
 {
@@ -153,16 +157,23 @@ class ProductResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->label('Name')
+                    ->searchable()
+                    ->sortable(),
                 VariantColumn::make('variants')
                     ->label("Varianten"),
                 TextColumn::make('type.name')
                     ->label("Produktgruppe")
                     ->sortable(),
                 IconColumn::make('exclude_from_statistics')
-                    ->label("Von Statistiken ausschließen")
+                    ->label("Statistik")
                     ->getStateUsing(fn(Product $record) => $record->exclude_from_statistics || $record->type->exclude_from_statistics)
-                    ->boolean(),
+                    ->boolean()
+                    ->trueIcon('heroicon-o-x-circle')
+                    ->falseIcon('heroicon-o-check-circle')
+                    ->trueColor('danger')
+                    ->falseColor('success')
+                    ->tooltip(fn(Product $record) => ($record->exclude_from_statistics || $record->type->exclude_from_statistics) ? 'Wird in Statistiken ignoriert' : 'Wird ausgewertet'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -173,8 +184,33 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
-            ])
+                SelectFilter::make('herbs')
+                    ->label('Enthält Rohstoff')
+                    ->relationship('herbs', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->multiple(),
+
+                SelectFilter::make('type')
+                    ->label('Produktgruppe')
+                    ->relationship('type', 'name')
+                    ->searchable()
+                    ->preload(),
+
+                TernaryFilter::make('statistics_status')
+                    ->label('Statistik-Status')
+                    ->placeholder('Alle Produkte')
+                    ->trueLabel('Nur ausgeschlossene')
+                    ->falseLabel('Nur aktive (in Statistik)')
+                    ->queries(
+                        true: fn(EloquentBuilder $query) => $query->where('exclude_from_statistics', true)
+                            ->orWhereHas('type', fn($q) => $q->where('exclude_from_statistics', true)),
+                        false: fn(EloquentBuilder $query) => $query->where('exclude_from_statistics', false)
+                            ->whereHas('type', fn($q) => $q->where('exclude_from_statistics', false)),
+                    ),
+            ], layout: FiltersLayout::AboveContent)
+            ->deferFilters(false)
+            ->filtersFormColumns(4)
             ->recordActions([
                 EditAction::make(),
             ])
