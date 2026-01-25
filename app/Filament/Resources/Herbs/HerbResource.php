@@ -2,25 +2,25 @@
 
 namespace App\Filament\Resources\Herbs;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\CreateAction;
-use App\Filament\Resources\Herbs\Pages\ListHerbs;
-use App\Filament\Resources\Herbs\Pages\CreateHerb;
-use App\Filament\Resources\Herbs\Pages\EditHerb;
 use App\Filament\Resources\HerbResource\Pages;
 use App\Filament\Resources\HerbResource\RelationManagers;
+use App\Filament\Resources\Herbs\Pages\CreateHerb;
+use App\Filament\Resources\Herbs\Pages\EditHerb;
+use App\Filament\Resources\Herbs\Pages\ListHerbs;
 use App\Models\Herb;
-use Filament\Forms;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class HerbResource extends Resource
@@ -33,9 +33,9 @@ class HerbResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'fullname';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Produkte';
+    protected static string|\UnitEnum|null $navigationGroup = 'Produkte';
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cube-transparent';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cube-transparent';
 
     public static function form(Schema $schema): Schema
     {
@@ -63,11 +63,29 @@ class HerbResource extends Resource
             ->columns([
                 TextColumn::make('fullname')
                     ->label('Bezeichnung')
-                    ->searchable()->sortable(),
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('supplier.shortname')
                     ->label('Standardlieferant')
-                    ->searchable()->sortable()
+                    ->searchable()
+                    ->sortable(),
             ])
+            ->filters([
+                SelectFilter::make('products')
+                    ->label('In Rezeptur enthalten')
+                    ->relationship('products', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->multiple(),
+
+                SelectFilter::make('supplier')
+                    ->label('Standardlieferant')
+                    ->relationship('supplier', 'shortname')
+                    ->searchable()
+                    ->preload(),
+            ], layout: FiltersLayout::AboveContent)
+            ->deferFilters(false)
+            ->filtersFormColumns(4)
             ->recordActions([
                 DeleteAction::make(),
                 EditAction::make(),

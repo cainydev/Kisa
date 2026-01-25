@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\HerbUsageStatistics;
+use App\Services\HerbStatisticsService;
 use App\Services\VariantStatisticsService;
 use Illuminate\Console\Command;
 
@@ -27,26 +27,41 @@ class GenerateStats extends Command
      */
     public function handle(): void
     {
-        if ($this->hasArgument('entity') && str($this->argument('entity'))->isNotEmpty()) {
-            switch ($this->argument('entity')) {
-                case 'herb' | 'herbs':
-                    HerbUsageStatistics::generateAll();
+        $entity = $this->argument('entity');
+
+        if ($entity && str($entity)->isNotEmpty()) {
+            switch ($entity) {
+                case 'herb':
+                case 'herbs':
+                    $this->info('Generating Herb statistics...');
+                    HerbStatisticsService::generateAll();
+                    $this->info('Done.');
                     break;
-                case 'variant' | 'variants':
+
+                case 'variant':
+                case 'variants':
+                    $this->info('Generating Variant statistics...');
                     VariantStatisticsService::generateAll();
+                    $this->info('Done.');
                     break;
+
                 default:
-                    $this->error('Unknown entity: ' . $this->argument('entity'));
+                    $this->error('Unknown entity: ' . $entity);
             }
         } else {
-            $this->info("No entity, generating all statistics");
+            $this->info("No entity specified, generating all statistics...");
             $this->newLine();
 
-            $this->info('Herb usage statistics...');
-            HerbUsageStatistics::generateAll();
+            $this->components->task('Generating Herb Statistics', function () {
+                HerbStatisticsService::generateAll();
+            });
 
-            $this->info('Variant statistics...');
-            VariantStatisticsService::generateAll();
+            $this->components->task('Generating Variant Statistics', function () {
+                VariantStatisticsService::generateAll();
+            });
+
+            $this->newLine();
+            $this->info('All statistics generated successfully.');
         }
     }
 }

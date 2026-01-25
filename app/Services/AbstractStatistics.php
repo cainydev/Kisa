@@ -41,7 +41,6 @@ abstract class AbstractStatistics
      */
     abstract public static function generate(Collection $models): void;
 
-
     /**
      * Get a CarbonPeriod for the past x days
      *
@@ -302,5 +301,33 @@ abstract class AbstractStatistics
             return Carbon::now();
 
         return Carbon::now()->addDays($currentAmount / $dailyRate);
+    }
+
+    /**
+     * Generic helper to snapshot a running value (like Stock) over time.
+     * @param Collection $dailyChanges Key=Date, Value=ChangeAmount (+ or -)
+     * @param float $startingValue The value at the END of the period (today)
+     * @param CarbonPeriod $period The period to walk backwards through
+     * @return Collection Collection of [Date => ValueAtEndOfDay]
+     */
+    protected static function reconstructHistory(Collection $dailyChanges, float $startingValue, CarbonPeriod $period): Collection
+    {
+        $history = collect();
+        $currentValue = $startingValue;
+
+        $dates = array_reverse($period->toArray());
+
+        foreach ($dates as $date) {
+            $dateStr = $date->toDateString();
+
+            $history[$dateStr] = $currentValue;
+
+            $change = $dailyChanges[$dateStr] ?? 0;
+            $currentValue -= $change;
+
+            if ($currentValue < 0) $currentValue = 0;
+        }
+
+        return $history->sortKeys();
     }
 }

@@ -147,6 +147,7 @@ class BottleResource extends Resource
                     }),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->deferFilters(false)
             ->recordActions([
                 EditAction::make(),
                 Action::make('recipes')

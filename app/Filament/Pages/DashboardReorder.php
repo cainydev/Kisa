@@ -15,11 +15,11 @@ class DashboardReorder extends \Filament\Pages\Dashboard
     protected static string|null|UnitEnum $navigationGroup = NavigationGroup::Overview;
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-
     public function getWidgets(): array
     {
         return [
             Reorder::make()
         ];
     }
+
 }

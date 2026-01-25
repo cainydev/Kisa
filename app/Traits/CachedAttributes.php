@@ -2,19 +2,18 @@
 
 namespace App\Traits;
 
-use RuntimeException;
 use BackedEnum;
-use Carbon\Carbon;
-use Carbon\CarbonImmutable;
 use Closure;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
 use ReflectionNamedType;
+use RuntimeException;
 use function value;
 
 trait CachedAttributes
@@ -119,7 +118,7 @@ trait CachedAttributes
      */
     public function getCacheKey(string $metric): string
     {
-        if (!$this->exists()) {
+        if (!$this->exists) {
             throw new RuntimeException('Cannot generate cachedAttribute key for non-existing model instance.');
         }
 
@@ -144,8 +143,7 @@ trait CachedAttributes
             is_float($value) => 'float',
             is_bool($value) => 'bool',
             is_array($value) => 'array',
-            $value instanceof Carbon ||
-            $value instanceof CarbonImmutable => 'datetime',
+            $value instanceof Collection => 'collection',
             $value instanceof DateTimeInterface => 'datetime',
             $value instanceof BackedEnum => get_class($value),
             default => 'string',

@@ -92,6 +92,6 @@ class Bottle extends Model
      */
     public function finished(): bool
     {
-        return array_all($this->positions, fn($pos) => $pos->hasAllBags());
+        return array_all($this->positions, fn($pos) => $pos->uploaded);
     }
 }
