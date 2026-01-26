@@ -8,9 +8,7 @@ use App\Filament\Resources\Deliveries\Pages\ListDeliveries;
 use App\Filament\Resources\Deliveries\RelationManagers\BagsRelationManager;
 use App\Filament\Resources\DeliveryResource\Pages;
 use App\Filament\Resources\DeliveryResource\RelationManagers;
-use App\Models\Bag;
 use App\Models\Delivery;
-use App\Models\Herb;
 use App\Models\Supplier;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
@@ -18,8 +16,6 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Exception;
-use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -33,11 +29,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
-use Filament\Tables;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class DeliveryResource extends Resource
@@ -180,6 +173,7 @@ class DeliveryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('delivered_date', 'desc')
             ->columns([
                 TextColumn::make('supplier.shortname')
                     ->label("Lieferant")
