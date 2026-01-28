@@ -16,7 +16,7 @@ class SimpleWizard extends Component
     #[Locked]
     public array $steps = [];
 
-    #[Reactive, Locked]
+    #[Reactive]
     public array $completedSteps = [];
 
     public function goToNextStep(): void
