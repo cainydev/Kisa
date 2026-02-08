@@ -11,136 +11,155 @@ use BillbeeDe\BillbeeAPI\Model\OrderItem as BillbeeOrderItem;
 use BillbeeDe\BillbeeAPI\Model\Payment;
 use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Console\Isolatable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
-class FetchBillbeeOrders extends Command
+class FetchBillbeeOrders extends Command implements Isolatable
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'billbee:orders {--perpage=250 : Page size when fetching} {--after : Only orders after this date}';
+    protected $signature = 'billbee:orders
+                            {--perpage=100 : Page size when fetching}
+                            {--after= : Only orders after this date (Y-m-d)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Fetches all orders at once and updates the database';
+    protected $description = 'Fetches orders from Billbee and updates the database';
 
     /**
      * Execute the console command.
-     * @throws QuotaExceededException
      */
-    public function handle(): void
+    public function handle(): int
     {
-        $orders = collect();
         $page = 1;
-        $pageSize = intval($this->option('perpage'));
+        $pageSize = (int)$this->option('perpage');
 
-        $minOrderDate = $this->option('after') ? Carbon::parse($this->option('after')) : null;
-        if ($minOrderDate) {
-            $this->info('Fetching orders from Billbee since ' . $minOrderDate->toDateTimeString());
-        } else {
-            $this->info('Fetching all orders from Billbee...');
-        }
-        $this->newLine();
+        $minOrderDate = $this->option('after')
+            ? Carbon::parse($this->option('after'))
+            : null;
 
-        $pagingInfo = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate)->paging;
+        $this->info($minOrderDate
+            ? "Fetching orders since {$minOrderDate->toDateTimeString()}..."
+            : "Fetching all orders...");
 
-        if ($pagingInfo === null) {
-            try {
-                $response = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate);
-                $orders->push(...$response->data);
-            } catch (QuotaExceededException $e) {
-                $this->warn('Billbee API quota exceeded. Let\'s wait a second.');
-                sleep(1);
-            } catch (Exception $e) {
-                $this->error($e->getMessage());
-            }
-        } else {
-            $bar = $this->output->createProgressBar($pagingInfo->totalRows);
+        try {
+            $firstResponse = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate);
+            $totalRows = $firstResponse->paging->totalRows ?? count($firstResponse->data);
+
+            $bar = $this->output->createProgressBar($totalRows);
             $bar->start();
 
-            while ($page) {
+            do {
                 try {
-                    $response = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate);
-                    $orders->push(...$response->data);
-                    $page = $response->paging->totalPages == $page ? false : $page + 1;
+                    $response = ($page === 1 && isset($firstResponse))
+                        ? $firstResponse
+                        : Billbee::orders()->getOrders($page, $pageSize, $minOrderDate);
+
+                    $this->processBatch($response->data);
+
                     $bar->advance(count($response->data));
+
+                    $totalPages = $response->paging->totalPages ?? 1;
+                    $page = ($page < $totalPages) ? $page + 1 : false;
+
+                    unset($response);
+
                 } catch (QuotaExceededException $e) {
-                    $this->warn('Billbee API quota exceeded. Let\'s wait a second.');
-                    sleep(1);
+                    $this->newLine();
+                    $this->warn("API Quota exceeded. Pausing for 2 seconds...");
+                    sleep(2);
                     continue;
-                } catch (Exception $e) {
-                    $this->error($e->getMessage());
-                    continue;
+                } catch (Throwable $e) {
+                    $this->newLine();
+                    $this->error("Error on page $page: " . $e->getMessage());
+                    Log::error($e);
+                    return self::FAILURE;
                 }
-            }
+
+            } while ($page !== false);
 
             $bar->finish();
             $this->newLine(2);
+            $this->info("Sync complete.");
+
+            return self::SUCCESS;
+
+        } catch (Exception $e) {
+            $this->error("Critical error: " . $e->getMessage());
+            return self::FAILURE;
         }
+    }
 
-        $this->info('Updating orders...');
-        $this->newLine();
-        $bar = $this->output->createProgressBar($orders->count());
-        $bar->start();
-
-        foreach ($orders as $order) {
+    /**
+     * Process a batch of orders within a transaction.
+     * @throws Throwable
+     */
+    private function processBatch(array $billbeeOrders): void
+    {
+        foreach ($billbeeOrders as $order) {
             if (!$order instanceof BillbeeOrder) continue;
 
-            $paymentMethod = $order->paymentMethod;
-            if (!empty($order->payments)) {
-                $payment = $order->payments[0];
-                if ($payment instanceof Payment)
-                    $paymentMethod = $payment->sourceTechnology;
+            DB::transaction(function () use ($order) {
+                $this->syncOrder($order);
+            });
+        }
+    }
+
+    private function syncOrder(BillbeeOrder $order): void
+    {
+        $paymentMethod = $order->paymentMethod;
+
+        if (!empty($order->payments)) {
+            $payment = $order->payments[0];
+            if ($payment instanceof Payment) {
+                $paymentMethod = $payment->sourceTechnology;
             }
-
-            $taxRates = [0, $order->taxRate1, $order->taxRate2];
-
-            $orderModel = Order::updateOrCreate(
-                ['billbee_id' => $order->id],
-                [
-                    'status' => $order->state,
-                    'order_number' => $order->orderNumber,
-                    'date' => $order->createdAt,
-                    'shipped_at' => $order->shippedAt,
-                    'paid_at' => $order->payedAt,
-                    'payment_method' => $paymentMethod,
-                    'platform' => $order->seller?->platform,
-                    'total' => $order->totalCost,
-                    'currency' => $order->currency,
-                ]
-            );
-
-            foreach ($order->orderItems as $item) {
-                if (!$orderModel instanceof Order) continue;
-                if (!$item instanceof BillbeeOrderItem) continue;
-                if (empty($item->billbeeId)) continue;
-                if ($item->quantity <= 0) continue;
-
-                $variant = Variant::where('sku', $item->product->sku)->first();
-                if ($variant === null) continue;
-
-                $orderModel->positions()->updateOrCreate(
-                    ['billbee_id' => $item->billbeeId],
-                    [
-                        'order_id' => $orderModel->id,
-                        'variant_id' => $variant->id,
-                        'quantity' => $item->quantity,
-                        'price' => $item->totalPrice / $item->quantity,
-                        'tax_percent' => $taxRates[$item->taxIndex],
-                    ]
-                );
-            }
-
-            $bar->advance();
         }
 
-        $bar->finish();
-        $this->newLine(2);
-        $this->info('Done.');
+        $taxRates = [0, $order->taxRate1, $order->taxRate2];
+
+        $orderModel = Order::updateOrCreate(
+            ['billbee_id' => $order->id],
+            [
+                'status' => $order->state,
+                'order_number' => $order->orderNumber,
+                'date' => $order->createdAt,
+                'shipped_at' => $order->shippedAt,
+                'paid_at' => $order->payedAt,
+                'payment_method' => $paymentMethod,
+                'platform' => $order->seller?->platform,
+                'total' => $order->totalCost,
+                'currency' => $order->currency,
+            ]
+        );
+
+        foreach ($order->orderItems as $item) {
+            if (!$item instanceof BillbeeOrderItem) continue;
+            if (empty($item->billbeeId) || $item->quantity <= 0) continue;
+
+            $variant = Variant::where('sku', $item->product->sku)->first();
+
+            if (!$variant) continue;
+
+            $orderModel->positions()->updateOrCreate(
+                ['billbee_id' => $item->billbeeId],
+                [
+                    'order_id' => $orderModel->id,
+                    'variant_id' => $variant->id,
+                    'quantity' => $item->quantity,
+                    'price' => $item->quantity > 0 ? ($item->totalPrice / $item->quantity) : 0,
+                    'tax_percent' => $taxRates[$item->taxIndex] ?? 0,
+                ]
+            );
+        }
     }
 }
