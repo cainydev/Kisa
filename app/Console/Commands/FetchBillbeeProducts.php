@@ -8,81 +8,95 @@ use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
 use BillbeeDe\BillbeeAPI\Model\Product;
 use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Console\Isolatable;
+use Illuminate\Support\Facades\Log;
 
-class FetchBillbeeProducts extends Command
+class FetchBillbeeProducts extends Command implements Isolatable
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'billbee:products {--perpage=250 : Page size when fetching}';
+    protected $signature = 'billbee:products {--perpage=100 : Page size when fetching}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Fetches all products at once and updates the database';
+    protected $description = 'Fetches products from Billbee and updates local stock/EAN';
 
     /**
      * Execute the console command.
-     * @throws QuotaExceededException
      */
-    public function handle(): void
+    public function handle(): int
     {
-        $this->info('Fetching all products from Billbee...');
-        $this->newLine();
+        $this->info('Fetching products from Billbee...');
 
-        $products = collect();
         $page = 1;
-        $pageSize = intval($this->option('perpage'));
-        $pagingInfo = Billbee::products()->getProducts($page, $pageSize)->paging;
+        $pageSize = (int)$this->option('perpage');
 
-        $bar = $this->output->createProgressBar($pagingInfo->totalRows);
-        $bar->start();
+        try {
+            $firstResponse = Billbee::products()->getProducts($page, $pageSize);
+            $totalRows = $firstResponse->paging->totalRows ?? 0;
 
-        while ($page) {
-            try {
-                $response = Billbee::products()->getProducts($page, $pageSize);
-                $products->push(...$response->data);
-                $page = $response->paging->totalPages == $page ? false : $page + 1;
-                $bar->advance(count($response->data));
-            } catch (QuotaExceededException $e) {
-                $this->warn('Billbee API quota exceeded. Let\'s wait a second.');
-                sleep(1);
-                continue;
-            } catch (Exception $e) {
-                $this->error($e->getMessage());
-                continue;
-            }
+            $bar = $this->output->createProgressBar($totalRows);
+            $bar->start();
+
+            do {
+                try {
+                    $response = ($page === 1 && isset($firstResponse))
+                        ? $firstResponse
+                        : Billbee::products()->getProducts($page, $pageSize);
+
+                    foreach ($response->data as $billbeeProduct) {
+                        $this->syncProduct($billbeeProduct);
+                        $bar->advance();
+                    }
+
+                    $totalPages = $response->paging->totalPages ?? 1;
+                    $page = ($page < $totalPages) ? $page + 1 : false;
+
+                    unset($response);
+
+                } catch (QuotaExceededException $e) {
+                    $this->warn("\nAPI quota exceeded. Pausing...");
+                    sleep(2);
+                    continue;
+                } catch (Exception $e) {
+                    $this->error("\nError on page $page: " . $e->getMessage());
+                    Log::error($e);
+                    return self::FAILURE;
+                }
+
+            } while ($page !== false);
+
+            $bar->finish();
+            $this->newLine(2);
+            $this->info('Done.');
+
+            return self::SUCCESS;
+
+        } catch (Exception $e) {
+            $this->error("Critical error: " . $e->getMessage());
+            return self::FAILURE;
+        }
+    }
+
+    /**
+     * Updates a single variant based on SKU match.
+     */
+    private function syncProduct(Product $product): void
+    {
+        if (empty($product->sku)) {
+            return;
         }
 
-        $bar->finish();
-        $this->newLine(2);
-
-        $this->info('Updating products...');
-        $this->newLine();
-        $bar = $this->output->createProgressBar(Variant::count());
-        $bar->start();
-
-        foreach (Variant::all() as $variant) {
-            $billbeeData = $products->first(function (Product $p) use ($variant) {
-                return $p->sku === $variant->sku;
-            });
-
-            if ($billbeeData instanceof Product) {
-                $variant->billbee_id = $billbeeData->id;
-                $variant->ean = $billbeeData->ean;
-                $variant->stock = $billbeeData->stockCurrent;
-                $variant->save();
-            }
-
-            $bar->advance();
-        }
-
-        $bar->finish();
-        $this->newLine(2);
-        $this->info('Done.');
+        Variant::where('sku', $product->sku)->update([
+            'billbee_id' => $product->id,
+            'ean' => $product->ean,
+            'stock' => $product->stockCurrent ?? 0,
+        ]);
     }
 }
