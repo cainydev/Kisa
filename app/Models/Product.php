@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * Represents a final product.
@@ -18,7 +19,7 @@ class Product extends Model
     /**
      * Returns the percentage of a herb in the recipe
      *
-     * @param Herb $herb The herb to check
+     * @param  Herb  $herb  The herb to check
      * @return float The percentage amount
      */
     public function getPercentage(Herb $herb): float
@@ -32,8 +33,6 @@ class Product extends Model
 
     /**
      * The recipe ingredients
-     *
-     * @return HasMany
      */
     public function recipeIngredients(): HasMany
     {
@@ -42,8 +41,6 @@ class Product extends Model
 
     /**
      * The type of product
-     *
-     * @return BelongsTo
      */
     public function type(): BelongsTo
     {
@@ -52,8 +49,6 @@ class Product extends Model
 
     /**
      * The variants of the product.
-     *
-     * @return HasMany
      */
     public function variants(): HasMany
     {
@@ -64,5 +59,10 @@ class Product extends Model
     {
         return $this->belongsToMany(Herb::class, 'herb_product')
             ->withPivot('percentage');
+    }
+
+    public function labels(): MorphMany
+    {
+        return $this->morphMany(Label::class, 'labelable');
     }
 }
