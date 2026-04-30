@@ -209,16 +209,13 @@
             height: 13mm;
         }
         .herb-back .seals-row .eu-seal {
-            position: relative;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
             line-height: 0;
         }
         .herb-back .seals-row .eu-seal .oeko-cap {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: -4.2mm;
+            margin-top: 0.5mm;
             font-size: 1.41mm;
             line-height: 1.1;
             text-align: left;
