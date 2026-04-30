@@ -121,7 +121,11 @@ class LabelResource extends Resource
                 ->preload()
                 ->columns(2)
                 ->modifyTypeSelectUsing(fn (Select $select) => $select->label('Typ')->hiddenLabel(false))
-                ->modifyKeySelectUsing(fn (Select $select) => $select->label('Eintrag')->hiddenLabel(false)),
+                ->modifyKeySelectUsing(fn (Select $select) => $select
+                    ->label('Eintrag')
+                    ->hiddenLabel(false)
+                    ->live()
+                    ->afterStateUpdated($autosave)),
         ];
     }
 
