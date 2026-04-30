@@ -9,4 +9,6 @@ enum ParamType: string
     case Image = 'image';
     case Color = 'color';
     case Font = 'font';
+    case Boolean = 'boolean';
+    case Select = 'select';
 }

@@ -22,6 +22,7 @@ use Filament\Forms\Components\MorphToSelect\Type;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Fieldset;
@@ -34,6 +35,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 
 class LabelResource extends Resource
 {
@@ -182,11 +184,11 @@ class LabelResource extends Resource
             return [];
         }
         $template = $registry->get($templateKey);
-        $hasParent = ! empty($parentId);
+        $parent = ! empty($parentId) ? Label::find($parentId) : null;
 
         $fields = [];
         foreach ($template->parameters() as $param) {
-            if ($param->isShared() && $hasParent) {
+            if ($param->isShared() && $parent && $parent->hasAncestorValue($param->key(), $param->type())) {
                 continue;
             }
             $fields[] = self::fieldFor($param, $template);
@@ -228,6 +230,7 @@ class LabelResource extends Resource
                 ->collection("param_{$key}")
                 ->disk('public')
                 ->visibility('public')
+                ->preserveFilenames()
                 ->image()
                 ->imageEditor()
                 ->imageEditorAspectRatioOptions([null, '1:1', '4:3', '3:4', '16:9', '9:16'])
@@ -243,6 +246,7 @@ class LabelResource extends Resource
                 ->collection("param_{$key}")
                 ->disk('public')
                 ->visibility('public')
+                ->preserveFilenames()
                 ->acceptedFileTypes([
                     'font/otf',
                     'font/ttf',
@@ -293,6 +297,21 @@ class LabelResource extends Resource
                 ->helperText($hint)
                 ->placeholder($placeholder)
                 ->live(onBlur: true)
+                ->afterStateUpdated($autosave)
+                ->hintAction($revert),
+            ParamType::Boolean => Toggle::make("parameters.{$key}")
+                ->label($label)
+                ->helperText($hint)
+                ->live()
+                ->afterStateUpdated($autosave)
+                ->hintAction($revert),
+            ParamType::Select => Select::make("parameters.{$key}")
+                ->label($label)
+                ->options($param->selectOptions())
+                ->native(false)
+                ->helperText($hint)
+                ->placeholder($placeholder)
+                ->live()
                 ->afterStateUpdated($autosave)
                 ->hintAction($revert),
         };
@@ -381,6 +400,18 @@ class LabelResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function (Builder $query) {
+                [$orderedIds, $treeMeta] = self::treeOrderAndDepths();
+                app()->instance('labels.tree-meta', $treeMeta);
+                if (empty($orderedIds)) {
+                    return $query;
+                }
+                $placeholders = implode(',', array_fill(0, count($orderedIds), '?'));
+
+                return $query->orderByRaw("FIELD(id, {$placeholders})", $orderedIds);
+            })
+            ->defaultPaginationPageOption(50)
+            ->paginated([25, 50, 100, 'all'])
             ->columns([
                 TextColumn::make('template_key')
                     ->label('Vorlage')
@@ -388,12 +419,25 @@ class LabelResource extends Resource
                         $r = app(TemplateRegistry::class);
 
                         return $r->has($state) ? $r->get($state)->name() : $state;
-                    })
-                    ->sortable(),
+                    }),
                 TextColumn::make('name')
                     ->label('Name')
                     ->placeholder('—')
-                    ->searchable(),
+                    ->searchable()
+                    ->formatStateUsing(function (?string $state, Label $record) {
+                        $meta = app()->bound('labels.tree-meta') ? app('labels.tree-meta') : [];
+                        $prefix = $meta[$record->id]['prefix'] ?? '';
+                        $label = $state ?: '—';
+                        if ($prefix === '') {
+                            return $label;
+                        }
+
+                        return new HtmlString(
+                            '<span style="white-space:pre;color:#fff;font-family:ui-monospace,monospace">'
+                            .e($prefix).'</span>'.e($label)
+                        );
+                    })
+                    ->html(),
                 TextColumn::make('labelable')
                     ->label('Zuordnung')
                     ->getStateUsing(function (Label $r) {
@@ -409,7 +453,7 @@ class LabelResource extends Resource
                 TextColumn::make('parent.name')
                     ->label('Eltern-Etikett')
                     ->placeholder('—')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
@@ -428,6 +472,59 @@ class LabelResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Preorder traversal of the label hierarchy with per-row tree metadata.
+     *
+     * Returns:
+     *   - array<int, int>             ordered list of label ids (roots first,
+     *                                 each followed by its descendants depth-first)
+     *   - array<int, array{depth:int, prefix:string}>
+     *                                 metadata keyed by id. `prefix` is the
+     *                                 ready-to-render box-drawing prefix
+     *                                 (e.g. `│  ├─ `) for that row.
+     *
+     * @return array{0: array<int,int>, 1: array<int, array{depth:int, prefix:string}>}
+     */
+    protected static function treeOrderAndDepths(): array
+    {
+        $rows = Label::query()
+            ->orderBy('parent_id')
+            ->orderBy('name')
+            ->orderBy('id')
+            ->get(['id', 'parent_id'])
+            ->all();
+
+        $childrenByParent = [];
+        foreach ($rows as $row) {
+            $childrenByParent[$row->parent_id ?? 0][] = $row->id;
+        }
+
+        $ordered = [];
+        $meta = [];
+        // $ancestorIsLast[d] = true if the ancestor at depth d is the last
+        // child of its parent (so deeper columns render a space rather than `│`).
+        $walk = function (?int $parentId, int $depth, array $ancestorIsLast) use (&$walk, &$ordered, &$meta, $childrenByParent): void {
+            $children = $childrenByParent[$parentId ?? 0] ?? [];
+            $count = count($children);
+            foreach ($children as $i => $id) {
+                $isLast = ($i === $count - 1);
+                $prefix = '';
+                for ($d = 0; $d < $depth; $d++) {
+                    $prefix .= ($ancestorIsLast[$d] ?? false) ? '   ' : '│  ';
+                }
+                if ($depth > 0) {
+                    $prefix .= $isLast ? '└─ ' : '├─ ';
+                }
+                $ordered[] = $id;
+                $meta[$id] = ['depth' => $depth, 'prefix' => $prefix];
+                $walk($id, $depth + 1, [...$ancestorIsLast, $isLast]);
+            }
+        };
+        $walk(null, 0, []);
+
+        return [$ordered, $meta];
     }
 
     public static function getPages(): array

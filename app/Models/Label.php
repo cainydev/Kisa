@@ -93,4 +93,29 @@ class Label extends Model implements HasMedia
     {
         return $this->labelable_type === null || $this->labelable_id === null;
     }
+
+    /**
+     * True if this label or any ancestor has stored a value (parameter or
+     * media file) for the given parameter key. Used to decide whether a
+     * shared parameter still needs a field on this child label.
+     */
+    public function hasAncestorValue(string $key, ParamType $type): bool
+    {
+        $isMedia = in_array($type, [ParamType::Image, ParamType::Font], true);
+        foreach ($this->ancestorChain() as $ancestor) {
+            if ($isMedia) {
+                if ($ancestor->getMedia("param_{$key}")->isNotEmpty()) {
+                    return true;
+                }
+
+                continue;
+            }
+            $params = $ancestor->parameters ?? [];
+            if (array_key_exists($key, $params) && $params[$key] !== null && $params[$key] !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

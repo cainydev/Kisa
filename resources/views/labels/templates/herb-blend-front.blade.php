@@ -1,5 +1,4 @@
 @php
-    $headingColor = $headingColor ?? '#d8dc8e';
     $subtitleColor = $subtitleColor ?? '#6f7070';
     $textColor = $textColor ?? '#1c1d1c';
 
@@ -28,14 +27,34 @@
         return "@font-face { font-family: '{$family}'; font-display: block; src: url(data:{$mime};base64,{$data}) format('{$format}'); }";
     };
 
-    $artworkSrc = $imgSrc($artwork ?? null);
+    $bioMode = \App\Labels\BioMode::tryFrom((string) ($bioMode ?? '')) ?? \App\Labels\BioMode::Bio;
+    // Walk the recipe once to derive both `anyBio` and the non-bio percentage
+    // sum. Bio seals are only legal when the product qualifies as bio (≤ 5 %
+    // non-bio share, EU 95/5 rule).
+    [$anyBio, $nonBioPercent] = (function () use ($bioMode, $entity) {
+        if ($bioMode === \App\Labels\BioMode::Bio) {
+            return [true, 0.0];
+        }
+        if ($bioMode === \App\Labels\BioMode::None || ! $entity) {
+            return [false, 0.0];
+        }
+        $any = false;
+        $nonBio = 0.0;
+        foreach ($entity->herbs as $herb) {
+            $pct = (float) ($herb->pivot->percentage ?? 0);
+            if ($bioMode->herbIsBio($herb)) {
+                $any = true;
+            } else {
+                $nonBio += $pct;
+            }
+        }
+        return [$any, $nonBio];
+    })();
+    $isBio = $anyBio || $bioMode === \App\Labels\BioMode::Bio;
+    $bioSealsAllowed = $isBio && $nonBioPercent <= 5.0;
+    $backgroundSrc = $imgSrc($background ?? null);
     $brandLogoSrc = $imgSrc($brandLogo ?? null);
-    $bioSealSrc = $imgSrc($bioSeal ?? null);
-
-    $artworkRotate = (float) ($artworkRotate ?? 0);
-    $artworkOffsetX = (float) ($artworkOffsetX ?? 0);
-    $artworkOffsetY = (float) ($artworkOffsetY ?? 0);
-    $artworkScale = (float) ($artworkScale ?? 1);
+    $bioSealSrc = $bioSealsAllowed ? $imgSrc($bioSeal ?? null) : null;
 
     $titleFontFace = $fontFace($titleFont ?? null, 'herb-title');
     $bodyFontFace = $fontFace($bodyFont ?? null, 'herb-body');
@@ -46,7 +65,7 @@
         {!! $titleFontFace !!}
         {!! $bodyFontFace !!}
         {!! $subtitleFontFace !!}
-        .herb-front {
+        .herb-blend-front {
             position: relative;
             width: 100%;
             height: 100%;
@@ -58,85 +77,74 @@
             display: flex;
             flex-direction: column;
         }
-        .herb-front .logo-wrap {
+        /* Background image: full-bleed, covering the entire front page. */
+        .herb-blend-front .bg-wrap {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            overflow: hidden;
+        }
+        .herb-blend-front .bg-wrap img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+        }
+        .herb-blend-front .logo-wrap {
             position: relative;
             z-index: 3;
             display: flex;
             justify-content: center;
             margin-bottom: 2mm;
         }
-        .herb-front .logo-wrap img {
+        .herb-blend-front .logo-wrap img {
             max-width: 35.59mm;
             max-height: 33mm;
             object-fit: contain;
         }
-        .herb-front .art-wrap {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            height: 100mm;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .herb-front .art-wrap img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            transform: translate({{ $artworkOffsetX }}mm, {{ $artworkOffsetY }}mm) rotate({{ $artworkRotate }}deg) scale({{ $artworkScale }});
-            transform-origin: center center;
-        }
-        .herb-front .bio-seal {
+        .herb-blend-front .bio-seal {
             position: absolute;
-            top: 90mm;
-            left: 7mm;
+            top: 69.40mm;
+            left: 9.98mm;
             z-index: 4;
         }
-        .herb-front .bio-seal img {
-            width: 18mm;
-            height: auto;
+        .herb-blend-front .bio-seal img {
+            width: 19.23mm;
+            height: 15.95mm;
         }
-        .herb-front .heading {
-            position: relative;
+        .herb-blend-front .heading {
+            position: absolute;
+            left: 9.88mm;
+            right: 9.88mm;
+            bottom: 8.70mm;
             z-index: 3;
-            margin-top: auto;
-            text-align: left;
+            color: #fff;
         }
-        .herb-front .title {
+        .herb-blend-front .title {
             font-family: 'herb-title', 'herb-body', -apple-system, sans-serif;
-            font-size: 9.9mm;
-            line-height: 0.95;
-            letter-spacing: 0.07em;
+            font-size: 9.10mm;
+            line-height: 1;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
-            color: {{ $headingColor }};
-            margin: 0 0 0.5mm 0;
-            word-break: break-word;
-            -webkit-hyphens: auto;
-            hyphens: auto;
-        }
-        .herb-front .subtitle {
-            font-family: 'herb-subtitle', 'herb-body', -apple-system, sans-serif;
-            font-size: 4.9mm;
-            letter-spacing: 0.057em;
-            line-height: 1.143;
-            color: {{ $textColor }};
             margin: 0;
         }
+        .herb-blend-front .subtitle {
+            font-family: 'herb-subtitle', 'herb-body', -apple-system, sans-serif;
+            font-size: 4.73mm;
+            line-height: 1.1;
+            letter-spacing: 0.057em;
+            margin: 1.5mm 0 0 0;
+        }
     </style>
-    <div class="herb-front">
+    <div class="herb-blend-front">
+        @if ($backgroundSrc)
+            <div class="bg-wrap"><img src="{{ $backgroundSrc }}" alt=""></div>
+        @endif
+
         <div class="logo-wrap">
             @if ($brandLogoSrc)
                 <img src="{{ $brandLogoSrc }}" alt="">
-            @endif
-        </div>
-
-        @if ($bioSealSrc)
-            <div class="bio-seal"><img src="{{ $bioSealSrc }}" alt=""></div>
-        @endif
-
-        <div class="art-wrap">
-            @if ($artworkSrc)
-                <img src="{{ $artworkSrc }}" alt="">
             @endif
         </div>
 
@@ -146,5 +154,9 @@
                 <p class="subtitle">{{ $subtitle }}</p>
             @endif
         </div>
+
+        @if ($bioSealSrc)
+            <div class="bio-seal"><img src="{{ $bioSealSrc }}" alt=""></div>
+        @endif
     </div>
 </x-label-page>

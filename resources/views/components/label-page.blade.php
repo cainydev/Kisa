@@ -57,7 +57,7 @@
         color: #999;
     }
 </style>
-<section class="lp-sheet">
+<section class="lp-sheet" lang="de">
     <div class="lp-page">{{ $slot }}</div>
     @if ($marks && $bleed > 0)
         @php

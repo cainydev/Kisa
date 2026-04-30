@@ -1,6 +1,8 @@
 <?php
 
+use App\Labels\Templates\HerbBlendTemplate;
 use App\Labels\Templates\HerbTemplate;
+use App\Labels\Templates\RuthsBlendTemplate;
 
 return [
     /*
@@ -17,6 +19,8 @@ return [
 
     'templates' => [
         HerbTemplate::class,
+        HerbBlendTemplate::class,
+        RuthsBlendTemplate::class,
     ],
 
     /*

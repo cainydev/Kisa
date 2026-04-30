@@ -1,10 +1,20 @@
 @php
-    $headingColor = $headingColor ?? '#d8dc8e';
+    use App\Labels\BioMode;
+    use App\Labels\IngredientList;
+
     $subtitleColor = $subtitleColor ?? '#6f7070';
     $textColor = $textColor ?? '#1c1d1c';
     $brand = config('labels.brand');
-    $latin = trim((string) ($latinName ?? ''));
-    $displayName = $displayName ?? $title;
+    $bioMode = BioMode::tryFrom((string) ($bioMode ?? '')) ?? BioMode::Bio;
+
+    $list = IngredientList::build($entity ?? null, $bioMode);
+    $inhaltsstoffeText = (! empty($inhaltsstoffe)) ? $inhaltsstoffe : $list->text;
+    // anyBio drives the asterisk-and-footnote pattern. allBio swaps it for a
+    // single closing sentence inline. bioSealsAllowed gates the BIO/EU-leaf
+    // seals (≤ 5 % non-bio share, EU 95/5 rule).
+    $isBio = $list->anyBio;
+    $allBio = $list->allBio || ($bioMode === BioMode::Bio && $list->text !== '');
+    $bioSealsAllowed = $isBio && $list->nonBioPercent <= 5.0;
 
     $imgSrc = function ($media) {
         if (!$media || !is_file($media->getPath())) {
@@ -31,12 +41,27 @@
         return "@font-face { font-family: '{$family}'; font-display: block; src: url(data:{$mime};base64,{$data}) format('{$format}'); }";
     };
 
-    $bioSealSrc = $imgSrc($bioSeal ?? null);
+    $accentColor = $accentColor ?? '#C5C95C';
+    $accentBaseColor = '#C5C95C';
+
+    $svgInline = function ($media) use ($accentColor, $accentBaseColor): ?string {
+        if (! $media || ! is_file($media->getPath())) {
+            return null;
+        }
+        $svg = file_get_contents($media->getPath());
+        $svg = preg_replace('/<\?xml[^?]*\?>/', '', $svg);
+        $svg = preg_replace('/<!DOCTYPE[^>]*>/', '', $svg);
+        $pattern = '/' . preg_quote($accentBaseColor, '/') . '/i';
+
+        return preg_replace($pattern, $accentColor, $svg);
+    };
+
+    $bioSealSrc = $bioSealsAllowed ? $imgSrc($bioSeal ?? null) : null;
     $gruenPunktSrc = $imgSrc($gruenPunkt ?? null);
-    $euBioLeafSrc = $imgSrc($euBioLeaf ?? null);
-    $prepAmountIconSrc = $imgSrc($prepAmountIcon ?? null);
-    $prepTemperatureIconSrc = $imgSrc($prepTemperatureIcon ?? null);
-    $prepTimeIconSrc = $imgSrc($prepTimeIcon ?? null);
+    $euBioLeafSrc = $bioSealsAllowed ? $imgSrc($euBioLeaf ?? null) : null;
+    $prepAmountIconSvg = $svgInline($prepAmountIcon ?? null);
+    $prepTemperatureIconSvg = $svgInline($prepTemperatureIcon ?? null);
+    $prepTimeIconSvg = $svgInline($prepTimeIcon ?? null);
 
     $titleFontFace = $fontFace($titleFont ?? null, 'herb-title');
     $bodyFontFace = $fontFace($bodyFont ?? null, 'herb-body');
@@ -51,7 +76,7 @@
         {!! $italicFontFace !!}
         {!! $subtitleFontFace !!}
         {!! $accentFontFace !!}
-        .herb-back {
+        .herb-blend-back {
             position: relative;
             width: 100%;
             height: 100%;
@@ -64,67 +89,76 @@
             display: flex;
             flex-direction: column;
         }
-        .herb-back .title {
+        .herb-blend-back .title {
             font-family: 'herb-title', 'herb-body', -apple-system, sans-serif;
             font-size: 6mm;
             line-height: 1;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            color: {{ $headingColor }};
+            color: {{ $accentColor }};
             margin: 0 0 1.25mm 0;
         }
-        .herb-back .ingredients {
+        .herb-blend-back .ingredients {
             margin: 0 0 4mm 0;
-            line-height: 1.1;
-            text-align: justify;
+            font-family: 'herb-body', -apple-system, sans-serif;
+            font-size: 2.82mm;
+            line-height: 1.125;
             hyphens: auto;
             -webkit-hyphens: auto;
             hyphenate-limit-chars: 6 3 3;
+            overflow-wrap: break-word;
         }
-        .herb-back .latin { font-family: 'herb-italic', 'herb-body', -apple-system, sans-serif; font-style: italic; }
+        .herb-blend-back .ingredients .bio-claim {
+            display: block;
+            margin-top: 1.5mm;
+            font-family: 'herb-body', -apple-system, sans-serif;
+            font-size: 2.82mm;
+            line-height: 1.125;
+        }
+        .herb-blend-back .latin { font-family: 'herb-italic', 'herb-body', -apple-system, sans-serif; font-style: italic; }
         /* Shared heading style: "Inhaltsstoffe:", "Zubereitungshinweise:",
            "Sicherheitshinweis:" — same typography regardless of position. */
-        .herb-back .section-heading {
+        .herb-blend-back .section-heading {
             font-family: 'herb-title', 'herb-body', -apple-system, sans-serif;
             font-size: 3.5mm;
             line-height: 1;
         }
-        .herb-back h3.section-heading {
+        .herb-blend-back h3.section-heading {
             margin: 0;
         }
-        .herb-back .prep-row {
+        .herb-blend-back .prep-row {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
             margin: -1.5mm 0 2.5mm 0;
         }
-        .herb-back .prep-row .item {
+        .herb-blend-back .prep-row .item {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        .herb-back .prep-row .icon {
+        .herb-blend-back .prep-row .icon {
             display: flex;
             align-items: end;
             justify-content: center;
             height: 25mm;
             margin-bottom: 2.5mm;
         }
-        .herb-back .prep-row .icon img,
-        .herb-back .prep-row .icon svg {
+        .herb-blend-back .prep-row .icon img,
+        .herb-blend-back .prep-row .icon svg {
             width: auto;
             height: 25mm;
             object-fit: contain;
             display: block;
         }
-        .herb-back .prep-row .caption {
+        .herb-blend-back .prep-row .caption {
             font-family: 'herb-accent', 'herb-body', -apple-system, sans-serif;
             font-size: 3.88mm;
             line-height: 1;
             text-align: center;
             color: {{ $textColor }};
         }
-        .herb-back .preparation-body {
+        .herb-blend-back .preparation-body {
             margin: 0 0 2.5mm 0;
             line-height: 1.1;
             text-align: justify;
@@ -132,7 +166,7 @@
             -webkit-hyphens: auto;
             hyphenate-limit-chars: 6 3 3;
         }
-        .herb-back .safety-hint {
+        .herb-blend-back .safety-hint {
             margin: 0;
             line-height: 1.1;
             text-align: justify;
@@ -140,39 +174,39 @@
             -webkit-hyphens: auto;
             hyphenate-limit-chars: 6 3 3;
         }
-        .herb-back .seals-row {
+        .herb-blend-back .seals-row {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin: 2.5mm 0 2mm 0;
         }
-        .herb-back .seals-row .fill-hint {
+        .herb-blend-back .seals-row .fill-hint {
             font-size: 2.82mm;
             line-height: 1.2;
             max-width: 36mm;
         }
-        .herb-back .seals-row .seals {
+        .herb-blend-back .seals-row .seals {
             display: flex;
             align-items: center;
             gap: 2mm;
             line-height: 0;
         }
-        .herb-back .seals-row .seals img {
+        .herb-blend-back .seals-row .seals img {
             height: 12mm;
             width: auto;
             object-fit: contain;
             display: block;
         }
-        .herb-back .seals-row .seals .bio-seal {
+        .herb-blend-back .seals-row .seals .bio-seal {
             height: 13mm;
         }
-        .herb-back .seals-row .eu-seal {
+        .herb-blend-back .seals-row .eu-seal {
             position: relative;
             display: flex;
             align-items: center;
             line-height: 0;
         }
-        .herb-back .seals-row .eu-seal .oeko-cap {
+        .herb-blend-back .seals-row .eu-seal .oeko-cap {
             position: absolute;
             left: 0;
             right: 0;
@@ -182,7 +216,7 @@
             text-align: left;
             color: {{ $textColor }};
         }
-        .herb-back .bottom-bar {
+        .herb-blend-back .bottom-bar {
             position: relative;
             margin-top: auto;
             margin-left: auto;
@@ -192,7 +226,7 @@
             background: #d8d8d8;
             border-radius: 0.25mm;
         }
-        .herb-back .bottom-bar .sticker-outline {
+        .herb-blend-back .bottom-bar .sticker-outline {
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
@@ -204,7 +238,7 @@
             pointer-events: none;
             z-index: 99;
         }
-        .herb-back .bottom-bar .sticker-outline .label {
+        .herb-blend-back .bottom-bar .sticker-outline .label {
             position: absolute;
             top: 1mm;
             left: 1mm;
@@ -213,27 +247,30 @@
             font-family: -apple-system, sans-serif;
         }
     </style>
-    <div class="herb-back">
+    <div class="herb-blend-back">
         <h1 class="title">{{ $title }}</h1>
 
         <p class="ingredients">
             <span class="section-heading">Inhaltsstoffe:</span>
-            Bio {{ $displayName }}@if ($latin) (<span class="latin">{{ $latin }}</span>)@endif<br>
-            aus kontrolliert biologischem Anbau aus {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }} {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}
+            {{ $inhaltsstoffeText }}@if ($allBio) aus kontrolliert biologischem Anbau {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}.
+            @elseif (! empty($inhaltsstoffeText));@endif
+            @if ($isBio && ! $allBio)
+                <span class="bio-claim">*aus ökologischer EU-/nicht-EU-Landwirtschaft {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}</span>
+            @endif
         </p>
 
         <h3 class="section-heading">Zubereitungshinweise:</h3>
         <div class="prep-row">
             <div class="item">
-                <div class="icon">@if ($prepAmountIconSrc)<img src="{{ $prepAmountIconSrc }}" alt="">@endif</div>
+                <div class="icon">@if ($prepAmountIconSvg){!! $prepAmountIconSvg !!}@endif</div>
                 <div class="caption">{{ $prepAmount }}</div>
             </div>
             <div class="item">
-                <div class="icon">@if ($prepTemperatureIconSrc)<img src="{{ $prepTemperatureIconSrc }}" alt="">@endif</div>
+                <div class="icon">@if ($prepTemperatureIconSvg){!! $prepTemperatureIconSvg !!}@endif</div>
                 <div class="caption">{{ $prepTemperature }}</div>
             </div>
             <div class="item">
-                <div class="icon">@if ($prepTimeIconSrc)<img src="{{ $prepTimeIconSrc }}" alt="">@endif</div>
+                <div class="icon">@if ($prepTimeIconSvg){!! $prepTimeIconSvg !!}@endif</div>
                 <div class="caption">{{ $prepTime }}</div>
             </div>
         </div>

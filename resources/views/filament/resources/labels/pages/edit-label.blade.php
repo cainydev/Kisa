@@ -151,9 +151,9 @@
                                     <div
                                         x-show="loading"
                                         x-transition.opacity
-                                        class="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-black/40 text-xs text-gray-600 dark:text-gray-300"
+                                        class="absolute inset-0 flex items-center justify-center bg-white"
                                     >
-                                        Aktualisiere Vorschau…
+                                        <x-filament::loading-indicator class="h-12 w-12 text-primary-600 dark:text-primary-400" />
                                     </div>
                                 </div>
                             </div>
