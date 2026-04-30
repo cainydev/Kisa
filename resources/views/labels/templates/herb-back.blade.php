@@ -1,10 +1,36 @@
 @php
+    use App\Labels\BioMode;
+
     $headingColor = $headingColor ?? '#d8dc8e';
     $subtitleColor = $subtitleColor ?? '#6f7070';
     $textColor = $textColor ?? '#1c1d1c';
     $brand = config('labels.brand');
     $latin = trim((string) ($latinName ?? ''));
-    $displayName = $displayName ?? $title;
+    $displayName = $displayName ?? $backTitle;
+    $cutForm = trim((string) ($cutForm ?? ''));
+
+    // Bio resolution. For Einzelkraut the recipe is the herb itself, so
+    // `from_stock` looks at the herb's bags; `bio` and `none` are explicit
+    // overrides. The herb is implicitly the only one in `entity->herbs`.
+    $bioMode = BioMode::tryFrom((string) ($bioMode ?? '')) ?? BioMode::Bio;
+    $isBio = (function () use ($bioMode, $entity) {
+        if ($bioMode === BioMode::Bio) {
+            return true;
+        }
+        if ($bioMode === BioMode::None || ! $entity) {
+            return false;
+        }
+        // from_stock — walk the (single) herb's bags
+        foreach ($entity->herbs ?? [] as $herb) {
+            if ($bioMode->herbIsBio($herb)) {
+                return true;
+            }
+        }
+
+        return false;
+    })();
+    // Single-ingredient labels can show seals if the herb qualifies as bio.
+    $bioSealsAllowed = $isBio;
 
     // Build the brewing-instructions paragraph from the resolved display name
     // and steep time when no override is set. The display-name fallback means
@@ -42,9 +68,9 @@
         return "@font-face { font-family: '{$family}'; font-display: block; src: url(data:{$mime};base64,{$data}) format('{$format}'); }";
     };
 
-    $bioSealSrc = $imgSrc($bioSeal ?? null);
+    $bioSealSrc = $bioSealsAllowed ? $imgSrc($bioSeal ?? null) : null;
     $gruenPunktSrc = $imgSrc($gruenPunkt ?? null);
-    $euBioLeafSrc = $imgSrc($euBioLeaf ?? null);
+    $euBioLeafSrc = $bioSealsAllowed ? $imgSrc($euBioLeaf ?? null) : null;
     $prepAmountIconSrc = $imgSrc($prepAmountIcon ?? null);
     $prepTemperatureIconSrc = $imgSrc($prepTemperatureIcon ?? null);
     $prepTimeIconSrc = $imgSrc($prepTimeIcon ?? null);
@@ -224,11 +250,11 @@
         }
     </style>
     <div class="herb-back">
-        <h1 class="title">{{ $title }}</h1>
+        <h1 class="title">{{ $backTitle }}</h1>
 
         <p class="ingredients">
             <span class="section-heading">Inhaltsstoffe:</span>
-            Bio {{ $displayName }}@if ($latin) (<span class="latin">{{ $latin }}</span>)@endif aus kontrolliert biologischem Anbau aus {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }} {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}
+            @if ($isBio)Bio @endif{{ $displayName }}@if ($cutForm !== '') {{ $cutForm }}@endif@if ($latin) (<span class="latin">{{ $latin }}</span>)@endif@if ($isBio) aus kontrolliert biologischem Anbau aus {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }} {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}@endif
         </p>
 
         <h3 class="section-heading">Zubereitungshinweise:</h3>
