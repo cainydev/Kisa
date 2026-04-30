@@ -185,6 +185,19 @@ class EditLabel extends EditRecord
 
                     $this->redirect(LabelResource::getUrl('edit', ['record' => $child->id]));
                 }),
+            Action::make('createSibling')
+                ->label('Geschwister-Etikett anlegen')
+                ->icon('heroicon-o-document-duplicate')
+                ->color('gray')
+                ->visible(fn () => $this->record->parent_id !== null)
+                ->action(function () {
+                    $sibling = Label::create([
+                        'template_key' => $this->record->template_key,
+                        'parent_id' => $this->record->parent_id,
+                    ]);
+
+                    $this->redirect(LabelResource::getUrl('edit', ['record' => $sibling->id]));
+                }),
             DeleteAction::make(),
         ];
     }
