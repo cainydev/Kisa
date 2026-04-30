@@ -90,9 +90,7 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": [
-                "laravel/telescope"
-            ]
+            "dont-discover": ["spatie/laravel-discord-alerts"]
         }
     },
     "config": {

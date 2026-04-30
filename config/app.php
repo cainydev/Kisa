@@ -172,6 +172,12 @@ return [
          */
         BillbeeServiceProvider::class,
         BillbeeCustomShopKeyAuthenticatorProvider::class,
+        // spatie/laravel-discord-alerts ships a broken `aliases` entry in its
+        // composer.json (`"Discord" => "DiscordAlert"`, the alias target is a
+        // bare class name). That breaks `composer install` via package:discover,
+        // so we opt the package out of auto-discovery (composer.json
+        // extra.laravel.dont-discover) and register the provider by hand here.
+        Spatie\DiscordAlerts\DiscordAlertsServiceProvider::class,
 
         /*
          * Application Service Providers...
