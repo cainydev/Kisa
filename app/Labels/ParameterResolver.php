@@ -8,6 +8,8 @@ use RuntimeException;
 
 class ParameterResolver
 {
+    public function __construct(private readonly Hyphenator $hyphenator) {}
+
     /**
      * Resolve every Param the template declares to a concrete value.
      *
@@ -20,6 +22,8 @@ class ParameterResolver
      *        a. Auto closure called with the entity (or null).
      *        b. Literal default if defined.
      *   3. If still null and the param is required, throw.
+     *   4. If the param is `->hyphenate()`, run the resolved string through
+     *      a Knuth–Liang hyphenator that injects U+00AD soft hyphens.
      *
      * @return array<string, mixed>
      */
@@ -27,7 +31,11 @@ class ParameterResolver
     {
         $values = [];
         foreach ($template->parameters() as $param) {
-            $values[$param->key()] = $this->resolveOne($param, $label, $entity);
+            $value = $this->resolveOne($param, $label, $entity);
+            if ($param->isHyphenated() && is_string($value) && $value !== '') {
+                $value = $this->hyphenator->hyphenate($value);
+            }
+            $values[$param->key()] = $value;
         }
 
         return $values;

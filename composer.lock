@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bfa0f20db7d846ef77c275bd8ccd910c",
+    "content-hash": "5c1a8d352cae7d70023080a2e89f1325",
     "packages": [
         {
             "name": "blade-ui-kit/blade-heroicons",
@@ -10083,6 +10083,62 @@
                 }
             ],
             "time": "2026-01-10T16:40:02+00:00"
+        },
+        {
+            "name": "vanderlee/syllable",
+            "version": "1.9.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/vanderlee/phpSyllable.git",
+                "reference": "ccf6e159a93e521ea0ae7adc51b863cc150283eb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/vanderlee/phpSyllable/zipball/ccf6e159a93e521ea0ae7adc51b863cc150283eb",
+                "reference": "ccf6e159a93e521ea0ae7adc51b863cc150283eb",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-json": "*",
+                "ext-libxml": "*",
+                "ext-mbstring": "*",
+                "php": ">=7.1"
+            },
+            "require-dev": {
+                "ext-curl": "*",
+                "phpunit/phpunit": "^5.7 || ^6.5 || ^7.5 || ^8.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Vanderlee\\Syllable\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Text syllable splitting and hyphenation using Frank M. Liang's TeX algorithm.",
+            "homepage": "https://github.com/vanderlee/phpSyllable",
+            "keywords": [
+                "dash",
+                "hyphen",
+                "hyphenate",
+                "hyphenation",
+                "language",
+                "locale",
+                "split",
+                "syllable",
+                "syllables",
+                "text",
+                "words"
+            ],
+            "support": {
+                "issues": "https://github.com/vanderlee/phpSyllable/issues",
+                "source": "https://github.com/vanderlee/phpSyllable/"
+            },
+            "time": "2025-04-24T18:50:09+00:00"
         },
         {
             "name": "vlucas/phpdotenv",

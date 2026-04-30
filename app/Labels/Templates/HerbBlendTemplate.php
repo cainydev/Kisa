@@ -58,7 +58,7 @@ class HerbBlendTemplate extends AbstractLabelTemplate
 
         return [
             // Title — "BIO-KRÄUTERTEE NR. 26".
-            Param::make('title')->string()->label('Titel')
+            Param::make('title')->string()->hyphenate()->label('Titel')
                 ->auto(function (?Product $p) {
                     $no = $this->teaNumber($p);
                     if ($no === null) {
@@ -69,7 +69,7 @@ class HerbBlendTemplate extends AbstractLabelTemplate
                 }),
 
             // Subtitle under the title on the front.
-            Param::make('subtitle')->string()->label('Untertitel')
+            Param::make('subtitle')->string()->hyphenate()->label('Untertitel')
                 ->default('Heimische Kräuter aus kontrolliert biologischem Anbau'),
 
             // Bio mode. Controls how each ingredient is rendered and whether
@@ -109,7 +109,7 @@ class HerbBlendTemplate extends AbstractLabelTemplate
             // Ingredient list on the back. When empty the blade view builds
             // it from the product's recipe (descending percentage, LMIV) and
             // applies the bio mode. Override here to hand-write the list.
-            Param::make('inhaltsstoffe')->string()->label('Inhaltsstoffe'),
+            Param::make('inhaltsstoffe')->string()->hyphenate()->label('Inhaltsstoffe'),
 
             // Brewing parameters shown as labels under the three icons.
             Param::make('prepAmount')->string()->label('Menge')
@@ -120,11 +120,11 @@ class HerbBlendTemplate extends AbstractLabelTemplate
                 ->default('5-8 Min.'),
 
             // Body paragraph under the prep icons.
-            Param::make('preparationBody')->string()->label('Zubereitungstext')
+            Param::make('preparationBody')->string()->hyphenate()->label('Zubereitungstext')
                 ->default('1-2 Teelöffel mit ca. 250 ml siedendem Wasser übergießen und nach 5-8 Minuten abseihen.'),
 
             // Safety hint paragraph.
-            Param::make('safetyHint')->string()->label('Sicherheitshinweis')
+            Param::make('safetyHint')->string()->hyphenate()->label('Sicherheitshinweis')
                 ->default('Immer mit sprudelnd kochendem Wasser aufgießen und mindestens 5 Minuten ziehen lassen! Nur so erhalten Sie ein sicheres Lebensmittel. Vor Licht und Feuchtigkeit geschützt aufbewahren.'),
 
             // Small left-aligned hint near the seals row.

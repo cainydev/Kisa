@@ -36,6 +36,8 @@ class Param
      */
     private ?array $selectOptions = null;
 
+    private bool $hyphenate = false;
+
     private function __construct(string $key)
     {
         $this->key = $key;
@@ -121,6 +123,22 @@ class Param
         return $this;
     }
 
+    /**
+     * Run the resolved value through a German hyphenator (Knuth–Liang via
+     * vanderlee/syllable) so the rendered Blade gets soft hyphens (U+00AD)
+     * inserted at legal break points. Server-side equivalent of CSS
+     * `hyphens: auto`, used because Chromium's built-in hyphenation depends
+     * on a runtime-downloaded component that isn't always available.
+     *
+     * Only meaningful for string-typed params.
+     */
+    public function hyphenate(): self
+    {
+        $this->hyphenate = true;
+
+        return $this;
+    }
+
     public function default(mixed $value): self
     {
         $this->hasLiteralDefault = true;
@@ -196,6 +214,11 @@ class Param
     public function isShared(): bool
     {
         return $this->shared;
+    }
+
+    public function isHyphenated(): bool
+    {
+        return $this->hyphenate;
     }
 
     public function hasLiteralDefault(): bool
