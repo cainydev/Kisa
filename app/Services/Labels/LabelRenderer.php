@@ -42,6 +42,7 @@ class LabelRenderer
         $values['bleed'] = $opts->bleed_mm;
         $values['marks'] = $opts->marks;
         $values['slug'] = $this->slugFor($template, $pageKey, $label, $entity);
+        $values['entity'] = $entity;
 
         $body = View::make($pages[$pageKey], $values)->render();
 

@@ -31,6 +31,11 @@ class Param
 
     private ?string $rangeSuffix = null;
 
+    /**
+     * @var array<string, string>|null
+     */
+    private ?array $selectOptions = null;
+
     private function __construct(string $key)
     {
         $this->key = $key;
@@ -74,6 +79,32 @@ class Param
         $this->type = ParamType::Font;
 
         return $this;
+    }
+
+    public function boolean(): self
+    {
+        $this->type = ParamType::Boolean;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, string>  $options  Map of stored value => human label.
+     */
+    public function select(array $options): self
+    {
+        $this->type = ParamType::Select;
+        $this->selectOptions = $options;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function selectOptions(): array
+    {
+        return $this->selectOptions ?? [];
     }
 
     public function required(): self
