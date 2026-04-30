@@ -96,13 +96,13 @@ HTML;
             ->waitUntilNetworkIdle()
             ->noSandbox();
 
-        if ($chromePath = env('BROWSERSHOT_CHROMIUM_PATH')) {
+        if ($chromePath = config('labels.browsershot.chromium_path')) {
             $shot->setChromePath($chromePath);
         }
-        if ($nodeBinary = env('BROWSERSHOT_NODE_BINARY')) {
+        if ($nodeBinary = config('labels.browsershot.node_binary')) {
             $shot->setNodeBinary($nodeBinary);
         }
-        if ($npmBinary = env('BROWSERSHOT_NPM_BINARY')) {
+        if ($npmBinary = config('labels.browsershot.npm_binary')) {
             $shot->setNpmBinary($npmBinary);
         }
 
@@ -144,13 +144,13 @@ HTML;
             ->waitUntilNetworkIdle()
             ->noSandbox();
 
-        if ($chromePath = env('BROWSERSHOT_CHROMIUM_PATH')) {
+        if ($chromePath = config('labels.browsershot.chromium_path')) {
             $shot->setChromePath($chromePath);
         }
-        if ($nodeBinary = env('BROWSERSHOT_NODE_BINARY')) {
+        if ($nodeBinary = config('labels.browsershot.node_binary')) {
             $shot->setNodeBinary($nodeBinary);
         }
-        if ($npmBinary = env('BROWSERSHOT_NPM_BINARY')) {
+        if ($npmBinary = config('labels.browsershot.npm_binary')) {
             $shot->setNpmBinary($npmBinary);
         }
 
