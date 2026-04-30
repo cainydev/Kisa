@@ -43,12 +43,12 @@ class RuthsBlendTemplate extends AbstractLabelTemplate
 
         return [
             // Title — e.g. "Ruths Frauen!Power".
-            Param::make('title')->string()->label('Titel')
+            Param::make('title')->string()->hyphenate()->label('Titel')
                 ->auto(fn (?Product $p) => $p?->name ?? 'Ruths Mischung'),
 
             // Subtitle under the title on the front. Pfennighaus copy:
             // "vorwiegend" (not "kontrolliert"), since the line isn't 100 % bio.
-            Param::make('subtitle')->string()->label('Untertitel')
+            Param::make('subtitle')->string()->hyphenate()->label('Untertitel')
                 ->default('Heimische Kräuter aus vorwiegend biologischem Anbau'),
 
             // Bio mode. Controls how each ingredient is rendered and whether
@@ -93,7 +93,7 @@ class RuthsBlendTemplate extends AbstractLabelTemplate
             // Ingredient list on the back. When empty the blade view builds
             // it from the product's recipe (descending percentage, LMIV) and
             // applies the bio mode. Override here to hand-write the list.
-            Param::make('inhaltsstoffe')->string()->label('Inhaltsstoffe'),
+            Param::make('inhaltsstoffe')->string()->hyphenate()->label('Inhaltsstoffe'),
 
             // Brewing parameters shown as labels under the three icons.
             Param::make('prepAmount')->string()->label('Menge')
@@ -108,10 +108,10 @@ class RuthsBlendTemplate extends AbstractLabelTemplate
             // when this is left empty (e.g. "1 Teelöffel Ruths Frauen!Power
             // mit ca. 250 ml siedendem Wasser übergießen und nach 5-8 Min.
             // abseihen."). Set a value here to override.
-            Param::make('preparationBody')->string()->label('Zubereitungstext'),
+            Param::make('preparationBody')->string()->hyphenate()->label('Zubereitungstext'),
 
             // Safety hint paragraph.
-            Param::make('safetyHint')->string()->label('Sicherheitshinweis')
+            Param::make('safetyHint')->string()->hyphenate()->label('Sicherheitshinweis')
                 ->default('Immer mit sprudelnd kochendem Wasser aufgießen und mindestens 5 Minuten ziehen lassen! Nur so erhalten Sie ein sicheres Lebensmittel. Vor Licht und Feuchtigkeit geschützt aufbewahren.'),
 
             // Small left-aligned hint near the seals row.

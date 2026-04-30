@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Labels\Hyphenator;
 use App\Labels\TemplateRegistry;
 use Carbon\Carbon;
 use Filament\Support\Facades\FilamentView;
@@ -19,6 +20,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TemplateRegistry::class, function () {
             return new TemplateRegistry(config('labels.templates', []));
         });
+
+        // Scoped (request-lifetime) so Syllable's compiled pattern dictionary
+        // is reused across the request's many param resolutions, but doesn't
+        // accumulate across Octane requests.
+        $this->app->scoped(Hyphenator::class);
     }
 
     /**

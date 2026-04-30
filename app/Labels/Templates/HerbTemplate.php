@@ -83,11 +83,11 @@ class HerbTemplate extends AbstractLabelTemplate
 
         return [
             // Title shown big on front, smaller on back. Defaults to a cleaned product name uppercased.
-            Param::make('title')->string()->label('Titel')
+            Param::make('title')->string()->hyphenate()->label('Titel')
                 ->auto(fn (?Product $p) => mb_strtoupper($this->cleanName($p))),
 
             // Subtitle under the title on the front.
-            Param::make('subtitle')->string()->label('Untertitel')
+            Param::make('subtitle')->string()->hyphenate()->label('Untertitel')
                 ->default('aus kontrolliert biologischem Anbau'),
 
             // The main visual. Required — per-herb illustration.
@@ -127,7 +127,7 @@ class HerbTemplate extends AbstractLabelTemplate
                 ->default(''),
 
             // Display name used on the back — sentence-case clean name, e.g. "Brennnesselblätter".
-            Param::make('displayName')->string()->label('Anzeigename')
+            Param::make('displayName')->string()->hyphenate()->label('Anzeigename')
                 ->auto(fn (?Product $p) => $this->cleanName($p)),
 
             // Brewing parameters shown as labels under the three icons.
@@ -139,11 +139,11 @@ class HerbTemplate extends AbstractLabelTemplate
                 ->default('5-8 Min.'),
 
             // Body paragraph under the prep icons.
-            Param::make('preparationBody')->string()->label('Zubereitungstext')
+            Param::make('preparationBody')->string()->hyphenate()->label('Zubereitungstext')
                 ->auto(fn (?Product $p) => '1-2 Teelöffel '.$this->cleanName($p).' mit ca. 250 ml siedendem Wasser übergießen und nach 5-8 Minuten abseihen.'),
 
             // Safety hint paragraph.
-            Param::make('safetyHint')->string()->label('Sicherheitshinweis')
+            Param::make('safetyHint')->string()->hyphenate()->label('Sicherheitshinweis')
                 ->default('Immer mit sprudelnd kochendem Wasser aufgießen und mindestens 5 Minuten ziehen lassen! Nur so erhalten Sie ein sicheres Lebensmittel. Vor Licht und Feuchtigkeit geschützt aufbewahren.'),
 
             // Small left-aligned hint near the seals row.

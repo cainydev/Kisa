@@ -37,7 +37,7 @@ class IngredientList
         public readonly float $nonBioPercent,
     ) {}
 
-    public static function build(?Product $product, BioMode $mode): self
+    public static function build(?Product $product, BioMode $mode, ?Hyphenator $hyphenator = null): self
     {
         if (! $product) {
             return new self('', false, false, 0.0);
@@ -47,8 +47,9 @@ class IngredientList
             return new self('', false, false, 0.0);
         }
 
+        $hyphenator = $hyphenator ?? app(Hyphenator::class);
         $rows = $herbs->map(fn ($h) => [
-            'name' => $h->name,
+            'name' => $hyphenator->hyphenate($h->name),
             'percentage' => (float) ($h->pivot->percentage ?? 0),
             'is_bio' => $mode->herbIsBio($h),
         ])->all();
