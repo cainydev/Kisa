@@ -491,7 +491,7 @@ class LabelResource extends Resource
      *
      * @return array{0: array<int,int>, 1: array<int, array{depth:int, prefix:string}>}
      */
-    protected static function treeOrderAndDepths(): array
+    public static function treeOrderAndDepths(): array
     {
         $rows = Label::query()
             ->orderBy('parent_id')
