@@ -100,6 +100,8 @@
             line-height: 1;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            gap: 1mm;
         }
         .herb-back .title {
             font-family: 'herb-title', 'herb-body', -apple-system, sans-serif;
@@ -111,7 +113,7 @@
             margin: 0 0 1.25mm 0;
         }
         .herb-back .ingredients {
-            margin: 0 0 4mm 0;
+            margin: 0;
             line-height: 1.1;
             hyphens: auto;
             -webkit-hyphens: auto;
@@ -132,7 +134,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            margin: -1.5mm 0 2.5mm 0;
+            margin: 0;
         }
         .herb-back .prep-row .item {
             display: flex;
@@ -161,18 +163,15 @@
             color: {{ $textColor }};
         }
         .herb-back .preparation-body {
-            margin: 0 0 2.5mm 0;
+            margin: 0;
             line-height: 1.1;
             text-align: justify;
             hyphens: auto;
             -webkit-hyphens: auto;
             hyphenate-limit-chars: 6 3 3;
         }
-        .herb-back .preparation-2-title {
-            margin-top: 1.5mm;
-        }
         .herb-back .usage-note {
-            margin: 0 0 2mm 0;
+            margin: 0;
             line-height: 1.1;
         }
         .herb-back .safety-hint {
@@ -187,7 +186,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin: 2.5mm 0 2mm 0;
+            margin: 0;
         }
         .herb-back .seals-row .fill-hint {
             font-size: 2.82mm;
@@ -225,29 +224,36 @@
             text-align: left;
             color: {{ $textColor }};
         }
-        .herb-back .bottom-bar {
+        /* Bottom flex child holding the placement bar plus the sticker overlay
+           that physically covers it. The sticker is sized to its real-world
+           extent so this child's height is the sticker's height — that
+           reserves exactly the right amount of space at the bottom of the
+           page when justify-content distributes the rest. */
+        .herb-back .footer {
             position: relative;
-            margin-top: auto;
-            margin-left: auto;
-            margin-right: auto;
+            width: 95mm;
+            height: 48mm;
+            margin: 0 auto;
+            pointer-events: none;
+        }
+        .herb-back .footer .bar {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
             width: 50.20mm;
             height: 0.50mm;
             background: #d8d8d8;
             border-radius: 0.25mm;
         }
-        .herb-back .bottom-bar .sticker-outline {
+        .herb-back .footer .outline {
             position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: 0;
-            width: 95mm;
-            height: 48mm;
+            inset: 0;
             background: rgba(255, 0, 128, 0.12);
             border: 0.3mm dashed #ff0080;
-            pointer-events: none;
             z-index: 99;
         }
-        .herb-back .bottom-bar .sticker-outline .label {
+        .herb-back .footer .footer-label {
             position: absolute;
             top: 1mm;
             left: 1mm;
@@ -311,10 +317,11 @@
             </div>
         </div>
 
-        <div class="bottom-bar">
+        <div class="footer">
+            <div class="bar"></div>
             @if (! empty($showStickerOutline))
-                <div class="sticker-outline">
-                    <span class="label">Aufkleber 95×48 mm</span>
+                <div class="outline">
+                    <span class="footer-label">Aufkleber 95×48 mm</span>
                 </div>
             @endif
         </div>
