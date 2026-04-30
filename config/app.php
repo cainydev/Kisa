@@ -166,7 +166,7 @@ return [
     |
     */
 
-    'providers' => ServiceProvider::defaultProviders()->merge([
+    'providers' => ServiceProvider::defaultProviders()->merge(array_filter([
         /*
          * Package Service Providers...
          */
@@ -188,8 +188,14 @@ return [
         EventServiceProvider::class,
         AdminPanelProvider::class,
         RouteServiceProvider::class,
-        TelescopeServiceProvider::class,
-    ])->toArray(),
+        // Telescope is a dev-only dependency; on production deploys (composer
+        // install --no-dev) the Telescope package isn't installed, so the
+        // local TelescopeServiceProvider can't extend its base class.
+        // Register it only when the base class is available.
+        class_exists(\Laravel\Telescope\TelescopeApplicationServiceProvider::class)
+            ? TelescopeServiceProvider::class
+            : null,
+    ]))->toArray(),
 
     /*
     |--------------------------------------------------------------------------
