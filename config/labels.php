@@ -46,4 +46,20 @@ return [
             'text' => '#1c1d1c',
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Browsershot binaries
+    |--------------------------------------------------------------------------
+    |
+    | Routed through config/ so they survive `php artisan config:cache`.
+    | Calling env() directly inside the renderer would return null after the
+    | config cache is built (Laravel only loads .env when the cache is absent).
+    */
+
+    'browsershot' => [
+        'chromium_path' => env('BROWSERSHOT_CHROMIUM_PATH'),
+        'node_binary' => env('BROWSERSHOT_NODE_BINARY'),
+        'npm_binary' => env('BROWSERSHOT_NPM_BINARY'),
+    ],
 ];
