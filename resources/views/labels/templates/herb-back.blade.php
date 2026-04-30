@@ -76,7 +76,6 @@
         .herb-back .ingredients {
             margin: 0 0 4mm 0;
             line-height: 1.1;
-            text-align: justify;
             hyphens: auto;
             -webkit-hyphens: auto;
             hyphenate-limit-chars: 6 3 3;
@@ -218,8 +217,7 @@
 
         <p class="ingredients">
             <span class="section-heading">Inhaltsstoffe:</span>
-            Bio {{ $displayName }}@if ($latin) (<span class="latin">{{ $latin }}</span>)@endif<br>
-            aus kontrolliert biologischem Anbau aus {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }} {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}
+            Bio {{ $displayName }}@if ($latin) (<span class="latin">{{ $latin }}</span>)@endif aus kontrolliert biologischem Anbau aus {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }} {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}
         </p>
 
         <h3 class="section-heading">Zubereitungshinweise:</h3>
