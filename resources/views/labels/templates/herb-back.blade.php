@@ -307,10 +307,7 @@
         <p class="preparation-body">{{ $preparationBodyText }}</p>
 
         @if (! empty($preparation2Body))
-            @if (! empty($preparation2Title))
-                <h3 class="section-heading preparation-2-title">{{ $preparation2Title }}</h3>
-            @endif
-            <p class="preparation-body">{{ $preparation2Body }}</p>
+            <p class="preparation-body">@if (! empty($preparation2Title))<span class="section-heading">{{ $preparation2Title }}</span> @endif{{ $preparation2Body }}</p>
         @endif
 
         <p class="safety-hint"><span class="section-heading">Sicherheitshinweis:</span> {{ $safetyHint }}</p>
