@@ -139,8 +139,10 @@ class HerbTemplate extends AbstractLabelTemplate
                 ->default('5-8 Min.'),
 
             // Body paragraph under the prep icons.
-            Param::make('preparationBody')->string()->hyphenate()->label('Zubereitungstext')
-                ->auto(fn (?Product $p) => '1-2 Teelöffel '.$this->cleanName($p).' mit ca. 250 ml siedendem Wasser übergießen und nach 5-8 Minuten abseihen.'),
+            // Body paragraph under the prep icons. The blade view auto-builds
+            // it from the displayName + brewing params when this is left
+            // empty, so an override of `displayName` flows through naturally.
+            Param::make('preparationBody')->string()->hyphenate()->label('Zubereitungstext'),
 
             // Safety hint paragraph.
             Param::make('safetyHint')->string()->hyphenate()->label('Sicherheitshinweis')

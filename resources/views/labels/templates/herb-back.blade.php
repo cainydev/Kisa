@@ -6,6 +6,17 @@
     $latin = trim((string) ($latinName ?? ''));
     $displayName = $displayName ?? $title;
 
+    // Build the brewing-instructions paragraph from the resolved display name
+    // and steep time when no override is set. The display-name fallback means
+    // setting `displayName = "Angelikawurzel"` on a label flows through here
+    // automatically. Run through the same hyphenator that the param resolver
+    // uses so the auto-built fallback gets soft hyphens just like an override.
+    $preparationBodyText = (! empty($preparationBody))
+        ? $preparationBody
+        : app(\App\Labels\Hyphenator::class)->hyphenate(
+            '1-2 Teelöffel '.$displayName.' mit ca. 250 ml siedendem Wasser übergießen und nach '.($prepTime ?? '5-8 Min.').' abseihen.'
+        );
+
     $imgSrc = function ($media) {
         if (!$media || !is_file($media->getPath())) {
             return null;
@@ -236,7 +247,7 @@
             </div>
         </div>
 
-        <p class="preparation-body">{{ $preparationBody }}</p>
+        <p class="preparation-body">{{ $preparationBodyText }}</p>
 
         <p class="safety-hint"><span class="section-heading">Sicherheitshinweis:</span> {{ $safetyHint }}</p>
 
