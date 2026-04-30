@@ -168,6 +168,13 @@
             -webkit-hyphens: auto;
             hyphenate-limit-chars: 6 3 3;
         }
+        .herb-back .preparation-2-title {
+            margin-top: 1.5mm;
+        }
+        .herb-back .usage-note {
+            margin: 0 0 2mm 0;
+            line-height: 1.1;
+        }
         .herb-back .safety-hint {
             margin: 0;
             line-height: 1.1;
@@ -257,7 +264,11 @@
             @if ($isBio)Bio @endif{{ $displayName }}@if ($cutForm !== '') {{ $cutForm }}@endif@if ($latin) (<span class="latin">{{ $latin }}</span>)@endif@if ($isBio) aus kontrolliert biologischem Anbau aus {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }} {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}@endif
         </p>
 
-        <h3 class="section-heading">Zubereitungshinweise:</h3>
+        @if (! empty($usageNote))
+            <p class="usage-note"><span class="section-heading">Anwendung:</span> {{ $usageNote }}</p>
+        @endif
+
+        <h3 class="section-heading">{{ $preparationTitle ?? 'Zubereitungshinweise:' }}</h3>
         <div class="prep-row">
             <div class="item">
                 <div class="icon">@if ($prepAmountIconSrc)<img src="{{ $prepAmountIconSrc }}" alt="">@endif</div>
@@ -274,6 +285,13 @@
         </div>
 
         <p class="preparation-body">{{ $preparationBodyText }}</p>
+
+        @if (! empty($preparation2Body))
+            @if (! empty($preparation2Title))
+                <h3 class="section-heading preparation-2-title">{{ $preparation2Title }}</h3>
+            @endif
+            <p class="preparation-body">{{ $preparation2Body }}</p>
+        @endif
 
         <p class="safety-hint"><span class="section-heading">Sicherheitshinweis:</span> {{ $safetyHint }}</p>
 

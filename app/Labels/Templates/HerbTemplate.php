@@ -115,6 +115,18 @@ class HerbTemplate extends AbstractLabelTemplate
             Param::make('cutForm')->string()->label('Schnitt')
                 ->default('geschnitten'),
 
+            // Optional usage / mode-of-application line shown above the
+            // Inhaltsstoffe block, e.g. "Zur inneren und äußeren Anwendung"
+            // or "Nur zur äußeren Anwendung". Empty = section is hidden.
+            Param::make('usageNote')->string()->hyphenate()->label('Anwendung')
+                ->default(''),
+
+            // Heading for the primary preparation section. Editable per
+            // label so a herb that's only used externally can show
+            // "Zubereitung als Badezusatz" or similar.
+            Param::make('preparationTitle')->string()->label('Titel Zubereitung')
+                ->default('Zubereitungshinweise:'),
+
             // Brewing parameters shown as labels under the three icons.
             Param::make('prepAmount')->string()->label('Menge')
                 ->default('1-2 TL'),
@@ -123,11 +135,23 @@ class HerbTemplate extends AbstractLabelTemplate
             Param::make('prepTime')->string()->label('Ziehzeit')
                 ->default('5-8 Min.'),
 
-            // Body paragraph under the prep icons.
             // Body paragraph under the prep icons. The blade view auto-builds
             // it from the displayName + brewing params when this is left
             // empty, so an override of `displayName` flows through naturally.
             Param::make('preparationBody')->string()->hyphenate()->label('Zubereitungstext'),
+
+            // Optional second preparation section. Renders below the first
+            // one when either field is set:
+            //   - title only:  not rendered (no body to show)
+            //   - body only:   plain paragraph with no heading
+            //   - both:        heading + paragraph (e.g. "Zubereitung als
+            //                  Badezusatz" + the bath instructions for
+            //                  Dostkraut)
+            // No icon row — that belongs to the primary preparation.
+            Param::make('preparation2Title')->string()->label('Titel zweite Zubereitung')
+                ->default(''),
+            Param::make('preparation2Body')->string()->hyphenate()->label('Zweite Zubereitung')
+                ->default(''),
 
             // Safety hint paragraph.
             Param::make('safetyHint')->string()->hyphenate()->label('Sicherheitshinweis')
