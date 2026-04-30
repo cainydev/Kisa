@@ -53,6 +53,7 @@
     $artworkOffsetX = (float) ($artworkOffsetX ?? 0);
     $artworkOffsetY = (float) ($artworkOffsetY ?? 0);
     $artworkScale = (float) ($artworkScale ?? 1);
+    $artworkScaleX = ($artworkMirror ?? false) ? -$artworkScale : $artworkScale;
 
     $titleFontFace = $fontFace($titleFont ?? null, 'herb-title');
     $bodyFontFace = $fontFace($bodyFont ?? null, 'herb-body');
@@ -100,7 +101,7 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            transform: translate({{ $artworkOffsetX }}mm, {{ $artworkOffsetY }}mm) rotate({{ $artworkRotate }}deg) scale({{ $artworkScale }});
+            transform: translate({{ $artworkOffsetX }}mm, {{ $artworkOffsetY }}mm) rotate({{ $artworkRotate }}deg) scale({{ $artworkScaleX }}, {{ $artworkScale }});
             transform-origin: center center;
         }
         .herb-front .bio-seal {
