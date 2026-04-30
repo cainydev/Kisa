@@ -10,6 +10,12 @@ use Vanderlee\Syllable\Syllable;
  * Hyphenation component still produces correct line breaks for long German
  * compounds (e.g. Brennnessel\u{00AD}blätter).
  *
+ * Manual override: a `|` character in the input is treated as an explicit
+ * break point and replaced with a soft hyphen — when present anywhere in
+ * the string the auto hyphenator is skipped entirely. Useful for compounds
+ * Knuth–Liang misclassifies (e.g. "Angelika|wurzel" → ANGELIKA-WURZEL
+ * instead of ANGELIKAWUR-ZEL).
+ *
  * Bound as a `scoped` singleton in AppServiceProvider so the underlying
  * Syllable instance is reused for the request lifetime (Octane-safe — the
  * scoped binding is reset between requests).
@@ -22,6 +28,9 @@ class Hyphenator
     {
         if ($text === '') {
             return $text;
+        }
+        if (str_contains($text, '|')) {
+            return str_replace('|', "\u{00AD}", $text);
         }
 
         return $this->syllable()->hyphenateText($text);
