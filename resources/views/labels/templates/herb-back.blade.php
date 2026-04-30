@@ -103,6 +103,13 @@
             justify-content: space-between;
             gap: 1mm;
         }
+        /* Keep every section block at its natural size — never shrink to fit
+           the column. Overflow then becomes visible (sections overlap the
+           sticker zone or each other) so we can spot layout problems instead
+           of having flex silently squish things. */
+        .herb-back > * {
+            flex-shrink: 0;
+        }
         .herb-back .title {
             font-family: 'herb-title', 'herb-body', -apple-system, sans-serif;
             font-size: 6mm;
@@ -182,6 +189,8 @@
             -webkit-hyphens: auto;
             hyphenate-limit-chars: 6 3 3;
         }
+        /* Seals row: full-width strip with the fill-hint on the left and the
+           seals group on the right (justify-between). */
         .herb-back .seals-row {
             display: flex;
             justify-content: space-between;
@@ -193,28 +202,36 @@
             line-height: 1.2;
             max-width: 36mm;
         }
+        /* Seal group: flex row, items aligned to the start (top) so the
+           EU-seal column can hang the caption below without affecting the
+           other seals' vertical placement. */
         .herb-back .seals-row .seals {
             display: flex;
-            align-items: center;
+            justify-content: flex-end;
+            align-items: flex-start;
             gap: 2mm;
-            line-height: 0;
         }
-        .herb-back .seals-row .seals img {
-            height: 12mm;
+        .herb-back .seals-row .seals .gruen-punkt,
+        .herb-back .seals-row .seals .bio-seal {
+            height: 13mm;
             width: auto;
             object-fit: contain;
             display: block;
         }
-        .herb-back .seals-row .seals .bio-seal {
-            height: 13mm;
-        }
+        /* EU-leaf: stack the seal image and the regulatory caption. */
         .herb-back .seals-row .eu-seal {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            line-height: 0;
+            align-items: center;
+        }
+        .herb-back .seals-row .eu-seal img {
+            height: 13mm;
+            width: auto;
+            object-fit: contain;
+            display: block;
         }
         .herb-back .seals-row .eu-seal .oeko-cap {
+            align-self: flex-start;
             margin-top: 0.5mm;
             font-size: 1.41mm;
             line-height: 1.1;
@@ -307,7 +324,8 @@
                     <div class="eu-seal">
                         <img src="{{ $euBioLeafSrc }}" alt="">
                         <div class="oeko-cap">
-                            {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }} · {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }}
+                            {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}<br>
+                            {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }}
                         </div>
                     </div>
                 @endif
