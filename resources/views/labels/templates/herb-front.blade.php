@@ -110,9 +110,9 @@
             text-transform: uppercase;
             color: {{ $headingColor }};
             margin: 0 0 0.5mm 0;
-            word-break: break-word;
             -webkit-hyphens: auto;
             hyphens: auto;
+            overflow-wrap: break-word;
         }
         .herb-front .subtitle {
             font-family: 'herb-subtitle', 'herb-body', -apple-system, sans-serif;
