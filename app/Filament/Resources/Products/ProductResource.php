@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Products;
 
-use App\Filament\Resources\ProductResource\Pages;
-use App\Filament\Resources\ProductResource\RelationManagers;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
@@ -15,6 +13,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
@@ -37,11 +36,13 @@ class ProductResource extends Resource
     protected static ?string $model = Product::class;
 
     protected static ?string $modelLabel = 'Endprodukt';
+
     protected static ?string $pluralModelLabel = 'Endprodukte';
 
     protected static ?string $recordTitleAttribute = 'name';
 
     protected static string|\UnitEnum|null $navigationGroup = 'Produkte';
+
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cube';
 
     public static function form(Schema $schema): Schema
@@ -49,83 +50,89 @@ class ProductResource extends Resource
         return $schema
             ->components([
                 Tabs::make()->tabs([
-                    Tab::make("Allgemein")->schema([
+                    Tab::make('Allgemein')->schema([
                         TextInput::make('name')
                             ->required()
                             ->maxLength(255)
                             ->default('Unbenanntes Produkt'),
+                        TagsInput::make('synonyms')
+                            ->label('Synonyme / alternative Namen')
+                            ->helperText('Werden für die Suche genutzt, erscheinen aber nirgendwo auf Etiketten oder im Shop.')
+                            ->placeholder('Begriff hinzufügen…'),
                         Select::make('product_type_id')
                             ->relationship('type', 'name')
-                            ->label("Produktgruppe")
+                            ->label('Produktgruppe')
                             ->required(),
                         Toggle::make('exclude_from_statistics')
-                            ->label("Von Statistiken ausschließen")
-                            ->disabled(fn(?Product $record) => $record?->type?->exclude_from_statistics)
-                            ->formatStateUsing(fn(?Product $record, mixed $state) => $record?->type->exclude_from_statistics ?: $state)
-                            ->beforeStateDehydrated(fn(?Product $record, mixed $state) => $record?->type->exclude_from_statistics ? $record?->exclude_from_statistics : $state)
-                            ->hint(fn(?Product $record) => $record?->type->exclude_from_statistics ? "Die ganze Produktgruppe '{$record?->type->name}' ist von den Statistiken ausgeschlossen." : false)
-                            ->hintIcon(fn(?Product $record) => $record?->type->exclude_from_statistics ? 'heroicon-o-exclamation-triangle' : null)
+                            ->label('Von Statistiken ausschließen')
+                            ->disabled(fn (?Product $record) => $record?->type?->exclude_from_statistics)
+                            ->formatStateUsing(fn (?Product $record, mixed $state) => $record?->type->exclude_from_statistics ?: $state)
+                            ->beforeStateDehydrated(fn (?Product $record, mixed $state) => $record?->type->exclude_from_statistics ? $record?->exclude_from_statistics : $state)
+                            ->hint(fn (?Product $record) => $record?->type->exclude_from_statistics ? "Die ganze Produktgruppe '{$record?->type->name}' ist von den Statistiken ausgeschlossen." : false)
+                            ->hintIcon(fn (?Product $record) => $record?->type->exclude_from_statistics ? 'heroicon-o-exclamation-triangle' : null)
                             ->required(),
                     ]),
-                    Tab::make("Varianten")->schema([
+                    Tab::make('Varianten')->schema([
                         Repeater::make('variants')
-                            ->addActionLabel("Neue Variante")
+                            ->addActionLabel('Neue Variante')
                             ->hiddenLabel()
                             ->itemLabel(function (array $state): string {
-                                if ($state['size'] !== null)
+                                if ($state['size'] !== null) {
                                     return "{$state['size']}g Variante";
-                                return "Neue Variante";
+                                }
+
+                                return 'Neue Variante';
                             })
                             ->relationship()
                             ->schema([
                                 Flex::make([
                                     TextInput::make('sku')
-                                        ->label("SKU")
-                                        ->dehydrateStateUsing(fn($state) => str($state)->toString())
+                                        ->label('SKU')
+                                        ->dehydrateStateUsing(fn ($state) => str($state)->toString())
                                         ->required(),
                                     TextInput::make('size')
                                         ->numeric()
                                         ->live()
-                                        ->suffix("g")
+                                        ->suffix('g')
                                         ->required(),
-                                ])
-                            ])
+                                ]),
+                            ]),
                     ]),
-                    Tab::make("Rezept")->schema([
+                    Tab::make('Rezept')->schema([
                         TextInput::make('sum')
-                            ->label("Gesamt %")
+                            ->label('Gesamt %')
                             ->readOnly()
                             ->disabled()
                             ->maxWidth('xs')
-                            ->prefixIcon(fn($state) => round($state, 1) === 100.0 ? 'heroicon-s-check' : 'heroicon-s-x-mark')
-                            ->prefixIconColor(fn($state) => round($state, 1) === 100.0 ? 'success' : 'danger'),
+                            ->prefixIcon(fn ($state) => round($state, 1) === 100.0 ? 'heroicon-s-check' : 'heroicon-s-x-mark')
+                            ->prefixIconColor(fn ($state) => round($state, 1) === 100.0 ? 'success' : 'danger'),
                         Repeater::make('recipeIngredients')
-                            ->addActionLabel("Neue Zutat")
+                            ->addActionLabel('Neue Zutat')
                             ->relationship()
                             ->live()
                             ->hiddenLabel()
                             ->schema([
                                 Flex::make([
                                     Select::make('herb_id')
-                                        ->label("Rohstoff")
+                                        ->label('Rohstoff')
                                         ->searchable()
                                         ->required()
                                         ->relationship('herb', 'name')
                                         ->disableOptionWhen(function ($value, $state, Get $get) {
                                             return collect($get('../*.herb_id'))
-                                                ->reject(fn($id) => $id == $state)
+                                                ->reject(fn ($id) => $id == $state)
                                                 ->filter()
                                                 ->contains($value);
                                         }),
                                     TextInput::make('percentage')
-                                        ->label("Anteil in %")
+                                        ->label('Anteil in %')
                                         ->numeric()
                                         ->inputMode('decimal')
                                         ->step(0.1)
-                                        ->disabled(fn(Get $get) => $get('locked'))
-                                        ->suffix("%")
+                                        ->disabled(fn (Get $get) => $get('locked'))
+                                        ->suffix('%')
                                         ->required(),
-                                ])
+                                ]),
                             ])
                             ->afterStateHydrated(function (Get $get, Set $set) {
                                 self::updateSum($get, $set);
@@ -135,18 +142,18 @@ class ProductResource extends Resource
                             })
                             ->debounce()
                             ->deleteAction(
-                                fn(Action $action) => $action->after(fn(Get $get, Set $set) => self::updateSum($get, $set)),
-                            )
-                    ])
-                ])->columnSpan("full")
+                                fn (Action $action) => $action->after(fn (Get $get, Set $set) => self::updateSum($get, $set)),
+                            ),
+                    ]),
+                ])->columnSpan('full'),
             ]);
     }
 
     public static function updateSum(Get $get, Set $set): void
     {
         $sum = collect($get('recipeIngredients'))
-            ->filter(fn($item) => !empty($item['herb_id']) && !empty($item['percentage']))
-            ->map(fn($item) => $item['percentage'])
+            ->filter(fn ($item) => ! empty($item['herb_id']) && ! empty($item['percentage']))
+            ->map(fn ($item) => $item['percentage'])
             ->sum();
 
         $set('sum', round($sum, 1));
@@ -158,22 +165,26 @@ class ProductResource extends Resource
             ->columns([
                 TextColumn::make('name')
                     ->label('Name')
-                    ->searchable()
+                    ->searchable(query: function (EloquentBuilder $query, string $search): EloquentBuilder {
+                        return $query->where('name', 'like', "%{$search}%")
+                            ->orWhereJsonContains('synonyms', $search)
+                            ->orWhereRaw("LOWER(JSON_EXTRACT(synonyms, '\$')) LIKE ?", ['%'.mb_strtolower($search).'%']);
+                    })
                     ->sortable(),
                 VariantColumn::make('variants')
-                    ->label("Varianten"),
+                    ->label('Varianten'),
                 TextColumn::make('type.name')
-                    ->label("Produktgruppe")
+                    ->label('Produktgruppe')
                     ->sortable(),
                 IconColumn::make('exclude_from_statistics')
-                    ->label("Statistik")
-                    ->getStateUsing(fn(Product $record) => $record->exclude_from_statistics || $record->type->exclude_from_statistics)
+                    ->label('Statistik')
+                    ->getStateUsing(fn (Product $record) => $record->exclude_from_statistics || $record->type->exclude_from_statistics)
                     ->boolean()
                     ->trueIcon('heroicon-o-x-circle')
                     ->falseIcon('heroicon-o-check-circle')
                     ->trueColor('danger')
                     ->falseColor('success')
-                    ->tooltip(fn(Product $record) => ($record->exclude_from_statistics || $record->type->exclude_from_statistics) ? 'Wird in Statistiken ignoriert' : 'Wird ausgewertet'),
+                    ->tooltip(fn (Product $record) => ($record->exclude_from_statistics || $record->type->exclude_from_statistics) ? 'Wird in Statistiken ignoriert' : 'Wird ausgewertet'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -203,10 +214,10 @@ class ProductResource extends Resource
                     ->trueLabel('Nur ausgeschlossene')
                     ->falseLabel('Nur aktive (in Statistik)')
                     ->queries(
-                        true: fn(EloquentBuilder $query) => $query->where('exclude_from_statistics', true)
-                            ->orWhereHas('type', fn($q) => $q->where('exclude_from_statistics', true)),
-                        false: fn(EloquentBuilder $query) => $query->where('exclude_from_statistics', false)
-                            ->whereHas('type', fn($q) => $q->where('exclude_from_statistics', false)),
+                        true: fn (EloquentBuilder $query) => $query->where('exclude_from_statistics', true)
+                            ->orWhereHas('type', fn ($q) => $q->where('exclude_from_statistics', true)),
+                        false: fn (EloquentBuilder $query) => $query->where('exclude_from_statistics', false)
+                            ->whereHas('type', fn ($q) => $q->where('exclude_from_statistics', false)),
                     ),
             ], layout: FiltersLayout::AboveContent)
             ->deferFilters(false)

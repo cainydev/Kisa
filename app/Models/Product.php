@@ -17,6 +17,13 @@ class Product extends Model
     protected $guarded = [];
 
     /**
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'synonyms' => 'array',
+    ];
+
+    /**
      * Returns the percentage of a herb in the recipe
      *
      * @param  Herb  $herb  The herb to check
