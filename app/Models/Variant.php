@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Throwable;
 use App\Facades\Billbee;
 use App\Traits\CachedAttributes;
 use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
@@ -13,8 +12,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class Variant extends Model
 {
@@ -24,14 +25,13 @@ class Variant extends Model
 
     /**
      * Always queries the related product
+     *
      * @var string[]
      */
     protected $with = ['product'];
 
     /**
      * Initializes the variant with billbee data
-     *
-     * @return void
      */
     public static function booted(): void
     {
@@ -82,12 +82,14 @@ class Variant extends Model
                     $this->saveQuietly();
                 } else {
                     Log::info("Billbee product not found by SKU {$this->sku} for variant {$this->id}. Error code: {$response->errorCode}");
+
                     return null;
                 }
             } catch (QuotaExceededException $e) {
                 throw $e; // Re-throw
             } catch (Throwable $e) {
                 Log::error("Error fetching Billbee product by SKU {$this->sku} for variant {$this->id}: {$e->getMessage()}");
+
                 return null;
             }
         }
@@ -124,17 +126,22 @@ class Variant extends Model
         return $this->belongsToMany(Order::class, 'order_positions');
     }
 
+    public function labels(): MorphMany
+    {
+        return $this->morphMany(Label::class, 'labelable');
+    }
+
     public function herbsNeededFor(int $amount): iterable
     {
         return $this->product
             ->recipeIngredients
             ->pluck('percentage', 'herb_id')
-            ->map(fn($percentage) => $this->size * ($percentage / 100.0) * $amount);
+            ->map(fn ($percentage) => $this->size * ($percentage / 100.0) * $amount);
     }
 
     public function name(): Attribute
     {
-        return new Attribute(get: fn() => "{$this->product->name} {$this->size}g");
+        return new Attribute(get: fn () => "{$this->product->name} {$this->size}g");
     }
 
     public function dailySales(): Attribute

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Labels\TemplateRegistry;
 use Carbon\Carbon;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
@@ -15,7 +16,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(TemplateRegistry::class, function () {
+            return new TemplateRegistry(config('labels.templates', []));
+        });
     }
 
     /**
@@ -25,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         FilamentView::registerRenderHook(
             PanelsRenderHook::SIDEBAR_FOOTER,
-            fn(): View => view('components.made-with-love'),
+            fn (): View => view('components.made-with-love'),
         );
 
         Carbon::macro('startOfTime', function () {

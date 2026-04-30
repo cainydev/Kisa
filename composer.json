@@ -21,6 +21,7 @@
     "require": {
         "php": "^8.4",
         "ext-curl": "*",
+        "ext-pdo": "*",
         "cainy/billbee-api": "dev-master",
         "cainy/custom-shop-api": "^3.1",
         "codeat3/blade-carbon-icons": "^2.18",
@@ -34,19 +35,19 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.8",
         "nyholm/psr7": "^1.8",
+        "spatie/browsershot": "^5.3",
         "spatie/laravel-backup": "^9.3",
         "spatie/laravel-discord-alerts": "^1.8",
         "spatie/laravel-medialibrary": "^11.0.0",
         "spatie/laravel-settings": "^3.2",
         "spatie/temporary-directory": "^2.3",
-        "symfony/psr-http-message-bridge": "^7.2",
-        "ext-pdo": "*"
+        "symfony/psr-http-message-bridge": "^7.2"
     },
     "require-dev": {
         "ext-xdebug": "*",
         "barryvdh/laravel-debugbar": "^4.0",
         "fakerphp/faker": "^1.9.1",
-        "laravel/boost": "^1.2",
+        "laravel/boost": "^2.1",
         "laravel/pail": "^1.2",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.18",
