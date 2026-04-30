@@ -3,6 +3,7 @@
 namespace App\Labels\Templates;
 
 use App\Labels\AbstractLabelTemplate;
+use App\Labels\BioMode;
 use App\Labels\Param;
 use App\Models\Product;
 
@@ -36,59 +37,34 @@ class HerbTemplate extends AbstractLabelTemplate
         ];
     }
 
-    /**
-     * Strip a leading "Bio " prefix and collapse redundant words from a product name.
-     */
-    protected function cleanName(?Product $p): string
-    {
-        if (! $p) {
-            return 'Kräuter';
-        }
-        $name = preg_replace('/^Bio\s+/iu', '', $p->name);
-        $words = array_values(array_filter(preg_split('/\s+/u', $name), 'strlen'));
-        $kept = [];
-        foreach ($words as $i => $w) {
-            $lw = mb_strtolower($w);
-            $isRedundant = false;
-            foreach ($words as $j => $other) {
-                if ($i === $j) {
-                    continue;
-                }
-                if ($lw !== mb_strtolower($other) && mb_stripos($other, $lw) !== false) {
-                    $isRedundant = true;
-                    break;
-                }
-            }
-            if (! $isRedundant) {
-                $kept[] = $w;
-            }
-        }
-        $seen = [];
-        $kept = array_values(array_filter($kept, function ($w) use (&$seen) {
-            $k = mb_strtolower($w);
-            if (isset($seen[$k])) {
-                return false;
-            }
-            $seen[$k] = true;
-
-            return true;
-        }));
-
-        return implode(' ', $kept) ?: $name;
-    }
-
     public function parameters(): array
     {
         $brandColors = config('labels.brand.colors');
 
         return [
-            // Title shown big on front, smaller on back. Defaults to a cleaned product name uppercased.
-            Param::make('title')->string()->hyphenate()->label('Titel')
-                ->auto(fn (?Product $p) => mb_strtoupper($this->cleanName($p))),
+            // Title for the front. Big uppercase rendering of the product
+            // name. Splits from backTitle so they can diverge if needed
+            // (e.g. an abbreviation on the front, full name on the back).
+            Param::make('frontTitle')->string()->hyphenate()->label('Titel (Vorderseite)')
+                ->auto(fn (?Product $p) => $p ? mb_strtoupper($p->name) : 'KRÄUTER'),
+
+            // Title for the back. Smaller, mixed-case rendering above the
+            // ingredients block. Same auto default as frontTitle but
+            // independently overridable.
+            Param::make('backTitle')->string()->hyphenate()->label('Titel (Rückseite)')
+                ->auto(fn (?Product $p) => $p ? mb_strtoupper($p->name) : 'KRÄUTER'),
 
             // Subtitle under the title on the front.
             Param::make('subtitle')->string()->hyphenate()->label('Untertitel')
                 ->default('aus kontrolliert biologischem Anbau'),
+
+            // Bio mode. Drives ingredient prefix ("Bio " when bio), the
+            // closing "aus kontrolliert biologischem Anbau …" sentence,
+            // and the BIO/EU-leaf seal eligibility on the back. Default
+            // bio for Einzelkraut — virtually all single herbs we sell
+            // are certified organic.
+            Param::make('bioMode')->select(BioMode::options())->label('Bio-Modus')
+                ->default(BioMode::Bio->value),
 
             // The main visual. Required — per-herb illustration.
             Param::make('artwork')->image()->label('Kräuterzeichnung')->required(),
@@ -126,9 +102,18 @@ class HerbTemplate extends AbstractLabelTemplate
             Param::make('latinName')->string()->label('Lateinischer Name')
                 ->default(''),
 
-            // Display name used on the back — sentence-case clean name, e.g. "Brennnesselblätter".
+            // Display name used on the back ingredients line, e.g.
+            // "Brennnesselblätter". Defaults to the product name; override
+            // here if the product name carries extra qualifiers you don't
+            // want on the label (rare — mostly the data should be clean).
             Param::make('displayName')->string()->hyphenate()->label('Anzeigename')
-                ->auto(fn (?Product $p) => $this->cleanName($p)),
+                ->auto(fn (?Product $p) => $p?->name ?? ''),
+
+            // Cut form suffix on the ingredients line, e.g. "geschnitten",
+            // "gerebelt", "ganz", "gemahlen". Per-label since it depends on
+            // what's currently bagged. Empty string = no suffix.
+            Param::make('cutForm')->string()->label('Schnitt')
+                ->default('geschnitten'),
 
             // Brewing parameters shown as labels under the three icons.
             Param::make('prepAmount')->string()->label('Menge')

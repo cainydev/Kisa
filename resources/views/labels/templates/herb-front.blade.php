@@ -28,9 +28,26 @@
         return "@font-face { font-family: '{$family}'; font-display: block; src: url(data:{$mime};base64,{$data}) format('{$format}'); }";
     };
 
+    $bioMode = \App\Labels\BioMode::tryFrom((string) ($bioMode ?? '')) ?? \App\Labels\BioMode::Bio;
+    $isBio = (function () use ($bioMode, $entity) {
+        if ($bioMode === \App\Labels\BioMode::Bio) {
+            return true;
+        }
+        if ($bioMode === \App\Labels\BioMode::None || ! $entity) {
+            return false;
+        }
+        foreach ($entity->herbs ?? [] as $herb) {
+            if ($bioMode->herbIsBio($herb)) {
+                return true;
+            }
+        }
+
+        return false;
+    })();
+
     $artworkSrc = $imgSrc($artwork ?? null);
     $brandLogoSrc = $imgSrc($brandLogo ?? null);
-    $bioSealSrc = $imgSrc($bioSeal ?? null);
+    $bioSealSrc = $isBio ? $imgSrc($bioSeal ?? null) : null;
 
     $artworkRotate = (float) ($artworkRotate ?? 0);
     $artworkOffsetX = (float) ($artworkOffsetX ?? 0);
@@ -141,7 +158,7 @@
         </div>
 
         <div class="heading">
-            <h1 class="title">{{ $title }}</h1>
+            <h1 class="title">{{ $frontTitle }}</h1>
             @if (!empty($subtitle))
                 <p class="subtitle">{{ $subtitle }}</p>
             @endif
