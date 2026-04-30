@@ -151,9 +151,47 @@ class EditLabel extends EditRecord
         }
     }
 
+    /**
+     * Locate the current record's position in the table's tree-ordered list,
+     * returning [previousId, nextId] (either may be null at the boundaries).
+     *
+     * @return array{0: ?int, 1: ?int}
+     */
+    protected function siblingsInTreeOrder(): array
+    {
+        [$ordered] = LabelResource::treeOrderAndDepths();
+        $idx = array_search($this->record->getKey(), $ordered, true);
+        if ($idx === false) {
+            return [null, null];
+        }
+
+        return [
+            $ordered[$idx - 1] ?? null,
+            $ordered[$idx + 1] ?? null,
+        ];
+    }
+
     protected function getHeaderActions(): array
     {
+        [$prevId, $nextId] = $this->siblingsInTreeOrder();
+
         return [
+            Action::make('previous')
+                ->label('Vorheriges')
+                ->icon('heroicon-o-chevron-left')
+                ->color('gray')
+                ->visible(fn () => $prevId !== null)
+                ->url(fn () => $prevId
+                    ? LabelResource::getUrl('edit', ['record' => $prevId])
+                    : null),
+            Action::make('next')
+                ->label('Nächstes')
+                ->icon('heroicon-o-chevron-right')
+                ->color('gray')
+                ->visible(fn () => $nextId !== null)
+                ->url(fn () => $nextId
+                    ? LabelResource::getUrl('edit', ['record' => $nextId])
+                    : null),
             Action::make('print')
                 ->label('Drucken')
                 ->icon('heroicon-o-printer')
