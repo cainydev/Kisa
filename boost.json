@@ -1,0 +1,21 @@
+{
+    "agents": [
+        "claude_code"
+    ],
+    "guidelines": true,
+    "herd_mcp": false,
+    "mcp": true,
+    "packages": [
+        "filament/filament",
+        "laravel/octane",
+        "spatie/laravel-medialibrary",
+        "barryvdh/laravel-debugbar"
+    ],
+    "sail": false,
+    "skills": [
+        "tailwindcss-development",
+        "medialibrary-development",
+        "debug-using-debugbar",
+        "working-on-labels"
+    ]
+}
