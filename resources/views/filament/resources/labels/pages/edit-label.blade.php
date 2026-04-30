@@ -48,7 +48,14 @@
 
         {{-- Preview --}}
         <div class="lg:col-span-7">
-            <div class="sticky top-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+            {{-- Equilibrium: panel sticks `top-20` (~5rem) below the viewport top so
+                 Filament's panel header isn't cropped, and fills the remaining
+                 viewport height so the inner preview area always uses all the
+                 vertical space. --}}
+            <div
+                class="sticky top-20 flex flex-col rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
+                style="height: calc(100vh - 6rem);"
+            >
                 @php
                     $pages = $this->templatePages();
                     $dims = $this->templateDimensions();
@@ -60,11 +67,12 @@
                         loading: false,
                         natural: {{ $dims ? round($dims['width_mm'] * 7.56) : 280 }},
                         widthPx() {
-                            if ($wire.zoom === 'fit') return '100%';
+                            if ($wire.zoom === 'fit') return null;
                             const factor = parseFloat($wire.zoom);
                             return (this.natural * factor) + 'px';
                         },
                     }"
+                    class="flex flex-col flex-1 min-h-0"
                 >
                     {{-- Page carousel + zoom toolbar --}}
                     <div class="mb-4 flex items-center justify-between gap-x-4 flex-wrap">
@@ -133,9 +141,17 @@
 
                     {{-- Live PNG preview rendered by Browsershot --}}
                     @if ($url && $dims)
-                        <div class="flex justify-center items-start bg-gray-100 dark:bg-gray-950 p-6 rounded-lg overflow-auto">
-                            <div class="relative" x-bind:style="`width: ${widthPx()}; max-width: 100%;`">
+                        <div class="flex flex-1 min-h-0 justify-center items-center bg-gray-100 dark:bg-gray-950 p-6 rounded-lg overflow-auto">
+                            <div
+                                class="relative"
+                                x-bind:style="
+                                    $wire.zoom === 'fit'
+                                        ? `aspect-ratio: {{ $dims['width_mm'] }} / {{ $dims['height_mm'] }}; max-width: 100%; max-height: 100%; height: 100%;`
+                                        : `width: ${widthPx()}; max-width: 100%;`
+                                "
+                            >
                                 <div style="aspect-ratio: {{ $dims['width_mm'] }} / {{ $dims['height_mm'] }};
+                                            width: 100%; height: 100%;
                                             background: white;
                                             border: 1px solid rgba(0,0,0,0.08);
                                             box-shadow: 0 8px 24px rgba(0,0,0,0.08);">
