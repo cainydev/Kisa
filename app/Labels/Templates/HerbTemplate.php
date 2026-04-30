@@ -70,6 +70,8 @@ class HerbTemplate extends AbstractLabelTemplate
             Param::make('artwork')->image()->label('Kräuterzeichnung')->required(),
 
             // Fine-tuning for the artwork placement on the front.
+            Param::make('artworkMirror')->boolean()->label('Horizontal spiegeln')
+                ->default(false),
             Param::make('artworkRotate')->number()->label('Drehung')
                 ->range(-180, 180, 1, '°')->default(0),
             Param::make('artworkScale')->number()->label('Skalierung')
