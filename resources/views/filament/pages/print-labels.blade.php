@@ -68,6 +68,7 @@
                                                 {{ ucfirst($pageKey) }}
                                             </div>
                                             <div class="flex items-center gap-x-2">
+                                                {{ ($this->pngAction)(['template' => $template->key(), 'label' => $label?->id, 'page' => $pageKey]) }}
                                                 {{ ($this->pdfAction)(['template' => $template->key(), 'label' => $label?->id, 'page' => $pageKey]) }}
                                                 {{ ($this->printReadyPdfAction)(['template' => $template->key(), 'label' => $label?->id, 'page' => $pageKey]) }}
                                             </div>
