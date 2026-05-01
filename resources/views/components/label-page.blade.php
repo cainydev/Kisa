@@ -99,18 +99,21 @@
     @endif
 </section>
 <script>
-    // Overflow probe. Sets window.__labelOverflow to true if any element on the
-    // page has visible content that can't fit (vertical or horizontal). The
-    // renderer reads this via Browsershot's evaluate() before saving.
+    // Overflow probe. Sets window.__labelOverflow to true when the trim box
+    // (.lp-page) has more content than fits inside it. The renderer reads
+    // this via Browsershot's evaluate() before saving.
+    //
+    // Why only .lp-page: it represents the printable trim and uses
+    // `overflow: hidden`, so scrollHeight > clientHeight tells us
+    // unambiguously "content was clipped because it didn't fit." Generic
+    // per-element checks trip on intentionally absolute-positioned items
+    // (e.g. oeko-cap below the EU leaf) which are not real overflows.
     (function () {
         function detect() {
             var TOL = 1; // subpixel rounding tolerance.
-            if (document.body.scrollHeight > document.documentElement.clientHeight + TOL) {
-                return true;
-            }
-            var nodes = document.querySelectorAll('*');
-            for (var i = 0; i < nodes.length; i++) {
-                var el = nodes[i];
+            var pages = document.querySelectorAll('.lp-page');
+            for (var i = 0; i < pages.length; i++) {
+                var el = pages[i];
                 if (el.scrollHeight > el.clientHeight + TOL) return true;
                 if (el.scrollWidth > el.clientWidth + TOL) return true;
             }

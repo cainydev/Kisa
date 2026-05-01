@@ -163,10 +163,9 @@ HTML;
                         return window.__labelOverflow ? '1' : '0';
                     }
                     var TOL = 1;
-                    if (document.body.scrollHeight > document.documentElement.clientHeight + TOL) return '1';
-                    var nodes = document.querySelectorAll('*');
-                    for (var i = 0; i < nodes.length; i++) {
-                        var el = nodes[i];
+                    var pages = document.querySelectorAll('.lp-page');
+                    for (var i = 0; i < pages.length; i++) {
+                        var el = pages[i];
                         if (el.scrollHeight > el.clientHeight + TOL) return '1';
                         if (el.scrollWidth > el.clientWidth + TOL) return '1';
                     }
