@@ -116,11 +116,27 @@ class HerbBlendTemplate extends AbstractLabelTemplate
             // applies the bio mode. Override here to hand-write the list.
             Param::make('inhaltsstoffe')->string()->hyphenate()->label('Inhaltsstoffe'),
 
+            // Optional usage / mode-of-application line shown above the
+            // Inhaltsstoffe block, e.g. "Nur zur äußeren Anwendung".
+            // Empty = section is hidden.
+            Param::make('usageNote')->string()->hyphenate()->label('Anwendung')
+                ->default(''),
+
+            // Heading for the primary preparation section. Editable per
+            // label so a blend that's only used externally (Sitzbad,
+            // Tinktur, Leibumschlag, …) can show "Zubereitung als
+            // Sitzbad" or similar.
+            Param::make('preparationTitle')->string()->label('Titel Zubereitung')
+                ->default('Zubereitungshinweise:'),
+
             // Brewing parameters shown as labels under the three icons.
+            // Defaults match the dominant pattern across the Mischtee range
+            // (49 of 58 variants use "2 TL · 90-100°C · 5-8 Min."). The few
+            // outliers (Gurgeltee, Augenbad, etc.) override per-label.
             Param::make('prepAmount')->string()->label('Menge')
-                ->default('1-2 TL'),
+                ->default('2 TL'),
             Param::make('prepTemperature')->string()->label('Temperatur')
-                ->default('100°C'),
+                ->default('90-100°C'),
             Param::make('prepTime')->string()->label('Ziehzeit')
                 ->default('5-8 Min.'),
 
@@ -130,6 +146,19 @@ class HerbBlendTemplate extends AbstractLabelTemplate
             // expands abbreviations like "5 Min." → "5 Minuten".
             Param::make('preparationBody')->string()->hyphenate()->label('Zubereitungstext')
                 ->default('{prepAmount} Teelöffel mit ca. 250 ml siedendem Wasser übergießen und nach {prepTimeLong} abseihen.'),
+
+            // Optional second preparation section. Renders below the first
+            // one when either field is set:
+            //   - title only:  not rendered (no body to show)
+            //   - body only:   plain paragraph with no heading
+            //   - both:        heading + paragraph (e.g. "Anwendung der
+            //                  Tinktur" + the application instructions for
+            //                  Nr. 76, or "Anwendungshinweise" for Nr. 613).
+            // No icon row — that belongs to the primary preparation.
+            Param::make('preparation2Title')->string()->label('Titel zweite Zubereitung')
+                ->default(''),
+            Param::make('preparation2Body')->string()->hyphenate()->label('Zweite Zubereitung')
+                ->default(''),
 
             // Safety hint paragraph.
             Param::make('safetyHint')->string()->hyphenate()->label('Sicherheitshinweis')
