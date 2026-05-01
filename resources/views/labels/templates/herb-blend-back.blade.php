@@ -215,6 +215,10 @@
             -webkit-hyphens: auto;
             hyphenate-limit-chars: 6 3 3;
         }
+        .herb-blend-back .usage-note {
+            margin: 0;
+            line-height: 1.1;
+        }
         .herb-blend-back .safety-hint {
             margin: 0;
             line-height: 1.1;
@@ -302,8 +306,12 @@
             @endif
         </p>
 
+        @if (! empty($usageNote))
+            <p class="usage-note"><span class="section-heading">Anwendung:</span> {{ $usageNote }}</p>
+        @endif
+
         <div class="prep-section">
-            <h3 class="section-heading">Zubereitungshinweise:</h3>
+            <h3 class="section-heading">{{ $preparationTitle ?? 'Zubereitungshinweise:' }}</h3>
             <div class="prep-row">
                 <div class="item">
                     <div class="icon">@if ($prepAmountIconSvg){!! $prepAmountIconSvg !!}@endif</div>
@@ -321,6 +329,10 @@
         </div>
 
         <p class="preparation-body">{{ $preparationBodyText }}</p>
+
+        @if (! empty($preparation2Body))
+            <p class="preparation-body">@if (! empty($preparation2Title))<span class="section-heading">{{ $preparation2Title }}</span> @endif{{ $preparation2Body }}</p>
+        @endif
 
         <p class="safety-hint"><span class="section-heading">Sicherheitshinweis:</span> {{ $safetyHint }}</p>
 
