@@ -98,3 +98,31 @@
         @endif
     @endif
 </section>
+<script>
+    // Overflow probe. Sets window.__labelOverflow to true if any element on the
+    // page has visible content that can't fit (vertical or horizontal). The
+    // renderer reads this via Browsershot's evaluate() before saving.
+    (function () {
+        function detect() {
+            var TOL = 1; // subpixel rounding tolerance.
+            if (document.body.scrollHeight > document.documentElement.clientHeight + TOL) {
+                return true;
+            }
+            var nodes = document.querySelectorAll('*');
+            for (var i = 0; i < nodes.length; i++) {
+                var el = nodes[i];
+                if (el.scrollHeight > el.clientHeight + TOL) return true;
+                if (el.scrollWidth > el.clientWidth + TOL) return true;
+            }
+            return false;
+        }
+        // Run after fonts are loaded (font swap can change line breaks).
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(function () {
+                window.__labelOverflow = detect();
+            });
+        } else {
+            window.__labelOverflow = detect();
+        }
+    })();
+</script>

@@ -13,6 +13,13 @@ use Spatie\Browsershot\Browsershot;
 
 class LabelRenderer
 {
+    /**
+     * Set after renderPagePdf when RenderOptions::checkOverflow was true.
+     * Null otherwise (no check was performed). True when the rendered page
+     * has visible content that exceeds its container; false when it fits.
+     */
+    public ?bool $lastOverflow = null;
+
     public function __construct(
         private readonly TemplateRegistry $registry,
         private readonly ParameterResolver $resolver,
@@ -72,6 +79,8 @@ HTML;
         ?Model $entity,
         RenderOptions $opts,
     ): string {
+        $this->lastOverflow = null;
+
         $html = $this->renderPageHtml($template, $pageKey, $label, $entity, $opts);
 
         $dir = storage_path('app/labels/tmp');
@@ -108,7 +117,67 @@ HTML;
 
         $shot->save($path);
 
+        if ($opts->checkOverflow) {
+            $this->lastOverflow = $this->detectOverflow($html);
+        }
+
         return $path;
+    }
+
+    /**
+     * Run an evaluate-only Browsershot call to determine whether the rendered
+     * HTML overflows its trim box. The probe is injected by the chassis
+     * component (resources/views/components/label-page.blade.php) which sets
+     * window.__labelOverflow once fonts are loaded.
+     *
+     * Adds ~600ms to the PDF generation but only runs when explicitly opted-in
+     * via RenderOptions::$checkOverflow — the print path does, the preview
+     * path does not.
+     */
+    private function detectOverflow(string $html): ?bool
+    {
+        $shot = Browsershot::html($html)
+            ->waitUntilNetworkIdle()
+            ->noSandbox();
+
+        if ($chromePath = config('labels.browsershot.chromium_path')) {
+            $shot->setChromePath($chromePath);
+        }
+        if ($nodeBinary = config('labels.browsershot.node_binary')) {
+            $shot->setNodeBinary($nodeBinary);
+        }
+        if ($npmBinary = config('labels.browsershot.npm_binary')) {
+            $shot->setNpmBinary($npmBinary);
+        }
+
+        try {
+            // Wait for the chassis probe to land its result on window, then
+            // return it. Falls back to recomputing inline if the probe hasn't
+            // run for any reason (e.g. font loading hung).
+            $raw = $shot->evaluate(<<<'JS'
+                (async () => {
+                    if (document.fonts && document.fonts.ready) {
+                        try { await document.fonts.ready; } catch (e) {}
+                    }
+                    if (typeof window.__labelOverflow !== 'undefined') {
+                        return window.__labelOverflow ? '1' : '0';
+                    }
+                    var TOL = 1;
+                    if (document.body.scrollHeight > document.documentElement.clientHeight + TOL) return '1';
+                    var nodes = document.querySelectorAll('*');
+                    for (var i = 0; i < nodes.length; i++) {
+                        var el = nodes[i];
+                        if (el.scrollHeight > el.clientHeight + TOL) return '1';
+                        if (el.scrollWidth > el.clientWidth + TOL) return '1';
+                    }
+                    return '0';
+                })();
+            JS);
+
+            return trim($raw) === '1';
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**

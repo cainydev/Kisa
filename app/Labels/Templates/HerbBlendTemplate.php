@@ -120,8 +120,11 @@ class HerbBlendTemplate extends AbstractLabelTemplate
                 ->default('5-8 Min.'),
 
             // Body paragraph under the prep icons.
+            // Tokens {prepAmount} and {prepTimeLong} are replaced at render time so
+            // the body stays in sync with the caption values. {prepTimeLong} also
+            // expands abbreviations like "5 Min." → "5 Minuten".
             Param::make('preparationBody')->string()->hyphenate()->label('Zubereitungstext')
-                ->default('1-2 Teelöffel mit ca. 250 ml siedendem Wasser übergießen und nach 5-8 Minuten abseihen.'),
+                ->default('{prepAmount} Teelöffel mit ca. 250 ml siedendem Wasser übergießen und nach {prepTimeLong} abseihen.'),
 
             // Safety hint paragraph.
             Param::make('safetyHint')->string()->hyphenate()->label('Sicherheitshinweis')

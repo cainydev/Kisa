@@ -247,7 +247,7 @@ class PrintLabels extends Page implements HasActions, HasForms
             ->color('primary')
             ->action(fn (array $arguments) => $this->generatePdf(
                 $arguments,
-                new RenderOptions(bleed_mm: 3, marks: true, cmyk: true),
+                new RenderOptions(bleed_mm: 3, marks: true, cmyk: true, checkOverflow: true),
             ));
     }
 
@@ -273,7 +273,17 @@ class PrintLabels extends Page implements HasActions, HasForms
             : null;
 
         try {
-            $path = app(LabelRenderer::class)->renderPagePdf($template, $pageKey, $label, $entity, $opts);
+            $renderer = app(LabelRenderer::class);
+            $path = $renderer->renderPagePdf($template, $pageKey, $label, $entity, $opts);
+
+            if ($renderer->lastOverflow === true) {
+                Notification::make()
+                    ->title('Überlauf erkannt')
+                    ->body('Der Inhalt passt nicht vollständig in die Etikettenfläche. Bitte vor dem Drucken prüfen.')
+                    ->warning()
+                    ->persistent()
+                    ->send();
+            }
 
             // Always run through Ghostscript to set exact MediaBox/TrimBox/BleedBox
             // (Browsershot's mm→pt conversion drifts by ~1pt). Convert to CMYK only
