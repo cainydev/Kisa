@@ -39,7 +39,14 @@
                                 </div>
                             </div>
 
-                            @if ($kind === 'unconfigured')
+                            @if ($kind === 'configured' && $label)
+                                <a
+                                    class="fi-btn fi-btn-color-gray inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 ring-1 ring-gray-300 dark:ring-white/10 hover:bg-gray-50 dark:hover:bg-white/5"
+                                    href="{{ \App\Filament\Resources\Labels\LabelResource::getUrl('edit', ['record' => $label->id]) }}"
+                                >
+                                    Konfigurieren
+                                </a>
+                            @elseif ($kind === 'unconfigured')
                                 <a
                                     class="fi-btn fi-btn-color-primary inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-500"
                                     href="{{ \App\Filament\Resources\Labels\LabelResource::getUrl('create', ['template_key' => $template->key()]) }}"
