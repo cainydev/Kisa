@@ -8,5 +8,6 @@ final readonly class RenderOptions
         public int $bleed_mm = 3,
         public bool $marks = true,
         public bool $cmyk = false,
+        public bool $checkOverflow = false,
     ) {}
 }

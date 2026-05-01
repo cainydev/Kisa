@@ -63,6 +63,44 @@
     $prepTemperatureIconSvg = $svgInline($prepTemperatureIcon ?? null);
     $prepTimeIconSvg = $svgInline($prepTimeIcon ?? null);
 
+    // Tokens supported in any preparationBody value (including overrides):
+    //   {prepAmount}    → e.g. "1-2"
+    //   {prepTime}      → e.g. "5-8 Min."
+    //   {prepTimeLong}  → "5-8 Min." → "5-8 Minuten"
+    $expandPrepTime = function (?string $t): string {
+        $t = trim((string) $t);
+        if ($t === '') {
+            return '';
+        }
+        // "5 Min." / "5 Min" / "5 min." → "5 Minuten" (consume the period too).
+        return preg_replace('/\bMin\b\.?/iu', 'Minuten', $t);
+    };
+    $prepAmountVal = trim((string) ($prepAmount ?? ''));
+    $prepAmountForBody = preg_replace('/\s*TL\s*$/iu', '', $prepAmountVal);
+    $prepTimeLong = $expandPrepTime($prepTime ?? '');
+    $tokens = [
+        '{prepAmount}' => $prepAmountForBody !== '' ? $prepAmountForBody : '1-2',
+        '{prepTime}' => $prepTime ?? '5-8 Min.',
+        '{prepTimeLong}' => $prepTimeLong !== '' ? $prepTimeLong : '5-8 Minuten',
+    ];
+    // Strip stored soft hyphens so {token} placeholders match, run substitution,
+    // then re-hyphenate the final text so the output is line-break-friendly.
+    $stripSoftHyphens = fn (?string $s) => str_replace("\u{00AD}", '', (string) $s);
+    $preparationBodyText = (! empty($preparationBody))
+        ? app(\App\Labels\Hyphenator::class)->hyphenate(strtr($stripSoftHyphens($preparationBody), $tokens))
+        : '';
+
+    // Captions under the prep icons. Operators may type "\n" in the field to
+    // force a line break — convert it to <br> while escaping the rest.
+    $renderCaption = function (?string $value): string {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+        $escaped = e($value);
+        return str_replace(['\\n', "\n"], '<br>', $escaped);
+    };
+
     $titleFontFace = $fontFace($titleFont ?? null, 'herb-title');
     $bodyFontFace = $fontFace($bodyFont ?? null, 'herb-body');
     $italicFontFace = $fontFace($italicFont ?? null, 'herb-italic');
@@ -263,19 +301,19 @@
         <div class="prep-row">
             <div class="item">
                 <div class="icon">@if ($prepAmountIconSvg){!! $prepAmountIconSvg !!}@endif</div>
-                <div class="caption">{{ $prepAmount }}</div>
+                <div class="caption">{!! $renderCaption($prepAmount) !!}</div>
             </div>
             <div class="item">
                 <div class="icon">@if ($prepTemperatureIconSvg){!! $prepTemperatureIconSvg !!}@endif</div>
-                <div class="caption">{{ $prepTemperature }}</div>
+                <div class="caption">{!! $renderCaption($prepTemperature) !!}</div>
             </div>
             <div class="item">
                 <div class="icon">@if ($prepTimeIconSvg){!! $prepTimeIconSvg !!}@endif</div>
-                <div class="caption">{{ $prepTime }}</div>
+                <div class="caption">{!! $renderCaption($prepTime) !!}</div>
             </div>
         </div>
 
-        <p class="preparation-body">{{ $preparationBody }}</p>
+        <p class="preparation-body">{{ $preparationBodyText }}</p>
 
         <p class="safety-hint"><span class="section-heading">Sicherheitshinweis:</span> {{ $safetyHint }}</p>
 

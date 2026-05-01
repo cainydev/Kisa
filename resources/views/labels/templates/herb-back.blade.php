@@ -33,15 +33,53 @@
     $bioSealsAllowed = $isBio;
 
     // Build the brewing-instructions paragraph from the resolved display name
-    // and steep time when no override is set. The display-name fallback means
-    // setting `displayName = "Angelikawurzel"` on a label flows through here
-    // automatically. Run through the same hyphenator that the param resolver
-    // uses so the auto-built fallback gets soft hyphens just like an override.
+    // and brewing values when no override is set. The display-name fallback
+    // means setting `displayName = "Angelikawurzel"` on a label flows through
+    // here automatically.
+    //
+    // Tokens supported in any preparationBody value (including overrides):
+    //   {prepAmount}    → e.g. "1-2"
+    //   {prepTime}      → e.g. "5-8 Min."
+    //   {prepTimeLong}  → "5-8 Min." → "5-8 Minuten"
+    //   {displayName}   → e.g. "Brennnesselblätter"
+    $expandPrepTime = function (?string $t): string {
+        $t = trim((string) $t);
+        if ($t === '') {
+            return '';
+        }
+        // "5 Min." / "5 Min" / "5 min." → "5 Minuten" (drop the period, expand the abbreviation).
+        return preg_replace('/\bMin\b\.?/iu', 'Minuten', $t);
+    };
+    $prepAmountVal = trim((string) ($prepAmount ?? ''));
+    $prepAmountForBody = preg_replace('/\s*TL\s*$/iu', '', $prepAmountVal);
+    $prepTimeLong = $expandPrepTime($prepTime ?? '');
+    $tokens = [
+        '{prepAmount}' => $prepAmountForBody !== '' ? $prepAmountForBody : '1-2',
+        '{prepTime}' => $prepTime ?? '5-8 Min.',
+        '{prepTimeLong}' => $prepTimeLong !== '' ? $prepTimeLong : '5-8 Minuten',
+        '{displayName}' => $displayName,
+    ];
+
+    $hyphenator = app(\App\Labels\Hyphenator::class);
+    // Strip stored soft hyphens so {token} placeholders match, run substitution,
+    // then re-hyphenate the final text so the output is line-break-friendly.
+    $stripSoftHyphens = fn (?string $s) => str_replace("\u{00AD}", '', (string) $s);
     $preparationBodyText = (! empty($preparationBody))
-        ? $preparationBody
-        : app(\App\Labels\Hyphenator::class)->hyphenate(
-            '1-2 Teelöffel '.$displayName.' mit ca. 250 ml siedendem Wasser übergießen und nach '.($prepTime ?? '5-8 Min.').' abseihen.'
+        ? $hyphenator->hyphenate(strtr($stripSoftHyphens($preparationBody), $tokens))
+        : $hyphenator->hyphenate(
+            strtr('{prepAmount} Teelöffel {displayName} mit ca. 250 ml siedendem Wasser übergießen und nach {prepTimeLong} abseihen.', $tokens)
         );
+
+    // Captions under the prep icons. Operators may type "\n" in the field to
+    // force a line break — convert it to <br> while escaping the rest.
+    $renderCaption = function (?string $value): string {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+        $escaped = e($value);
+        return str_replace(['\\n', "\n"], '<br>', $escaped);
+    };
 
     $imgSrc = function ($media) {
         if (!$media || !is_file($media->getPath())) {
@@ -292,15 +330,15 @@
         <div class="prep-row">
             <div class="item">
                 <div class="icon">@if ($prepAmountIconSrc)<img src="{{ $prepAmountIconSrc }}" alt="">@endif</div>
-                <div class="caption">{{ $prepAmount }}</div>
+                <div class="caption">{!! $renderCaption($prepAmount) !!}</div>
             </div>
             <div class="item">
                 <div class="icon">@if ($prepTemperatureIconSrc)<img src="{{ $prepTemperatureIconSrc }}" alt="">@endif</div>
-                <div class="caption">{{ $prepTemperature }}</div>
+                <div class="caption">{!! $renderCaption($prepTemperature) !!}</div>
             </div>
             <div class="item">
                 <div class="icon">@if ($prepTimeIconSrc)<img src="{{ $prepTimeIconSrc }}" alt="">@endif</div>
-                <div class="caption">{{ $prepTime }}</div>
+                <div class="caption">{!! $renderCaption($prepTime) !!}</div>
             </div>
         </div>
 

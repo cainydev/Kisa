@@ -31,30 +31,73 @@
     })($title ?? null);
 
     /**
+     * Expand abbreviations like "5 Min." → "5 Minuten" for use in body text.
+     * The captions under the prep icons keep the abbreviation; this is only
+     * used when the value lands inside the brewing-instructions paragraph.
+     */
+    $expandPrepTime = function (?string $t): string {
+        $t = trim((string) $t);
+        if ($t === '') {
+            return '';
+        }
+
+        // "5 Min." / "5 Min" / "5 min." → "5 Minuten" (consume the period too).
+        return preg_replace('/\bMin\b\.?/iu', 'Minuten', $t);
+    };
+
+    /**
      * Build the brewing-instructions paragraph from the prep params.
      * Anything ending at 100°C (incl. ranges like "90-100°C") reads as
      * "siedendem Wasser"; lower temperatures read literally as "ca. {temp}
-     * heißem Wasser". The steep time (e.g. "5-8 Min.") is interpolated
-     * verbatim.
+     * heißem Wasser". "Min." is expanded to "Minuten" inside the sentence.
      */
-    $buildPreparationBody = function (string $name, ?string $temp, ?string $time) {
+    $buildPreparationBody = function (string $name, ?string $amount, ?string $temp, ?string $time) use ($expandPrepTime) {
         $tempStr = trim((string) $temp);
-        // Highest number in the temp string. "100°C" → 100, "90-100°C" → 100.
         preg_match_all('/\d+/', $tempStr, $matches);
         $maxTemp = ! empty($matches[0]) ? (int) max($matches[0]) : null;
         $waterClause = ($maxTemp === 100)
             ? 'siedendem Wasser'
             : 'ca. '.$tempStr.' heißem Wasser';
-        $timeClause = trim((string) $time);
+        $amountStr = preg_replace('/\s*TL\s*$/iu', '', trim((string) $amount));
+        $amountClause = $amountStr !== '' ? $amountStr : '1';
+        $timeClause = $expandPrepTime($time);
         $namePart = $name !== '' ? ' '.$name : '';
 
-        return "1 Teelöffel{$namePart} mit ca. 250 ml {$waterClause} übergießen"
+        return "{$amountClause} Teelöffel{$namePart} mit ca. 250 ml {$waterClause} übergießen"
             .($timeClause !== '' ? " und nach {$timeClause} abseihen." : ' und nach 5-8 Minuten abseihen.');
     };
 
+    // Tokens supported in any preparationBody override:
+    //   {prepAmount}    → e.g. "1-2"
+    //   {prepTime}      → e.g. "5-8 Min."
+    //   {prepTimeLong}  → "5-8 Min." → "5-8 Minuten"
+    //   {displayName}   → e.g. "Frauen!Power"
+    $prepAmountForBody = preg_replace('/\s*TL\s*$/iu', '', trim((string) ($prepAmount ?? '')));
+    $prepTimeLong = $expandPrepTime($prepTime ?? '');
+    $tokens = [
+        '{prepAmount}' => $prepAmountForBody !== '' ? $prepAmountForBody : '1',
+        '{prepTime}' => $prepTime ?? '5-8 Min.',
+        '{prepTimeLong}' => $prepTimeLong !== '' ? $prepTimeLong : '5-8 Minuten',
+        '{displayName}' => $backTitle ?? '',
+    ];
+
+    // Strip stored soft hyphens so {token} placeholders match, run substitution,
+    // then re-hyphenate the final text so the output is line-break-friendly.
+    $stripSoftHyphens = fn (?string $s) => str_replace("\u{00AD}", '', (string) $s);
     $preparationBodyText = (! empty($preparationBody))
-        ? $preparationBody
-        : $buildPreparationBody($backTitle, $prepTemperature ?? null, $prepTime ?? null);
+        ? app(\App\Labels\Hyphenator::class)->hyphenate(strtr($stripSoftHyphens($preparationBody), $tokens))
+        : $buildPreparationBody($backTitle, $prepAmount ?? null, $prepTemperature ?? null, $prepTime ?? null);
+
+    // Captions under the prep icons. Operators may type "\n" in the field to
+    // force a line break — convert it to <br> while escaping the rest.
+    $renderCaption = function (?string $value): string {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+        $escaped = e($value);
+        return str_replace(['\\n', "\n"], '<br>', $escaped);
+    };
 
     $imgSrc = function ($media) {
         if (!$media || !is_file($media->getPath())) {
@@ -303,15 +346,15 @@
         <div class="prep-row">
             <div class="item">
                 <div class="icon">@if ($prepAmountIconSvg){!! $prepAmountIconSvg !!}@endif</div>
-                <div class="caption">{{ $prepAmount }}</div>
+                <div class="caption">{!! $renderCaption($prepAmount) !!}</div>
             </div>
             <div class="item">
                 <div class="icon">@if ($prepTemperatureIconSvg){!! $prepTemperatureIconSvg !!}@endif</div>
-                <div class="caption">{{ $prepTemperature }}</div>
+                <div class="caption">{!! $renderCaption($prepTemperature) !!}</div>
             </div>
             <div class="item">
                 <div class="icon">@if ($prepTimeIconSvg){!! $prepTimeIconSvg !!}@endif</div>
-                <div class="caption">{{ $prepTime }}</div>
+                <div class="caption">{!! $renderCaption($prepTime) !!}</div>
             </div>
         </div>
 
