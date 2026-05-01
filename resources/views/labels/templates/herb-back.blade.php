@@ -155,7 +155,7 @@
             letter-spacing: 0.05em;
             text-transform: uppercase;
             color: {{ $headingColor }};
-            margin: 0 0 1.25mm 0;
+            margin: 0;
         }
         .herb-back .ingredients {
             margin: 0;
@@ -175,17 +175,26 @@
         .herb-back h3.section-heading {
             margin: 0;
         }
+        /* Three columns laid out left / center / right with a shared two-row
+           subgrid so icons in row 1 stay aligned across items and captions in
+           row 2 do too — even when one caption wraps to a second line. Within
+           each item, both icon and caption are independently centered. */
         .herb-back .prep-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: auto auto auto;
+            grid-template-rows: auto auto;
             justify-content: space-between;
-            align-items: flex-end;
             margin: 0;
         }
         .herb-back .prep-row .item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            display: grid;
+            grid-template-rows: subgrid;
+            grid-row: span 2;
+            justify-items: center;
         }
+        .herb-back .prep-row .item:nth-child(1) { justify-self: start; }
+        .herb-back .prep-row .item:nth-child(2) { justify-self: center; }
+        .herb-back .prep-row .item:nth-child(3) { justify-self: end; }
         .herb-back .prep-row .icon {
             display: flex;
             align-items: end;
@@ -201,6 +210,7 @@
             display: block;
         }
         .herb-back .prep-row .caption {
+            align-self: start;
             font-family: 'herb-accent', 'herb-body', -apple-system, sans-serif;
             font-size: 3.88mm;
             line-height: 1;
@@ -326,19 +336,21 @@
             <p class="usage-note"><span class="section-heading">Anwendung:</span> {{ $usageNote }}</p>
         @endif
 
-        <h3 class="section-heading">{{ $preparationTitle ?? 'Zubereitungshinweise:' }}</h3>
-        <div class="prep-row">
-            <div class="item">
-                <div class="icon">@if ($prepAmountIconSrc)<img src="{{ $prepAmountIconSrc }}" alt="">@endif</div>
-                <div class="caption">{!! $renderCaption($prepAmount) !!}</div>
-            </div>
-            <div class="item">
-                <div class="icon">@if ($prepTemperatureIconSrc)<img src="{{ $prepTemperatureIconSrc }}" alt="">@endif</div>
-                <div class="caption">{!! $renderCaption($prepTemperature) !!}</div>
-            </div>
-            <div class="item">
-                <div class="icon">@if ($prepTimeIconSrc)<img src="{{ $prepTimeIconSrc }}" alt="">@endif</div>
-                <div class="caption">{!! $renderCaption($prepTime) !!}</div>
+        <div class="prep-section">
+            <h3 class="section-heading">{{ $preparationTitle ?? 'Zubereitungshinweise:' }}</h3>
+            <div class="prep-row">
+                <div class="item">
+                    <div class="icon">@if ($prepAmountIconSrc)<img src="{{ $prepAmountIconSrc }}" alt="">@endif</div>
+                    <div class="caption">{!! $renderCaption($prepAmount) !!}</div>
+                </div>
+                <div class="item">
+                    <div class="icon">@if ($prepTemperatureIconSrc)<img src="{{ $prepTemperatureIconSrc }}" alt="">@endif</div>
+                    <div class="caption">{!! $renderCaption($prepTemperature) !!}</div>
+                </div>
+                <div class="item">
+                    <div class="icon">@if ($prepTimeIconSrc)<img src="{{ $prepTimeIconSrc }}" alt="">@endif</div>
+                    <div class="caption">{!! $renderCaption($prepTime) !!}</div>
+                </div>
             </div>
         </div>
 
