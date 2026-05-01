@@ -118,6 +118,12 @@
     $italicFontFace = $fontFace($italicFont ?? null, 'herb-italic');
     $subtitleFontFace = $fontFace($subtitleFont ?? null, 'herb-subtitle');
     $accentFontFace = $fontFace($accentFont ?? null, 'herb-accent');
+
+    // Body text size override (mm). Drives a single CSS variable used by
+    // every block-level text rule on the back (ingredients, preparation-body,
+    // usage-note, safety-hint). Leave blank to use the template default.
+    $bodyFontSizeMm = (float) ($bodyFontSize ?? 0);
+    $bodyFontSizeCss = $bodyFontSizeMm > 0 ? sprintf('%.2fmm', $bodyFontSizeMm) : '3.5mm';
 @endphp
 <x-label-page :width="$width" :height="$height" :bleed="$bleed" :marks="$marks" :slug="$slug ?? null">
     <style>
@@ -127,6 +133,7 @@
         {!! $subtitleFontFace !!}
         {!! $accentFontFace !!}
         .herb-back {
+            --lp-body-size: {{ $bodyFontSizeCss }};
             position: relative;
             width: 100%;
             height: 100%;
@@ -134,7 +141,7 @@
             padding: 5mm 5mm;
             color: {{ $textColor }};
             font-family: 'herb-body', -apple-system, sans-serif;
-            font-size: 3.5mm;
+            font-size: var(--lp-body-size);
             line-height: 1;
             display: flex;
             flex-direction: column;

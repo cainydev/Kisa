@@ -51,6 +51,13 @@ class RuthsBlendTemplate extends AbstractLabelTemplate
             Param::make('titleFontSize')->number()->label('Titel-Schriftgröße')
                 ->range(4, 14, 0.1, 'mm'),
 
+            // Per-label override for the back body text size (Inhaltsstoffe,
+            // Zubereitungstext, Sicherheitshinweis, Anwendung). Leave blank
+            // to use the template default. Bump down when long bodies don't
+            // fit; bump up if there's room to spare.
+            Param::make('bodyFontSize')->number()->label('Text-Schriftgröße')
+                ->range(2, 5, 0.05, 'mm'),
+
             // Subtitle under the title on the front. Pfennighaus copy:
             // "vorwiegend" (not "kontrolliert"), since the line isn't 100 % bio.
             Param::make('subtitle')->string()->hyphenate()->label('Untertitel')

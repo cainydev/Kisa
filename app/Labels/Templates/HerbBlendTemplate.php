@@ -73,6 +73,13 @@ class HerbBlendTemplate extends AbstractLabelTemplate
             Param::make('titleFontSize')->number()->label('Titel-Schriftgröße')
                 ->range(4, 14, 0.1, 'mm'),
 
+            // Per-label override for the back body text size (Inhaltsstoffe,
+            // Zubereitungstext, Sicherheitshinweis, Anwendung). Leave blank
+            // to use the template default. Bump down when long bodies don't
+            // fit (Hautwaschung, Tinktur, …); bump up if room to spare.
+            Param::make('bodyFontSize')->number()->label('Text-Schriftgröße')
+                ->range(2, 5, 0.05, 'mm'),
+
             // Subtitle under the title on the front.
             Param::make('subtitle')->string()->hyphenate()->label('Untertitel')
                 ->default('Heimische Kräuter aus kontrolliert biologischem Anbau'),
