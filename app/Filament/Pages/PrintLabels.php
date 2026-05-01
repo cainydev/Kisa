@@ -223,18 +223,49 @@ class PrintLabels extends Page implements HasActions, HasForms
     }
 
     /**
-     * Plain RGB PDF — for screen, internal review, normal printing.
+     * Open the plain-RGB PDF preview in a new tab. Reuses the labels.preview
+     * route so the result is cacheable just like the EditLabel preview.
+     * Only available for configured labels (we need a label id for the URL).
      */
     public function pdfAction(): Action
     {
         return Action::make('pdf')
             ->label('PDF')
-            ->icon('heroicon-o-arrow-down-tray')
+            ->icon('heroicon-o-eye')
             ->color('gray')
-            ->action(fn (array $arguments) => $this->generatePdf(
-                $arguments,
-                new RenderOptions(bleed_mm: 0, marks: false, cmyk: false),
-            ));
+            ->visible(fn (array $arguments): bool => ! empty($arguments['label']))
+            ->url(function (array $arguments): ?string {
+                $labelId = $arguments['label'] ?? null;
+                $page = $arguments['page'] ?? null;
+                if (! $labelId || ! $page) {
+                    return null;
+                }
+
+                return route('labels.preview', ['label' => $labelId, 'page' => $page]).'?format=pdf';
+            })
+            ->openUrlInNewTab();
+    }
+
+    /**
+     * Open the PNG preview in a new tab. Same routing pattern as pdfAction.
+     */
+    public function pngAction(): Action
+    {
+        return Action::make('png')
+            ->label('PNG')
+            ->icon('heroicon-o-eye')
+            ->color('gray')
+            ->visible(fn (array $arguments): bool => ! empty($arguments['label']))
+            ->url(function (array $arguments): ?string {
+                $labelId = $arguments['label'] ?? null;
+                $page = $arguments['page'] ?? null;
+                if (! $labelId || ! $page) {
+                    return null;
+                }
+
+                return route('labels.preview', ['label' => $labelId, 'page' => $page]).'?format=png';
+            })
+            ->openUrlInNewTab();
     }
 
     /**
