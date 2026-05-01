@@ -151,6 +151,12 @@
     $italicFontFace = $fontFace($italicFont ?? null, 'herb-italic');
     $subtitleFontFace = $fontFace($subtitleFont ?? null, 'herb-subtitle');
     $accentFontFace = $fontFace($accentFont ?? null, 'herb-accent');
+
+    // Body text size override (mm). Drives a single CSS variable used by
+    // every block-level text rule on the back. Leave blank to use the
+    // template default.
+    $bodyFontSizeMm = (float) ($bodyFontSize ?? 0);
+    $bodyFontSizeCss = $bodyFontSizeMm > 0 ? sprintf('%.2fmm', $bodyFontSizeMm) : '2.82mm';
 @endphp
 <x-label-page :width="$width" :height="$height" :bleed="$bleed" :marks="$marks" :slug="$slug ?? null">
     <style>
@@ -160,6 +166,7 @@
         {!! $subtitleFontFace !!}
         {!! $accentFontFace !!}
         .ruths-blend-back {
+            --lp-body-size: {{ $bodyFontSizeCss }};
             position: relative;
             width: 100%;
             height: 100%;
@@ -185,7 +192,7 @@
         .ruths-blend-back .ingredients {
             margin: 0;
             font-family: 'herb-body', -apple-system, sans-serif;
-            font-size: 2.82mm;
+            font-size: var(--lp-body-size);
             line-height: 1.125;
             hyphens: auto;
             -webkit-hyphens: auto;
@@ -196,7 +203,7 @@
             display: block;
             margin-top: 1.5mm;
             font-family: 'herb-body', -apple-system, sans-serif;
-            font-size: 2.82mm;
+            font-size: var(--lp-body-size);
             line-height: 1.125;
         }
         .ruths-blend-back .latin { font-family: 'herb-italic', 'herb-body', -apple-system, sans-serif; font-style: italic; }
@@ -254,6 +261,7 @@
         }
         .ruths-blend-back .preparation-body {
             margin: 0;
+            font-size: var(--lp-body-size);
             line-height: 1.1;
             text-align: justify;
             hyphens: auto;
@@ -262,6 +270,7 @@
         }
         .ruths-blend-back .safety-hint {
             margin: 0;
+            font-size: var(--lp-body-size);
             line-height: 1.1;
             text-align: justify;
             hyphens: auto;
