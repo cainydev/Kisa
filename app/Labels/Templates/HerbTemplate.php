@@ -54,6 +54,12 @@ class HerbTemplate extends AbstractLabelTemplate
             Param::make('backTitle')->string()->hyphenate()->label('Titel (Rückseite)')
                 ->auto(fn (?Product $p) => $p ? mb_strtoupper($p->name) : 'KRÄUTER'),
 
+            // Per-label override for the front title's font size. Leave blank
+            // to use the template default (9.9 mm). Bump down when long
+            // herb names won't fit on a single line at the default size.
+            Param::make('titleFontSize')->number()->label('Titel-Schriftgröße')
+                ->range(4, 14, 0.1, 'mm'),
+
             // Subtitle under the title on the front.
             Param::make('subtitle')->string()->hyphenate()->label('Untertitel')
                 ->default('aus kontrolliert biologischem Anbau'),

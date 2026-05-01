@@ -266,26 +266,6 @@
             object-fit: contain;
             display: block;
         }
-        /* EU-leaf: stack the seal image and the regulatory caption. */
-        .herb-back .seals-row .eu-seal {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .herb-back .seals-row .eu-seal img {
-            height: 13mm;
-            width: auto;
-            object-fit: contain;
-            display: block;
-        }
-        .herb-back .seals-row .eu-seal .oeko-cap {
-            align-self: flex-start;
-            margin-top: 0.5mm;
-            font-size: 1.41mm;
-            line-height: 1.1;
-            text-align: left;
-            color: {{ $textColor }};
-        }
         /* Bottom flex child holding the placement bar plus the sticker overlay
            that physically covers it. The sticker is sized to its real-world
            extent so this child's height is the sticker's height — that
@@ -367,15 +347,13 @@
             <div class="seals">
                 @if ($gruenPunktSrc) <img src="{{ $gruenPunktSrc }}" class="gruen-punkt" alt=""> @endif
                 @if ($bioSealSrc) <img src="{{ $bioSealSrc }}" class="bio-seal" alt=""> @endif
-                @if ($euBioLeafSrc)
-                    <div class="eu-seal">
-                        <img src="{{ $euBioLeafSrc }}" alt="">
-                        <div class="oeko-cap">
-                            {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}<br>
-                            {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }}
-                        </div>
-                    </div>
-                @endif
+                <x-eu-bio-seal
+                    :src="$euBioLeafSrc"
+                    :code="$brand['oeko_code'] ?? 'DE-ÖKO-039'"
+                    :origin="$brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft'"
+                    captionLayout="stacked"
+                    :color="$textColor"
+                />
             </div>
         </div>
 

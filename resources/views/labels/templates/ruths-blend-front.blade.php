@@ -60,6 +60,11 @@
     $titleFontFace = $fontFace($titleFont ?? null, 'herb-title');
     $bodyFontFace = $fontFace($bodyFont ?? null, 'herb-body');
     $subtitleFontFace = $fontFace($subtitleFont ?? null, 'herb-subtitle');
+
+    // Title font size override (mm). Falls back to the template default when
+    // the operator has not set an explicit value on this label.
+    $titleFontSizeMm = (float) ($titleFontSize ?? 0);
+    $titleFontSizeCss = $titleFontSizeMm > 0 ? sprintf('%.2fmm', $titleFontSizeMm) : '9.10mm';
 @endphp
 <x-label-page :width="$width" :height="$height" :bleed="$bleed" :marks="$marks" :slug="$slug ?? null">
     <style>
@@ -139,7 +144,7 @@
         }
         .ruths-blend-front .title {
             font-family: 'herb-title', 'herb-body', -apple-system, sans-serif;
-            font-size: 9.10mm;
+            font-size: {{ $titleFontSizeCss }};
             line-height: 1;
             letter-spacing: 0.065em;
             text-transform: uppercase;

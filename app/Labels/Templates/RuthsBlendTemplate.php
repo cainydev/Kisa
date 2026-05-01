@@ -46,6 +46,11 @@ class RuthsBlendTemplate extends AbstractLabelTemplate
             Param::make('title')->string()->hyphenate()->label('Titel')
                 ->auto(fn (?Product $p) => $p?->name ?? 'Ruths Mischung'),
 
+            // Per-label override for the front title's font size. Leave blank
+            // to use the template default (9.10 mm).
+            Param::make('titleFontSize')->number()->label('Titel-Schriftgröße')
+                ->range(4, 14, 0.1, 'mm'),
+
             // Subtitle under the title on the front. Pfennighaus copy:
             // "vorwiegend" (not "kontrolliert"), since the line isn't 100 % bio.
             Param::make('subtitle')->string()->hyphenate()->label('Untertitel')

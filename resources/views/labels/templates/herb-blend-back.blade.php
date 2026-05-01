@@ -249,22 +249,6 @@
         .herb-blend-back .seals-row .seals .bio-seal {
             height: 13mm;
         }
-        .herb-blend-back .seals-row .eu-seal {
-            position: relative;
-            display: flex;
-            align-items: center;
-            line-height: 0;
-        }
-        .herb-blend-back .seals-row .eu-seal .oeko-cap {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: -4.2mm;
-            font-size: 1.41mm;
-            line-height: 1.1;
-            text-align: left;
-            color: {{ $textColor }};
-        }
         .herb-blend-back .bottom-bar {
             position: relative;
             margin-top: auto;
@@ -335,14 +319,12 @@
             <div class="seals">
                 @if ($gruenPunktSrc) <img src="{{ $gruenPunktSrc }}" class="gruen-punkt" alt=""> @endif
                 @if ($bioSealSrc) <img src="{{ $bioSealSrc }}" class="bio-seal" alt=""> @endif
-                @if ($euBioLeafSrc)
-                    <div class="eu-seal">
-                        <img src="{{ $euBioLeafSrc }}" alt="">
-                        <div class="oeko-cap">
-                            {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }} · {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }}
-                        </div>
-                    </div>
-                @endif
+                <x-eu-bio-seal
+                    :src="$euBioLeafSrc"
+                    :code="$brand['oeko_code'] ?? 'DE-ÖKO-039'"
+                    :origin="$brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft'"
+                    :color="$textColor"
+                />
             </div>
         </div>
 
