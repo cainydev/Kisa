@@ -211,7 +211,7 @@
            "Sicherheitshinweis:" — same typography regardless of position. */
         .ruths-blend-back .section-heading {
             font-family: 'herb-title', 'herb-body', -apple-system, sans-serif;
-            font-size: 3.5mm;
+            font-size: var(--lp-body-size);
             line-height: 1;
         }
         .ruths-blend-back h3.section-heading {
