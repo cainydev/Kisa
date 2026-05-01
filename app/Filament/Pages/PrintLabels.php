@@ -251,6 +251,28 @@ class PrintLabels extends Page implements HasActions, HasForms
             ));
     }
 
+    /**
+     * Confirmation step that fires when generatePdf detects an overflow.
+     * The first action call halts (returns null), then mounts this action so
+     * the operator can either go back and fix the layout or override and print
+     * anyway. The "force" path skips the overflow check on the second render.
+     */
+    public function confirmOverflowPdfAction(): Action
+    {
+        return Action::make('confirmOverflowPdf')
+            ->label('Überlauf bestätigen')
+            ->icon('heroicon-o-exclamation-triangle')
+            ->color('warning')
+            ->modalHeading('Überlauf erkannt')
+            ->modalDescription('Der Inhalt passt nicht vollständig in die Etikettenfläche. Möchtest du das Layout zuerst anpassen oder trotzdem drucken?')
+            ->modalSubmitActionLabel('Trotzdem drucken')
+            ->modalCancelActionLabel('Konfigurieren')
+            ->action(fn (array $arguments) => $this->generatePdf(
+                $arguments,
+                new RenderOptions(bleed_mm: 3, marks: true, cmyk: true, checkOverflow: false),
+            ));
+    }
+
     protected function generatePdf(array $arguments, RenderOptions $opts): mixed
     {
         $templateKey = $arguments['template'] ?? null;
@@ -277,12 +299,13 @@ class PrintLabels extends Page implements HasActions, HasForms
             $path = $renderer->renderPagePdf($template, $pageKey, $label, $entity, $opts);
 
             if ($renderer->lastOverflow === true) {
-                Notification::make()
-                    ->title('Überlauf erkannt')
-                    ->body('Der Inhalt passt nicht vollständig in die Etikettenfläche. Bitte vor dem Drucken prüfen.')
-                    ->warning()
-                    ->persistent()
-                    ->send();
+                // Halt the download and let the operator decide. The confirm
+                // action re-runs generatePdf with checkOverflow: false so the
+                // second render is fast and unconditional.
+                @unlink($path);
+                $this->mountAction('confirmOverflowPdf', $arguments);
+
+                return null;
             }
 
             // Always run through Ghostscript to set exact MediaBox/TrimBox/BleedBox
