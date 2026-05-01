@@ -323,9 +323,10 @@
             <p class="usage-note"><span class="section-heading">Anwendung:</span> {{ $usageNote }}</p>
         @endif
 
-        <div class="prep-section">
-            <h3 class="section-heading">{{ $preparationTitle ?? 'Zubereitungshinweise:' }}</h3>
-            @if (! isset($showPrepIcons) || $showPrepIcons)
+        @php $iconsVisible = ! isset($showPrepIcons) || $showPrepIcons; @endphp
+        @if ($iconsVisible)
+            <div class="prep-section">
+                <h3 class="section-heading">{{ $preparationTitle ?? 'Zubereitungshinweise:' }}</h3>
                 <div class="prep-row">
                     <div class="item">
                         <div class="icon">@if ($prepAmountIconSrc)<img src="{{ $prepAmountIconSrc }}" alt="">@endif</div>
@@ -340,10 +341,12 @@
                         <div class="caption">{!! $renderCaption($prepTime) !!}</div>
                     </div>
                 </div>
-            @endif
-        </div>
+            </div>
 
-        <p class="preparation-body">{{ $preparationBodyText }}</p>
+            <p class="preparation-body">{{ $preparationBodyText }}</p>
+        @else
+            <p class="preparation-body"><span class="section-heading">{{ $preparationTitle ?? 'Zubereitungshinweise:' }}</span> {{ $preparationBodyText }}</p>
+        @endif
 
         @if (! empty($preparation2Body))
             <p class="preparation-body">@if (! empty($preparation2Title))<span class="section-heading">{{ $preparation2Title }}</span> @endif{{ $preparation2Body }}</p>

@@ -356,9 +356,10 @@
             @endif
         </p>
 
-        <div class="prep-section">
-            <h3 class="section-heading">Zubereitungshinweise:</h3>
-            @if (! isset($showPrepIcons) || $showPrepIcons)
+        @php $iconsVisible = ! isset($showPrepIcons) || $showPrepIcons; @endphp
+        @if ($iconsVisible)
+            <div class="prep-section">
+                <h3 class="section-heading">Zubereitungshinweise:</h3>
                 <div class="prep-row">
                     <div class="item">
                         <div class="icon">@if ($prepAmountIconSvg){!! $prepAmountIconSvg !!}@endif</div>
@@ -373,10 +374,12 @@
                         <div class="caption">{!! $renderCaption($prepTime) !!}</div>
                     </div>
                 </div>
-            @endif
-        </div>
+            </div>
 
-        <p class="preparation-body">{{ $preparationBodyText }}</p>
+            <p class="preparation-body">{{ $preparationBodyText }}</p>
+        @else
+            <p class="preparation-body"><span class="section-heading">Zubereitungshinweise:</span> {{ $preparationBodyText }}</p>
+        @endif
 
         <p class="safety-hint"><span class="section-heading">Sicherheitshinweis:</span> {{ $safetyHint }}</p>
 
