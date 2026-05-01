@@ -268,6 +268,8 @@
             -webkit-hyphens: auto;
             hyphenate-limit-chars: 6 3 3;
         }
+        /* Seals row: full-width strip with the fill-hint on the left and the
+           seals group on the right (justify-between). */
         .ruths-blend-back .seals-row {
             display: flex;
             justify-content: space-between;
@@ -279,44 +281,52 @@
             line-height: 1.2;
             max-width: 36mm;
         }
+        /* Seal group: flex row, items aligned to the start (top) so the
+           EU-seal column can hang the caption below without affecting the
+           other seals' vertical placement. */
         .ruths-blend-back .seals-row .seals {
             display: flex;
-            align-items: center;
+            justify-content: flex-end;
+            align-items: flex-start;
             gap: 2mm;
-            line-height: 0;
         }
-        .ruths-blend-back .seals-row .seals img {
-            height: 12mm;
+        .ruths-blend-back .seals-row .seals .gruen-punkt,
+        .ruths-blend-back .seals-row .seals .bio-seal {
+            height: 13mm;
             width: auto;
             object-fit: contain;
             display: block;
         }
-        .ruths-blend-back .seals-row .seals .bio-seal {
-            height: 13mm;
-        }
-        .ruths-blend-back .bottom-bar {
+        /* Bottom flex child holding the placement bar plus the sticker overlay
+           that physically covers it. The sticker is sized to its real-world
+           extent so this child's height is the sticker's height — that
+           reserves exactly the right amount of space at the bottom of the
+           page when justify-content distributes the rest. */
+        .ruths-blend-back .footer {
             position: relative;
-            margin-top: auto;
-            margin-left: auto;
-            margin-right: auto;
+            width: 95mm;
+            height: 48mm;
+            margin: 0 auto;
+            pointer-events: none;
+        }
+        .ruths-blend-back .footer .bar {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
             width: 50.20mm;
             height: 0.50mm;
             background: #d8d8d8;
             border-radius: 0.25mm;
         }
-        .ruths-blend-back .bottom-bar .sticker-outline {
+        .ruths-blend-back .footer .outline {
             position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: 0;
-            width: 95mm;
-            height: 48mm;
+            inset: 0;
             background: rgba(255, 0, 128, 0.12);
             border: 0.3mm dashed #ff0080;
-            pointer-events: none;
             z-index: 99;
         }
-        .ruths-blend-back .bottom-bar .sticker-outline .label {
+        .ruths-blend-back .footer .footer-label {
             position: absolute;
             top: 1mm;
             left: 1mm;
@@ -368,15 +378,17 @@
                     :src="$euBioLeafSrc"
                     :code="$brand['oeko_code'] ?? 'DE-ÖKO-039'"
                     :origin="$brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft'"
+                    captionLayout="stacked"
                     :color="$textColor"
                 />
             </div>
         </div>
 
-        <div class="bottom-bar">
+        <div class="footer">
+            <div class="bar"></div>
             @if (! empty($showStickerOutline))
-                <div class="sticker-outline">
-                    <span class="label">Aufkleber 95×48 mm</span>
+                <div class="outline">
+                    <span class="footer-label">Aufkleber 95×48 mm</span>
                 </div>
             @endif
         </div>
