@@ -325,20 +325,22 @@
 
         <div class="prep-section">
             <h3 class="section-heading">{{ $preparationTitle ?? 'Zubereitungshinweise:' }}</h3>
-            <div class="prep-row">
-                <div class="item">
-                    <div class="icon">@if ($prepAmountIconSrc)<img src="{{ $prepAmountIconSrc }}" alt="">@endif</div>
-                    <div class="caption">{!! $renderCaption($prepAmount) !!}</div>
+            @if (! isset($showPrepIcons) || $showPrepIcons)
+                <div class="prep-row">
+                    <div class="item">
+                        <div class="icon">@if ($prepAmountIconSrc)<img src="{{ $prepAmountIconSrc }}" alt="">@endif</div>
+                        <div class="caption">{!! $renderCaption($prepAmount) !!}</div>
+                    </div>
+                    <div class="item">
+                        <div class="icon">@if ($prepTemperatureIconSrc)<img src="{{ $prepTemperatureIconSrc }}" alt="">@endif</div>
+                        <div class="caption">{!! $renderCaption($prepTemperature) !!}</div>
+                    </div>
+                    <div class="item">
+                        <div class="icon">@if ($prepTimeIconSrc)<img src="{{ $prepTimeIconSrc }}" alt="">@endif</div>
+                        <div class="caption">{!! $renderCaption($prepTime) !!}</div>
+                    </div>
                 </div>
-                <div class="item">
-                    <div class="icon">@if ($prepTemperatureIconSrc)<img src="{{ $prepTemperatureIconSrc }}" alt="">@endif</div>
-                    <div class="caption">{!! $renderCaption($prepTemperature) !!}</div>
-                </div>
-                <div class="item">
-                    <div class="icon">@if ($prepTimeIconSrc)<img src="{{ $prepTimeIconSrc }}" alt="">@endif</div>
-                    <div class="caption">{!! $renderCaption($prepTime) !!}</div>
-                </div>
-            </div>
+            @endif
         </div>
 
         <p class="preparation-body">{{ $preparationBodyText }}</p>

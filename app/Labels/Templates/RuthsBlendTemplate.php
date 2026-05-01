@@ -58,6 +58,12 @@ class RuthsBlendTemplate extends AbstractLabelTemplate
             Param::make('bodyFontSize')->number()->label('Text-Schriftgröße')
                 ->range(2, 5, 0.05, 'mm'),
 
+            // Hide the three prep icons + their captions. For variants where
+            // brewing icons make no sense (Kopfdampfbad, Sitzbad, Tinktur,
+            // Hautwaschung, Leibumschlag, …) — the icons are tea-specific.
+            Param::make('showPrepIcons')->boolean()->label('Zubereitungs-Icons zeigen')
+                ->default(true),
+
             // Subtitle under the title on the front. Pfennighaus copy:
             // "vorwiegend" (not "kontrolliert"), since the line isn't 100 % bio.
             Param::make('subtitle')->string()->hyphenate()->label('Untertitel')

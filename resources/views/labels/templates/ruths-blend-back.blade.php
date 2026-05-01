@@ -358,20 +358,22 @@
 
         <div class="prep-section">
             <h3 class="section-heading">Zubereitungshinweise:</h3>
-            <div class="prep-row">
-                <div class="item">
-                    <div class="icon">@if ($prepAmountIconSvg){!! $prepAmountIconSvg !!}@endif</div>
-                    <div class="caption">{!! $renderCaption($prepAmount) !!}</div>
+            @if (! isset($showPrepIcons) || $showPrepIcons)
+                <div class="prep-row">
+                    <div class="item">
+                        <div class="icon">@if ($prepAmountIconSvg){!! $prepAmountIconSvg !!}@endif</div>
+                        <div class="caption">{!! $renderCaption($prepAmount) !!}</div>
+                    </div>
+                    <div class="item">
+                        <div class="icon">@if ($prepTemperatureIconSvg){!! $prepTemperatureIconSvg !!}@endif</div>
+                        <div class="caption">{!! $renderCaption($prepTemperature) !!}</div>
+                    </div>
+                    <div class="item">
+                        <div class="icon">@if ($prepTimeIconSvg){!! $prepTimeIconSvg !!}@endif</div>
+                        <div class="caption">{!! $renderCaption($prepTime) !!}</div>
+                    </div>
                 </div>
-                <div class="item">
-                    <div class="icon">@if ($prepTemperatureIconSvg){!! $prepTemperatureIconSvg !!}@endif</div>
-                    <div class="caption">{!! $renderCaption($prepTemperature) !!}</div>
-                </div>
-                <div class="item">
-                    <div class="icon">@if ($prepTimeIconSvg){!! $prepTimeIconSvg !!}@endif</div>
-                    <div class="caption">{!! $renderCaption($prepTime) !!}</div>
-                </div>
-            </div>
+            @endif
         </div>
 
         <p class="preparation-body">{{ $preparationBodyText }}</p>
