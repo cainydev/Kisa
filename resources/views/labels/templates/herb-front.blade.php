@@ -54,6 +54,11 @@
     $artworkOffsetY = (float) ($artworkOffsetY ?? 0);
     $artworkScale = (float) ($artworkScale ?? 1);
 
+    // Title font size override (mm). Falls back to the template default when
+    // the operator has not set an explicit value on this label.
+    $titleFontSizeMm = (float) ($titleFontSize ?? 0);
+    $titleFontSizeCss = $titleFontSizeMm > 0 ? sprintf('%.2fmm', $titleFontSizeMm) : '9.9mm';
+
     $titleFontFace = $fontFace($titleFont ?? null, 'herb-title');
     $bodyFontFace = $fontFace($bodyFont ?? null, 'herb-body');
     $subtitleFontFace = $fontFace($subtitleFont ?? null, 'herb-subtitle');
@@ -113,15 +118,19 @@
             width: 18mm;
             height: auto;
         }
+        /* Anchored to the bottom of the page so a wrapping title grows upward
+           rather than pushing the subtitle past the trim. */
         .herb-front .heading {
-            position: relative;
+            position: absolute;
+            left: 7mm;
+            right: 7mm;
+            bottom: 7mm;
             z-index: 3;
-            margin-top: auto;
             text-align: left;
         }
         .herb-front .title {
             font-family: 'herb-title', 'herb-body', -apple-system, sans-serif;
-            font-size: 9.9mm;
+            font-size: {{ $titleFontSizeCss }};
             line-height: 0.95;
             letter-spacing: 0.07em;
             text-transform: uppercase;

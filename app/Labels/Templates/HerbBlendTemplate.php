@@ -68,6 +68,11 @@ class HerbBlendTemplate extends AbstractLabelTemplate
                     return "BIO-KRÄUTERTEE NR. {$no}";
                 }),
 
+            // Per-label override for the front title's font size. Leave blank
+            // to use the template default (9.10 mm).
+            Param::make('titleFontSize')->number()->label('Titel-Schriftgröße')
+                ->range(4, 14, 0.1, 'mm'),
+
             // Subtitle under the title on the front.
             Param::make('subtitle')->string()->hyphenate()->label('Untertitel')
                 ->default('Heimische Kräuter aus kontrolliert biologischem Anbau'),
