@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\Labels\LabelResource;
 use App\Labels\LabelTemplate;
 use App\Labels\TemplateRegistry;
 use App\Models\Label;
@@ -266,7 +267,21 @@ class PrintLabels extends Page implements HasActions, HasForms
             ->modalHeading('Überlauf erkannt')
             ->modalDescription('Der Inhalt passt nicht vollständig in die Etikettenfläche. Möchtest du das Layout zuerst anpassen oder trotzdem drucken?')
             ->modalSubmitActionLabel('Trotzdem drucken')
-            ->modalCancelActionLabel('Konfigurieren')
+            ->modalCancelAction(false)
+            ->extraModalFooterActions(fn (Action $action): array => [
+                Action::make('configure')
+                    ->label('Konfigurieren')
+                    ->color('gray')
+                    ->url(function (array $arguments) {
+                        $labelId = $arguments['label'] ?? null;
+
+                        return $labelId
+                            ? LabelResource::getUrl('edit', ['record' => $labelId])
+                            : null;
+                    })
+                    ->visible(fn (array $arguments): bool => ! empty($arguments['label']))
+                    ->cancelParentActions(),
+            ])
             ->action(fn (array $arguments) => $this->generatePdf(
                 $arguments,
                 new RenderOptions(bleed_mm: 3, marks: true, cmyk: true, checkOverflow: false),
