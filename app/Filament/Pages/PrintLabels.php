@@ -301,9 +301,10 @@ class PrintLabels extends Page implements HasActions, HasForms
             if ($renderer->lastOverflow === true) {
                 // Halt the download and let the operator decide. The confirm
                 // action re-runs generatePdf with checkOverflow: false so the
-                // second render is fast and unconditional.
+                // second render is fast and unconditional. replaceMountedAction
+                // hands our $arguments off to the confirm action automatically.
                 @unlink($path);
-                $this->mountAction('confirmOverflowPdf', $arguments);
+                $this->replaceMountedAction('confirmOverflowPdf', $arguments);
 
                 return null;
             }
