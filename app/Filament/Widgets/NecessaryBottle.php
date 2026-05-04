@@ -147,21 +147,19 @@ class NecessaryBottle extends Widget implements HasActions, HasSchemas, HasTable
                     $variant = $group->first()->variant ?? Variant::find($group->first()->variant_id);
                     $variantLabel = $variant ? ($variant->title ?? $variant->name ?? '#'.$variant->id) : ('#'.$group->first()->variant_id);
                     $stock = $variant?->stock ?? 0;
-                    // Negative stock represents open backorders; for production planning we
-                    // treat it as zero so we don't double-count the demand that caused it.
-                    $effectiveStock = max(0, $stock);
                     $orderRefs = $group->map(fn ($p) => $p->order?->order_number ?? $p->order?->reference ?? $p->order_id)->unique()->values()->all();
                     $averageMonthlySales = $variant ? VariantStats::for($variant)->averageMonthlySales() : 0;
                     $minBatchSize = 1;
-                    if ($variant && $stock <= 0) {
+                    if ($variant && $stock < 0) {
+                        // Billbee already decremented stock when the order arrived, so a negative
+                        // value is exactly the open shortfall we need to produce.
+                        $shortfall = -$stock;
                         if ($variant->size <= $extrapolateMaxSize) {
-                            $orderedQuantity = $group->sum('quantity');
                             $projectedNeeded = $extrapolateMonths * $averageMonthlySales;
-                            $minNeededQuantity = max($minBatchSize, $orderedQuantity, (int) ceil($projectedNeeded - $effectiveStock));
+                            $minNeededQuantity = max($minBatchSize, $shortfall, (int) ceil($projectedNeeded));
                         } else {
-                            // For big/special sizes, just produce what each position requires
-                            // (clamped against current stock to avoid going negative twice).
-                            $minNeededQuantity = $group->sum(fn ($p) => max(0, $p->quantity - $effectiveStock));
+                            // For big/special sizes, just cover the shortfall.
+                            $minNeededQuantity = max($minBatchSize, $shortfall);
                         }
                         if ($roundUp !== 'none') {
                             $roundValue = (int) $roundUp;
