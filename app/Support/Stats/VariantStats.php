@@ -13,7 +13,7 @@ class VariantStats
 
     public function __construct(protected Variant $variant)
     {
-        $this->baseKey = VariantStatisticsService::CACHE_PREFIX . ":{$variant->id}";
+        $this->baseKey = VariantStatisticsService::CACHE_PREFIX.":{$variant->id}";
     }
 
     public static function for(Variant $variant): self
@@ -48,18 +48,23 @@ class VariantStats
 
     public function currentStock(): float
     {
-        return (float)$this->getFromCache('stock:current', 0);
+        return (float) $this->getFromCache('stock:current', 0);
     }
 
     public function totalSales(): float
     {
-        return (float)$this->getFromCache('sales:total', 0);
+        return (float) $this->getFromCache('sales:total', 0);
     }
 
     public function averageDailySales(): float
     {
         // You can return the recent rate or calculated all-time avg
-        return (float)$this->getFromCache('sales:avg_recent', 0);
+        return (float) $this->getFromCache('sales:avg_recent', 0);
+    }
+
+    public function averageMonthlySales(): float
+    {
+        return $this->averageDailySales() * 30;
     }
 
     public function production(): TimeSeriesQuery
@@ -68,16 +73,18 @@ class VariantStats
             $this->getFromCache('restock:daily', collect())
         );
     }
-    
+
     public function estimatedDepletionDate(): ?Carbon
     {
         $val = $this->getFromCache('depletion_date');
+
         return $val ? Carbon::parse($val) : null;
     }
 
     public function nextSaleDate(): ?Carbon
     {
         $val = $this->getFromCache('next_sale_date');
+
         return $val ? Carbon::parse($val) : null;
     }
 }

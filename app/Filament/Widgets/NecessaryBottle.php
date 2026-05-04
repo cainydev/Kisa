@@ -7,6 +7,7 @@ use App\Models\Bottle;
 use App\Models\Order;
 use App\Models\OrderPosition;
 use App\Models\Variant;
+use App\Support\Stats\VariantStats;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -27,21 +28,25 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Collection;
+
 use function auth;
 
-class NecessaryBottle extends Widget implements HasSchemas, HasActions, HasTable
+class NecessaryBottle extends Widget implements HasActions, HasSchemas, HasTable
 {
-    use InteractsWithSchemas;
     use InteractsWithActions;
+    use InteractsWithSchemas;
     use InteractsWithTable;
 
     public ?array $filters = [];
 
     public Carbon $defaultMaxDate;
+
     public int $defaultExtrapolateMonths = 3;
+
     public int $defaultExtrapolateMaxSize = 200;
 
     protected string $view = 'filament.widgets.necessary-bottle';
+
     protected int|string|array $columnSpan = 'full';
 
     public function mount(): void
@@ -88,7 +93,7 @@ class NecessaryBottle extends Widget implements HasSchemas, HasActions, HasTable
                     ->schema([
                         Select::make('extrapolate_max_size')
                             ->label('Hochrechnen bis Größe')
-                            ->options(Variant::pluck('size')->unique()->sort()->mapWithKeys(fn($size) => [$size => $size . 'g']))
+                            ->options(Variant::pluck('size')->unique()->sort()->mapWithKeys(fn ($size) => [$size => $size.'g']))
                             ->native(false)
                             ->default(200)
                             ->live(),
@@ -119,10 +124,10 @@ class NecessaryBottle extends Widget implements HasSchemas, HasActions, HasTable
                     default => Carbon::now()->subDays(7)->startOfDay(),
                 };
                 $extrapolateMonths = filled($filters['extrapolate_months']['extrapolate_months'] ?? null)
-                    ? (int)$filters['extrapolate_months']['extrapolate_months']
+                    ? (int) $filters['extrapolate_months']['extrapolate_months']
                     : $this->defaultExtrapolateMonths;
                 $extrapolateMaxSize = filled($filters['extrapolate_max_size']['extrapolate_max_size'] ?? null)
-                    ? (int)$filters['extrapolate_max_size']['extrapolate_max_size']
+                    ? (int) $filters['extrapolate_max_size']['extrapolate_max_size']
                     : $this->defaultExtrapolateMaxSize;
                 $roundUp = $filters['round_up_quantity']['round_up_quantity'] ?? 'none';
 
@@ -133,34 +138,36 @@ class NecessaryBottle extends Widget implements HasSchemas, HasActions, HasTable
                     ->where('created_at', '>=', $maxDate)
                     ->whereHas('positions')
                     ->get()
-                    ->flatMap(fn(Order $order) => $order->positions->map(fn(OrderPosition $p) => $p->setRelation('order', $order)));
+                    ->flatMap(fn (Order $order) => $order->positions->map(fn (OrderPosition $p) => $p->setRelation('order', $order)));
 
                 // Build records grouped by variant_id
-                $grouped = $positions->groupBy(fn(OrderPosition $p) => $p->variant_id);
+                $grouped = $positions->groupBy(fn (OrderPosition $p) => $p->variant_id);
 
                 return $grouped->mapWithKeys(function ($group) use ($extrapolateMonths, $extrapolateMaxSize, $roundUp) {
                     $variant = $group->first()->variant ?? Variant::find($group->first()->variant_id);
-                    $variantLabel = $variant ? ($variant->title ?? $variant->name ?? '#' . $variant->id) : ('#' . $group->first()->variant_id);
+                    $variantLabel = $variant ? ($variant->title ?? $variant->name ?? '#'.$variant->id) : ('#'.$group->first()->variant_id);
                     $stock = $variant?->stock ?? 0;
-                    $orderRefs = $group->map(fn($p) => $p->order?->order_number ?? $p->order?->reference ?? $p->order_id)->unique()->values()->all();
-                    $averageMonthlySales = $variant?->average_monthly_sales ?? 0;
+                    $orderRefs = $group->map(fn ($p) => $p->order?->order_number ?? $p->order?->reference ?? $p->order_id)->unique()->values()->all();
+                    $averageMonthlySales = $variant ? VariantStats::for($variant)->averageMonthlySales() : 0;
                     $minBatchSize = 1;
                     if ($variant && $variant->stock < 0) {
                         if ($variant->size <= $extrapolateMaxSize) {
                             $projectedNeeded = $extrapolateMonths * $averageMonthlySales;
-                            $minNeededQuantity = max($minBatchSize, (int)ceil($projectedNeeded - $stock));
+                            $minNeededQuantity = max($minBatchSize, (int) ceil($projectedNeeded - $stock));
                         } else {
                             // For big/special sizes, just sum up the deficit for all positions
                             $minNeededQuantity = $group->sum(function ($p) use ($variant) {
                                 $stock = $variant?->stock ?? 0;
+
                                 return max(0, $p->quantity - $stock);
                             });
                         }
                         if ($roundUp !== 'none') {
-                            $roundValue = (int)$roundUp;
-                            $minNeededQuantity = $roundValue * (int)ceil($minNeededQuantity / $roundValue);
+                            $roundValue = (int) $roundUp;
+                            $minNeededQuantity = $roundValue * (int) ceil($minNeededQuantity / $roundValue);
                         }
                         $perVariantHerbs = method_exists($variant, 'herbsNeededFor') ? ($variant->herbsNeededFor($minNeededQuantity) ?: []) : [];
+
                         return [
                             $variant->id => [
                                 'variant_id' => $variant->id,
@@ -173,6 +180,7 @@ class NecessaryBottle extends Widget implements HasSchemas, HasActions, HasTable
                             ],
                         ];
                     }
+
                     return [];
                 });
             })
@@ -189,7 +197,7 @@ class NecessaryBottle extends Widget implements HasSchemas, HasActions, HasTable
                     ->label('Bestellnummern')
                     ->icon('billbee')
                     ->iconPosition(IconPosition::After)
-                    ->formatStateUsing(fn($state) => is_array($state) ? implode(', ', $state) : $state),
+                    ->formatStateUsing(fn ($state) => is_array($state) ? implode(', ', $state) : $state),
             ])
             ->selectable()
             ->headerActions([
@@ -206,20 +214,21 @@ class NecessaryBottle extends Widget implements HasSchemas, HasActions, HasTable
                         $bottle = Bottle::create([
                             'date' => now(),
                             'user_id' => auth()->user()->id,
-                            'note' => 'Auto bottle ' . now()->format('Y-m-d H:i'),
+                            'note' => 'Auto bottle '.now()->format('Y-m-d H:i'),
                         ]);
                         foreach ($records as $rec) {
                             $roundUp = $this->filters['round_up_quantity'] ?? 'none';
                             $finalQuantity = $rec['min_needed_quantity'];
                             if ($roundUp !== 'none') {
-                                $roundValue = (int)$roundUp;
-                                $finalQuantity = $roundValue * (int)ceil($finalQuantity / $roundValue);
+                                $roundValue = (int) $roundUp;
+                                $finalQuantity = $roundValue * (int) ceil($finalQuantity / $roundValue);
                             }
                             $bottle->positions()->create([
                                 'variant_id' => $rec['variant_id'],
                                 'count' => $finalQuantity,
                             ]);
                         }
+
                         return redirect(BottleResource::getUrl('edit', ['record' => $bottle->id]));
                     })
                     ->color('gray'),
@@ -235,20 +244,21 @@ class NecessaryBottle extends Widget implements HasSchemas, HasActions, HasTable
                         $bottle = Bottle::create([
                             'date' => now(),
                             'user_id' => auth()->user()->id,
-                            'note' => 'Auto bottle ' . now()->format('Y-m-d H:i'),
+                            'note' => 'Auto bottle '.now()->format('Y-m-d H:i'),
                         ]);
                         foreach ($records as $rec) {
                             $roundUp = $this->filters['round_up_quantity'] ?? 'none';
                             $finalQuantity = $rec['min_needed_quantity'];
                             if ($roundUp !== 'none') {
-                                $roundValue = (int)$roundUp;
-                                $finalQuantity = $roundValue * (int)ceil($finalQuantity / $roundValue);
+                                $roundValue = (int) $roundUp;
+                                $finalQuantity = $roundValue * (int) ceil($finalQuantity / $roundValue);
                             }
                             $bottle->positions()->create([
                                 'variant_id' => $rec['variant_id'],
                                 'count' => $finalQuantity,
                             ]);
                         }
+
                         return redirect(BottleResource::getUrl('edit', ['record' => $bottle->id]));
                     })
                     ->requiresConfirmation()
