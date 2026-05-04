@@ -5,14 +5,17 @@ namespace App\Console\Commands;
 use App\Facades\Billbee;
 use App\Models\Order;
 use App\Models\Variant;
+use App\Services\VariantStatisticsService;
 use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
 use BillbeeDe\BillbeeAPI\Model\Order as BillbeeOrder;
 use BillbeeDe\BillbeeAPI\Model\OrderItem as BillbeeOrderItem;
 use BillbeeDe\BillbeeAPI\Model\Payment;
+use BillbeeDe\BillbeeAPI\Type\ProductLookupBy;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\Isolatable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -41,7 +44,7 @@ class FetchBillbeeOrders extends Command implements Isolatable
     public function handle(): int
     {
         $page = 1;
-        $pageSize = (int)$this->option('perpage');
+        $pageSize = (int) $this->option('perpage');
 
         $minOrderDate = $this->option('after')
             ? Carbon::parse($this->option('after'))
@@ -49,7 +52,7 @@ class FetchBillbeeOrders extends Command implements Isolatable
 
         $this->info($minOrderDate
             ? "Fetching orders since {$minOrderDate->toDateTimeString()}..."
-            : "Fetching all orders...");
+            : 'Fetching all orders...');
 
         try {
             $firstResponse = Billbee::orders()->getOrders($page, $pageSize, $minOrderDate);
@@ -75,13 +78,15 @@ class FetchBillbeeOrders extends Command implements Isolatable
 
                 } catch (QuotaExceededException $e) {
                     $this->newLine();
-                    $this->warn("API Quota exceeded. Pausing for 2 seconds...");
+                    $this->warn('API Quota exceeded. Pausing for 2 seconds...');
                     sleep(2);
+
                     continue;
                 } catch (Throwable $e) {
                     $this->newLine();
-                    $this->error("Error on page $page: " . $e->getMessage());
+                    $this->error("Error on page $page: ".$e->getMessage());
                     Log::error($e);
+
                     return self::FAILURE;
                 }
 
@@ -89,36 +94,89 @@ class FetchBillbeeOrders extends Command implements Isolatable
 
             $bar->finish();
             $this->newLine(2);
-            $this->info("Sync complete.");
+            $this->info('Sync complete.');
 
             return self::SUCCESS;
 
         } catch (Exception $e) {
-            $this->error("Critical error: " . $e->getMessage());
+            $this->error('Critical error: '.$e->getMessage());
+
             return self::FAILURE;
         }
     }
 
     /**
      * Process a batch of orders within a transaction.
+     *
      * @throws Throwable
      */
     private function processBatch(array $billbeeOrders): void
     {
-        foreach ($billbeeOrders as $order) {
-            if (!$order instanceof BillbeeOrder) continue;
+        $touchedVariantIds = [];
 
-            DB::transaction(function () use ($order) {
-                $this->syncOrder($order);
+        foreach ($billbeeOrders as $order) {
+            if (! $order instanceof BillbeeOrder) {
+                continue;
+            }
+
+            DB::transaction(function () use ($order, &$touchedVariantIds) {
+                $ids = $this->syncOrder($order);
+                foreach ($ids as $id) {
+                    $touchedVariantIds[$id] = true;
+                }
             });
+        }
+
+        if (! empty($touchedVariantIds)) {
+            $this->refreshVariants(array_keys($touchedVariantIds));
         }
     }
 
-    private function syncOrder(BillbeeOrder $order): void
+    /**
+     * Refresh stock from Billbee and regenerate stats for the given variants.
+     *
+     * @param  array<int>  $variantIds
+     */
+    private function refreshVariants(array $variantIds): void
+    {
+        $variants = Variant::whereIn('id', $variantIds)->get();
+
+        foreach ($variants as $variant) {
+            if (empty($variant->sku)) {
+                continue;
+            }
+
+            try {
+                $response = Billbee::products()->getProduct($variant->sku, ProductLookupBy::SKU);
+                $product = $response->data ?? null;
+                if ($product) {
+                    $variant->update([
+                        'billbee_id' => $product->id,
+                        'ean' => $product->ean,
+                        'stock' => $product->stockCurrent ?? 0,
+                    ]);
+                }
+            } catch (QuotaExceededException $e) {
+                sleep(2);
+            } catch (Throwable $e) {
+                Log::warning("Failed to refresh stock for variant {$variant->id} (sku {$variant->sku}): ".$e->getMessage());
+            }
+        }
+
+        $variants = $variants->fresh();
+        if ($variants instanceof Collection && $variants->isNotEmpty()) {
+            VariantStatisticsService::generate($variants);
+        }
+    }
+
+    /**
+     * @return array<int> Variant IDs touched by this order's positions.
+     */
+    private function syncOrder(BillbeeOrder $order): array
     {
         $paymentMethod = $order->paymentMethod;
 
-        if (!empty($order->payments)) {
+        if (! empty($order->payments)) {
             $payment = $order->payments[0];
             if ($payment instanceof Payment) {
                 $paymentMethod = $payment->sourceTechnology;
@@ -142,13 +200,21 @@ class FetchBillbeeOrders extends Command implements Isolatable
             ]
         );
 
+        $variantIds = [];
+
         foreach ($order->orderItems as $item) {
-            if (!$item instanceof BillbeeOrderItem) continue;
-            if (empty($item->billbeeId) || $item->quantity <= 0) continue;
+            if (! $item instanceof BillbeeOrderItem) {
+                continue;
+            }
+            if (empty($item->billbeeId) || $item->quantity <= 0) {
+                continue;
+            }
 
             $variant = Variant::where('sku', $item->product->sku)->first();
 
-            if (!$variant) continue;
+            if (! $variant) {
+                continue;
+            }
 
             $orderModel->positions()->updateOrCreate(
                 ['billbee_id' => $item->billbeeId],
@@ -160,6 +226,10 @@ class FetchBillbeeOrders extends Command implements Isolatable
                     'tax_percent' => $taxRates[$item->taxIndex] ?? 0,
                 ]
             );
+
+            $variantIds[$variant->id] = true;
         }
+
+        return array_keys($variantIds);
     }
 }

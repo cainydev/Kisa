@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Facades\Billbee;
-use App\Traits\CachedAttributes;
 use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
 use BillbeeDe\BillbeeAPI\Model\Product as BillbeeProduct;
 use BillbeeDe\BillbeeAPI\Type\ProductLookupBy;
@@ -13,14 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class Variant extends Model
 {
-    use CachedAttributes;
-
     protected $guarded = [];
 
     /**
@@ -142,55 +138,5 @@ class Variant extends Model
     public function name(): Attribute
     {
         return new Attribute(get: fn () => "{$this->product->name} {$this->size}g");
-    }
-
-    public function dailySales(): Attribute
-    {
-        return $this->cachedAttribute('daily', collect())();
-    }
-
-    public function weeklySales(): Attribute
-    {
-        return $this->cachedAttribute('weekly', collect())();
-    }
-
-    public function monthlySales(): Attribute
-    {
-        return $this->cachedAttribute('monthly', collect())();
-    }
-
-    public function yearlySales(): Attribute
-    {
-        return $this->cachedAttribute('yearly', collect())();
-    }
-
-    public function averageDailySales(): Attribute
-    {
-        return $this->cachedAttribute('daily:avg', 0.0)();
-    }
-
-    public function averageWeeklySales(): Attribute
-    {
-        return $this->cachedAttribute('weekly:avg', 0.0)();
-    }
-
-    public function averageMonthlySales(): Attribute
-    {
-        return $this->cachedAttribute('monthly:avg', 0.0)();
-    }
-
-    public function averageYearlySales(): Attribute
-    {
-        return $this->cachedAttribute('yearly:avg', 0.0)();
-    }
-
-    public function depletedDate(): Attribute
-    {
-        return $this->cachedAttribute('depleted', Carbon::endOfTime())();
-    }
-
-    public function nextSale(): Attribute
-    {
-        return $this->cachedAttribute('next_sale', Carbon::endOfTime())();
     }
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Filament\Resources\Bottles\BottleResource;
 use App\Models\Bottle;
 use App\Models\Variant;
+use App\Support\Stats\VariantStats;
 use Filament\Actions\BulkAction;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -23,19 +24,25 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Collection;
+
 use function auth;
 
-class NextBottles extends Widget implements HasTable, HasActions, HasSchemas
+class NextBottles extends Widget implements HasActions, HasSchemas, HasTable
 {
     use InteractsWithActions;
-    use InteractsWithTable;
     use InteractsWithSchemas;
+    use InteractsWithTable;
 
     public int $maxSize = 200;
+
     public int $coverMonths = 3;
+
     public int $minItems = 5;
+
     public int $maxEntries = 15;
+
     protected string $view = 'filament.widgets.next-bottles';
+
     protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
@@ -57,7 +64,7 @@ class NextBottles extends Widget implements HasTable, HasActions, HasSchemas
                     ->schema([
                         Select::make('extrapolate_max_size')
                             ->label('Hochrechnen bis Größe (g)')
-                            ->options(Variant::pluck('size')->unique()->sort()->mapWithKeys(fn($size) => [$size => $size . 'g']))
+                            ->options(Variant::pluck('size')->unique()->sort()->mapWithKeys(fn ($size) => [$size => $size.'g']))
                             ->native(false)
                             ->default(200)
                             ->live(),
@@ -82,10 +89,10 @@ class NextBottles extends Widget implements HasTable, HasActions, HasSchemas
             ->filtersFormColumns(['xs' => 1, 'md' => 3])
             ->records(function (array $filters): Collection {
                 $extrapolateMonths = filled($filters['extrapolate_months']['extrapolate_months'] ?? null)
-                    ? (int)$filters['extrapolate_months']['extrapolate_months']
+                    ? (int) $filters['extrapolate_months']['extrapolate_months']
                     : $this->coverMonths;
                 $extrapolateMaxSize = filled($filters['extrapolate_max_size']['extrapolate_max_size'] ?? null)
-                    ? (int)$filters['extrapolate_max_size']['extrapolate_max_size']
+                    ? (int) $filters['extrapolate_max_size']['extrapolate_max_size']
                     : $this->maxSize;
                 $roundUp = $filters['round_up_quantity']['round_up_quantity'] ?? 'none';
 
@@ -101,14 +108,16 @@ class NextBottles extends Widget implements HasTable, HasActions, HasSchemas
                     ->get();
 
                 // Sort by stock - (average_monthly_sales * extrapolate_months)
-                $variants = $variants->sortBy(fn($v) => $v->stock - ($v->average_monthly_sales * $extrapolateMonths))->take($this->maxEntries);
+                $variants = $variants->sortBy(fn ($v) => $v->stock - (VariantStats::for($v)->averageMonthlySales() * $extrapolateMonths))->take($this->maxEntries);
 
                 return $variants->map(function (Variant $v) use ($extrapolateMonths, $roundUp) {
-                    $needed = max($this->minItems, intval($extrapolateMonths * $v->average_monthly_sales - $v->stock));
+                    $averageMonthlySales = VariantStats::for($v)->averageMonthlySales();
+                    $needed = max($this->minItems, intval($extrapolateMonths * $averageMonthlySales - $v->stock));
                     if ($roundUp !== 'none') {
-                        $roundValue = (int)$roundUp;
-                        $needed = $roundValue * (int)ceil($needed / $roundValue);
+                        $roundValue = (int) $roundUp;
+                        $needed = $roundValue * (int) ceil($needed / $roundValue);
                     }
+
                     return [
                         'variant_id' => $v->id,
                         'product_id' => $v->product_id,
@@ -116,7 +125,7 @@ class NextBottles extends Widget implements HasTable, HasActions, HasSchemas
                         'variant_name' => $v->name,
                         'size' => $v->size,
                         'stock' => $v->stock,
-                        'average_monthly_sales' => $v->average_monthly_sales,
+                        'average_monthly_sales' => $averageMonthlySales,
                         'needed_count' => $needed,
                     ];
                 });
@@ -145,7 +154,7 @@ class NextBottles extends Widget implements HasTable, HasActions, HasSchemas
                         $bottle = Bottle::create([
                             'date' => now(),
                             'user_id' => auth()->user()->id,
-                            'note' => 'Auto bottle ' . now()->format('Y-m-d H:i'),
+                            'note' => 'Auto bottle '.now()->format('Y-m-d H:i'),
                         ]);
                         foreach ($records as $rec) {
                             $bottle->positions()->create([
@@ -153,6 +162,7 @@ class NextBottles extends Widget implements HasTable, HasActions, HasSchemas
                                 'count' => $rec['needed_count'],
                             ]);
                         }
+
                         return redirect(BottleResource::getUrl('edit', ['record' => $bottle->id]));
                     })
                     ->requiresConfirmation()
