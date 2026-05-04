@@ -34,10 +34,10 @@ class Variant extends Model
         static::created(function (Variant $variant) {
             try {
                 if ($billbeeProduct = $variant->fetchBillbeeProduct()) {
-                    $this->stock = $billbeeProduct->stockCurrent;
-                    $this->sku = $billbeeProduct->sku;
-                    $this->ean = $billbeeProduct->ean;
-                    $this->saveQuietly();
+                    $variant->stock = $billbeeProduct->stockCurrent;
+                    $variant->sku = $billbeeProduct->sku;
+                    $variant->ean = $billbeeProduct->ean;
+                    $variant->saveQuietly();
                 }
             } catch (QuotaExceededException $e) {
                 Log::warning("Billbee quota exceeded while initializing variant {$variant->id}: {$e->getMessage()}");
