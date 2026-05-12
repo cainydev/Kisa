@@ -178,7 +178,19 @@
             line-height: 1;
             display: flex;
             flex-direction: column;
+        }
+        /* The title sits at the top with a fixed gap below; everything from
+           Inhaltsstoffe down lives inside .back-flow, which takes the rest
+           of the height and distributes its children with space-between. */
+        .ruths-blend-back .back-flow {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             justify-content: space-between;
+        }
+        .ruths-blend-back > *,
+        .ruths-blend-back .back-flow > * {
+            flex-shrink: 0;
         }
         .ruths-blend-back .title {
             font-family: 'herb-title', 'herb-body', -apple-system, sans-serif;
@@ -187,7 +199,7 @@
             letter-spacing: 0.05em;
             text-transform: uppercase;
             color: {{ $accentColor }};
-            margin: 0;
+            margin: 0 0 0.75mm 0;
         }
         .ruths-blend-back .ingredients {
             margin: 0;
@@ -347,6 +359,7 @@
     <div class="ruths-blend-back">
         <h1 class="title">{{ $backTitle }}</h1>
 
+        <div class="back-flow">
         <p class="ingredients">
             <span class="section-heading">Inhaltsstoffe:</span>
             {{ $inhaltsstoffeText }}@if ($allBio) aus kontrolliert biologischem Anbau {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}.
@@ -406,5 +419,6 @@
                 </div>
             @endif
         </div>
+        </div>{{-- /.back-flow --}}
     </div>
 </x-label-page>
