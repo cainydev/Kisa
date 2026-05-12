@@ -215,14 +215,26 @@ class LabelResource extends Resource
         $autosave = fn ($livewire) => method_exists($livewire, 'autosave') ? $livewire->autosave() : null;
         $placeholder = fn (?Label $record) => self::placeholderFor($param, $record);
 
+        // The "Erben" (inherit) button removes the key from the parameters
+        // array entirely so the resolver falls back to the parent chain.
+        // Setting it to null leaves a `key: null` entry in the JSON, which
+        // still counts as a local override for the resolver and — worse —
+        // boolean fields interpret null as `false` (so the toggle would
+        // silently force the value to false instead of inheriting).
         $revert = Action::make("revert_{$key}")
             ->label('Erben')
             ->icon('heroicon-m-arrow-uturn-left')
             ->color('gray')
             ->size('xs')
-            ->visible(fn ($state) => $state !== null && $state !== '')
-            ->action(function (Set $set, $livewire) use ($key) {
-                $set("parameters.{$key}", null);
+            ->visible(function (Get $get) use ($key) {
+                $params = $get('parameters') ?? [];
+
+                return array_key_exists($key, $params);
+            })
+            ->action(function (Get $get, Set $set, $livewire) use ($key) {
+                $params = $get('parameters') ?? [];
+                unset($params[$key]);
+                $set('parameters', $params);
                 if (method_exists($livewire, 'autosave')) {
                     $livewire->autosave();
                 }
