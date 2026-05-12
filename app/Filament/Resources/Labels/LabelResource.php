@@ -19,6 +19,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\MorphToSelect;
 use Filament\Forms\Components\MorphToSelect\Type;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
@@ -315,12 +316,41 @@ class LabelResource extends Resource
                 ->live(onBlur: true)
                 ->afterStateUpdated($autosave)
                 ->hintAction($revert),
-            ParamType::Boolean => Toggle::make("parameters.{$key}")
+            ParamType::Boolean => Radio::make("parameters.{$key}")
                 ->label($label)
+                ->options([
+                    '' => 'Erben',
+                    '1' => 'Ja',
+                    '0' => 'Nein',
+                ])
+                ->inline()
+                ->inlineLabel(false)
                 ->helperText($hint)
+                ->formatStateUsing(function ($state) {
+                    if ($state === null || $state === '') {
+                        return '';
+                    }
+
+                    return $state ? '1' : '0';
+                })
+                ->dehydrateStateUsing(function ($state) {
+                    if ($state === '' || $state === null) {
+                        return null;
+                    }
+
+                    return $state === '1';
+                })
                 ->live()
-                ->afterStateUpdated($autosave)
-                ->hintAction($revert),
+                ->afterStateUpdated(function ($state, Get $get, Set $set, $livewire) use ($key, $autosave) {
+                    if ($state === '' || $state === null) {
+                        // Inherit: drop the key from the parameters array
+                        // entirely so the resolver falls back to the parent.
+                        $params = $get('parameters') ?? [];
+                        unset($params[$key]);
+                        $set('parameters', $params);
+                    }
+                    $autosave($livewire);
+                }),
             ParamType::Select => Select::make("parameters.{$key}")
                 ->label($label)
                 ->options($param->selectOptions())
