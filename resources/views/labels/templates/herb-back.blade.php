@@ -145,6 +145,14 @@
             line-height: 1;
             display: flex;
             flex-direction: column;
+        }
+        /* The title sits at the top with a fixed gap below; everything from
+           Inhaltsstoffe down lives inside .back-flow, which takes the rest
+           of the height and distributes its children with space-between. */
+        .herb-back .back-flow {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             justify-content: space-between;
             gap: 1mm;
         }
@@ -152,7 +160,8 @@
            the column. Overflow then becomes visible (sections overlap the
            sticker zone or each other) so we can spot layout problems instead
            of having flex silently squish things. */
-        .herb-back > * {
+        .herb-back > *,
+        .herb-back .back-flow > * {
             flex-shrink: 0;
         }
         .herb-back .title {
@@ -162,7 +171,7 @@
             letter-spacing: 0.05em;
             text-transform: uppercase;
             color: {{ $headingColor }};
-            margin: 0;
+            margin: 0 0 0.75mm 0;
         }
         .herb-back .ingredients {
             margin: 0;
@@ -314,6 +323,7 @@
     <div class="herb-back">
         <h1 class="title">{{ $backTitle }}</h1>
 
+        <div class="back-flow">
         <p class="ingredients">
             <span class="section-heading">Inhaltsstoffe:</span>
             @if ($isBio)Bio @endif{{ $displayName }}@if ($cutForm !== '') {{ $cutForm }}@endif@if ($latin) (<span class="latin">{{ $latin }}</span>)@endif@if ($isBio) aus kontrolliert biologischem Anbau aus {{ $brand['oeko_origin'] ?? 'EU-/Nicht-EU-Landwirtschaft' }} {{ $brand['oeko_code'] ?? 'DE-ÖKO-039' }}@endif
@@ -377,5 +387,6 @@
                 </div>
             @endif
         </div>
+        </div>{{-- /.back-flow --}}
     </div>
 </x-label-page>
