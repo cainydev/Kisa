@@ -67,15 +67,11 @@
             ? "{$this->type}:{$this->entityId}"
             : null)
 
-        {{-- Graph + detail modal.
-             x-load / x-load-src (Async Alpine, bundled with Filament) defer the
-             x-data evaluation until the compiled graph component has loaded, so
-             warenwegGraph() is always defined before use. FilamentAsset serves
-             the file from /public, identically in dev and production. --}}
+        {{-- Graph + detail modal. The warenwegGraph component is registered
+             eagerly via FilamentAsset (see AppServiceProvider), so it is always
+             defined before this x-data is evaluated. --}}
         <div
             wire:key="warenweg-{{ md5(json_encode([$this->type, $this->charge, $this->entityId, $this->dateFrom, $this->dateTo])) }}"
-            x-load
-            x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('warenweg-graph') }}"
             x-data="warenwegGraph({
                 nodes: @js($graph['nodes']),
                 edges: @js($graph['edges']),

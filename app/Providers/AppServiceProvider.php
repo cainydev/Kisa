@@ -5,10 +5,11 @@ namespace App\Providers;
 use App\Labels\Hyphenator;
 use App\Labels\TemplateRegistry;
 use Carbon\Carbon;
-use Filament\Support\Assets\AlpineComponent;
+use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View;
 
@@ -34,8 +35,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Load the Vite-built Warenweg graph component on every panel page, as a
+        // module (its imports resolve). Loading it eagerly here — rather than a
+        // deferred @vite tag in the page — guarantees the Alpine component is
+        // registered before any page evaluates its x-data.
         FilamentAsset::register([
-            AlpineComponent::make('warenweg-graph', __DIR__.'/../../resources/js/dist/warenweg-graph.js'),
+            Js::make('warenweg-graph', Vite::asset('resources/js/warenweg-graph.js'))->module(),
         ]);
 
         FilamentView::registerRenderHook(

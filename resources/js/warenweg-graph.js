@@ -16,11 +16,17 @@ cytoscape.use(dagre);
  * the panel's light/dark theme automatically.
  */
 /**
- * Compiled by bin/build-warenweg.js and served via FilamentAsset as an async
- * Alpine component. The Blade view loads it with `x-load` / `x-load-src`, which
- * defers the element's `x-data` evaluation until this file has loaded — so the
- * component is always defined before it is used (no load-order race).
+ * Alpine component for the Warenweg trace graph (Cytoscape).
+ *
+ * Built by Vite and loaded eagerly on every panel page via
+ * FilamentAsset::register([Js::make(...)]) — so it is registered on Alpine
+ * before any page's `x-data="warenwegGraph(...)"` is evaluated, avoiding the
+ * load-order race a deferred `@vite` module caused.
  */
+document.addEventListener('alpine:init', () => {
+    window.Alpine.data('warenwegGraph', warenwegGraph);
+});
+
 export default function warenwegGraph({ nodes, edges, anchor, currentTargetId = null }) {
     return {
         cy: null,
