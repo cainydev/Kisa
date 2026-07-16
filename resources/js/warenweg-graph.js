@@ -15,10 +15,12 @@ cytoscape.use(dagre);
  * Colours are read from Filament's CSS custom properties so the graph tracks
  * the panel's light/dark theme automatically.
  */
-document.addEventListener('alpine:init', () => {
-    window.Alpine.data('warenwegGraph', warenwegGraph);
-});
-
+/**
+ * Compiled by bin/build-warenweg.js and served via FilamentAsset as an async
+ * Alpine component. The Blade view loads it with `x-load` / `x-load-src`, which
+ * defers the element's `x-data` evaluation until this file has loaded — so the
+ * component is always defined before it is used (no load-order race).
+ */
 export default function warenwegGraph({ nodes, edges, anchor, currentTargetId = null }) {
     return {
         cy: null,
@@ -38,6 +40,28 @@ export default function warenwegGraph({ nodes, edges, anchor, currentTargetId = 
                 return;
             }
 
+            // Cytoscape measures its container on build; if the element has no
+            // height yet (freshly inserted by a Livewire re-render, or laid out a
+            // frame later), it renders into a 0×0 canvas and shows nothing. Wait
+            // for real dimensions before building.
+            this.mountWhenSized();
+        },
+
+        mountWhenSized(attempt = 0) {
+            const el = this.$refs.canvas;
+            if (el && el.clientHeight > 0 && el.clientWidth > 0) {
+                this.build();
+                return;
+            }
+            if (attempt > 60) {
+                // Give up gracefully after ~1s rather than loop forever.
+                this.build();
+                return;
+            }
+            requestAnimationFrame(() => this.mountWhenSized(attempt + 1));
+        },
+
+        build() {
             this.heavy = nodes.length > 20;
 
             this.cy = cytoscape({
