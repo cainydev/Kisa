@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Labels\Hyphenator;
 use App\Labels\TemplateRegistry;
 use Carbon\Carbon;
+use Filament\Support\Assets\AlpineComponent;
+use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\ServiceProvider;
@@ -32,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        FilamentAsset::register([
+            AlpineComponent::make('warenweg-graph', __DIR__.'/../../resources/js/dist/warenweg-graph.js'),
+        ]);
+
         FilamentView::registerRenderHook(
             PanelsRenderHook::SIDEBAR_FOOTER,
             fn (): View => view('components.made-with-love'),
