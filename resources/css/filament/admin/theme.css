@@ -35,3 +35,14 @@
 .fi-badge.fi-color-primary > .fi-icon {
     @apply text-primary-400;
 }
+
+/* Mengenfluss: a subtle red tint for rows whose balance is implausible.
+   A low-alpha overlay on the cells keeps Filament's own text colours legible
+   in both light and dark mode (a solid bg-danger-50 washed the text out). */
+.fi-mengenfluss-flagged .fi-ta-cell {
+    background-color: rgb(239 68 68 / 0.06);
+}
+
+.dark .fi-mengenfluss-flagged .fi-ta-cell {
+    background-color: rgb(239 68 68 / 0.12);
+}
