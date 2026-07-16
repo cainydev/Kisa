@@ -3,15 +3,12 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build",
-        "build:warenweg": "node bin/build-warenweg.js",
-        "dev:warenweg": "node bin/build-warenweg.js --dev"
+        "build": "vite build"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/postcss": "^4.2.4",
         "@tailwindcss/typography": "^0.5.19",
-        "esbuild": "^0.28.1",
         "laravel-vite-plugin": "^3.1.0",
         "postcss": "^8.5.13",
         "postcss-nesting": "^14.0.0",
