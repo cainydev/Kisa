@@ -2,15 +2,26 @@
 
 namespace App\Filament\Resources\Deliveries\Pages;
 
-use Illuminate\Contracts\View\View;
 use App\Filament\Resources\Deliveries\DeliveryResource;
+use App\Services\DocumentExtraction\CertificateSnapshotter;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Contracts\View\View;
 
 class CreateDelivery extends CreateRecord
 {
     protected static string $resource = DeliveryResource::class;
+
+    /**
+     * Auto-attach the supplier's valid organic certificate as a frozen
+     * snapshot on the new delivery. A missing certificate is expected for
+     * many deliveries, so it is silently skipped.
+     */
+    protected function afterCreate(): void
+    {
+        app(CertificateSnapshotter::class)->snapshotFromSupplier($this->record);
+    }
 
     /**
      * Remove the actions from the bottom of the form.
@@ -33,7 +44,7 @@ class CreateDelivery extends CreateRecord
         return [
             $this->getCreateFormAction()->formId('form'),
             $this->getCreateAnotherFormAction()->formId('form'),
-            $this->getCancelFormAction()->formId('form')
+            $this->getCancelFormAction()->formId('form'),
         ];
     }
 

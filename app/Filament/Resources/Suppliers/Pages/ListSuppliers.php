@@ -2,12 +2,11 @@
 
 namespace App\Filament\Resources\Suppliers\Pages;
 
-use Filament\Actions\CreateAction;
 use App\Filament\Resources\Suppliers\SupplierResource;
-use Filament\Actions;
-use Filament\Resources\Pages\ManageRecords;
+use Filament\Actions\CreateAction;
+use Filament\Resources\Pages\ListRecords;
 
-class ManageSuppliers extends ManageRecords
+class ListSuppliers extends ListRecords
 {
     protected static string $resource = SupplierResource::class;
 
