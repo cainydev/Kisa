@@ -13,8 +13,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Delivery extends Model implements HasMedia
 {
-    use InteractsWithMedia;
     use HasFactory;
+    use InteractsWithMedia;
 
     protected $with = ['bags'];
 
@@ -23,6 +23,7 @@ class Delivery extends Model implements HasMedia
     protected $casts = [
         'delivered_date' => 'date:Y-m-d',
         'bio_inspection' => 'array',
+        'certificate_snapshot' => 'array',
     ];
 
     public function registerMediaCollections(): void
@@ -56,9 +57,10 @@ class Delivery extends Model implements HasMedia
     {
         $bags = '';
         foreach ($this->bags as $bag) {
-            $bags .= $bag->herb->name . '-' . $bag->charge . '-' . $bag->getSizeInKilo() . ', ';
+            $bags .= $bag->herb->name.'-'.$bag->charge.'-'.$bag->getSizeInKilo().', ';
         }
         $bags = substr($bags, 0, strlen($bags) - 2);
+
         return [
             'id' => $this->id,
             'supplier' => $this->supplier->shortname,

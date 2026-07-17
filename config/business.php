@@ -39,4 +39,21 @@ return [
         'control_number' => 'DE-HE-039-09312-B',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Document extraction (OCR / AI)
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the AI-assisted extraction of uploaded documents
+    | (organic certificates, delivery notes). The provider/model are resolved
+    | by laravel/ai; swap them here to change the extraction engine in one
+    | place. The provider's API key lives in the matching config/ai.php entry
+    | (e.g. GEMINI_API_KEY for the "gemini" provider).
+    */
+    'document_extraction' => [
+        'provider' => env('DOCUMENT_EXTRACTION_PROVIDER', 'gemini'),
+        'model' => env('DOCUMENT_EXTRACTION_MODEL', 'gemini-3.1-flash-lite'),
+        'timeout' => env('DOCUMENT_EXTRACTION_TIMEOUT', 120),
+    ],
+
 ];
