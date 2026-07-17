@@ -7,6 +7,7 @@
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
             {{ $this->filterAction }}
+            {{ $this->printAction }}
             {{ $this->clearAction }}
 
             @if ($this->hasRange())
@@ -25,7 +26,7 @@
             ['Rohstoffe', number_format($totals['herbs'], 0, ',', '.'), 'heroicon-o-cube-transparent'],
             ['Eingang', $this->kg($totals['delivered']), 'carbon-delivery'],
             ['Verbrauch', $this->kg($totals['used']), 'heroicon-o-inbox'],
-            ['Ausschuss', $this->kg($totals['trashed']), 'heroicon-o-trash'],
+            ['Verlust', $this->kg($totals['trashed']), 'heroicon-o-trash'],
             ['Bestand', $this->kg($totals['stock']), 'heroicon-o-archive-box'],
         ] as [$label, $value, $icon])
             <div class="rounded-xl bg-gray-50 p-4 dark:bg-white/5">

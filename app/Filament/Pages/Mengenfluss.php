@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\NavigationGroup;
+use App\Support\PrintPdf;
 use App\Support\Stats\MassBalance;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -88,6 +89,31 @@ class Mengenfluss extends Page implements HasTable
                 $this->dateFrom = $data['dateFrom'] ?: null;
                 $this->dateTo = $data['dateTo'] ?: null;
                 $this->flush();
+            });
+    }
+
+    public function printAction(): Action
+    {
+        return Action::make('print')
+            ->label('Drucken')
+            ->icon('heroicon-m-printer')
+            ->color('gray')
+            ->outlined()
+            ->action(function () {
+                $pdf = PrintPdf::fromView('print.mengenfluss', [
+                    'business' => config('business'),
+                    'dateFrom' => $this->dateFrom,
+                    'dateTo' => $this->dateTo,
+                    'printedAt' => now(),
+                    'rows' => $this->rows(),
+                    'totals' => $this->totals(),
+                ]);
+
+                return response()->streamDownload(
+                    fn () => print ($pdf),
+                    'mengenfluss-'.now()->format('Ymd-Hi').'.pdf',
+                    ['Content-Type' => 'application/pdf'],
+                );
             });
     }
 
@@ -240,7 +266,7 @@ class Mengenfluss extends Page implements HasTable
                     ->color('gray'),
 
                 TextColumn::make('trashed')
-                    ->label('Ausschuss')
+                    ->label('Verlust')
                     ->alignEnd()
                     ->sortable()
                     ->formatStateUsing(fn ($state) => $this->kg((float) $state))

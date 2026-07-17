@@ -9,6 +9,7 @@
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
             {{ $this->filterAction }}
+            {{ $this->printAction }}
             {{ $this->clearAction }}
 
             @if ($this->hasQuery() && ($this->dateFrom || $this->dateTo))
@@ -211,7 +212,7 @@
 
                                         <div class="flex h-6 w-full overflow-hidden rounded-lg bg-gray-100 dark:bg-white/5">
                                             <div class="bg-danger-500 transition-all" :style="`width: ${pct(a.trashed)}%`"
-                                                title="Ausschuss"></div>
+                                                title="Verlust"></div>
                                             <div class="bg-warning-500 transition-all" :style="`width: ${pct(a.used)}%`"
                                                 title="Verbraucht"></div>
                                             <div class="bg-success-500 transition-all" :style="`width: ${pct(a.free)}%`"
@@ -221,7 +222,7 @@
                                         <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
                                             <span class="flex items-center gap-1.5" x-show="a.trashed > 0">
                                                 <span class="h-2.5 w-2.5 rounded-sm bg-danger-500"></span>
-                                                <span class="text-gray-600 dark:text-gray-300">Ausschuss</span>
+                                                <span class="text-gray-600 dark:text-gray-300">Verlust</span>
                                                 <span class="font-medium text-gray-950 dark:text-white" x-text="a.trashed + ' g'"></span>
                                             </span>
                                             <span class="flex items-center gap-1.5" x-show="a.used > 0">
