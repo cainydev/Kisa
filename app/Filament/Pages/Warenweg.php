@@ -13,6 +13,7 @@ use App\Models\Herb;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Variant;
+use App\Support\PrintPdf;
 use App\Support\Warenweg\GraphAccumulator;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -171,6 +172,475 @@ class Warenweg extends Page
                 $this->type = 'charge';
                 $this->graphCache = null;
             });
+    }
+
+    /**
+     * Generate the printable traceability PDF on the page itself: Filament shows
+     * the action's spinner while Browsershot renders, then the browser downloads
+     * the file. No separate route/controller.
+     *
+     * Each entity type maps to one of five document shapes (the print view's
+     * `mode`), each designed to stay small (1–2 pages) and show only what is
+     * actually related to the subject.
+     */
+    public function printAction(): Action
+    {
+        return Action::make('print')
+            ->label('Drucken')
+            ->icon('heroicon-m-printer')
+            ->color('gray')
+            ->outlined()
+            ->visible($this->hasQuery())
+            ->action(function () {
+                $data = match ($this->type) {
+                    'delivery' => $this->printDeliveryData(),
+                    'herb' => $this->printHerbData(),
+                    'product', 'variant' => $this->printProductData(),
+                    'filling' => $this->printFillingData(),
+                    default => $this->printGebindeData(), // charge, bag
+                };
+
+                $pdf = PrintPdf::fromView('print.warenweg', array_merge([
+                    'business' => config('business'),
+                    'subjectType' => static::typeLabels()[$this->type] ?? 'Auswahl',
+                    'dateFrom' => $this->dateFrom,
+                    'dateTo' => $this->dateTo,
+                    'printedAt' => now(),
+                ], $data));
+
+                return response()->streamDownload(
+                    fn () => print ($pdf),
+                    'warenweg-'.now()->format('Ymd-Hi').'.pdf',
+                    ['Content-Type' => 'application/pdf'],
+                );
+            });
+    }
+
+    /**
+     * Mode A — Gebinde/Charge: one (or few) bags, each with full origin, the
+     * complete Wareneingangskontrolle, and where it was used.
+     *
+     * @return array<string, mixed>
+     */
+    protected function printGebindeData(): array
+    {
+        $with = ['herb', 'delivery.supplier.bioInspector', 'delivery.media'];
+
+        $bags = $this->type === 'charge'
+            ? Bag::withTrashed()->with($with)->where('charge', $this->charge)->get()
+            : Bag::withTrashed()->with($with)->whereKey($this->entityId)->get();
+
+        $rows = $bags->map(fn (Bag $bag) => $this->gebindeRow($bag));
+
+        return [
+            'mode' => 'gebinde',
+            'subjectLabel' => $this->type === 'charge' ? "Charge {$this->charge}" : $this->entityLabel('bag', (int) $this->entityId),
+            'rows' => $rows,
+            'flags' => $this->flagsFromGebindeRows($rows),
+        ];
+    }
+
+    /**
+     * Mode B — Lieferung: the delivery once (origin + Wareneingangskontrolle),
+     * then a compact table of the Gebinde it delivered. No per-bag usage.
+     *
+     * @return array<string, mixed>
+     */
+    protected function printDeliveryData(): array
+    {
+        $delivery = Delivery::with('supplier.bioInspector', 'media')->find($this->entityId);
+
+        if (! $delivery) {
+            return ['mode' => 'delivery', 'subjectLabel' => "#{$this->entityId}", 'flags' => []];
+        }
+
+        $inspection = $delivery->bio_inspection ?? [];
+
+        $bags = Bag::withTrashed()->with('herb')->where('delivery_id', $delivery->id)->get()
+            ->map(fn (Bag $bag) => [
+                'herb' => $bag->herb->name,
+                'charge' => $bag->charge,
+                'specification' => $bag->specification,
+                'size' => $bag->getSizeInKilo(),
+                'bestbefore' => $bag->bestbefore,
+                'bio' => (bool) $bag->bio,
+            ])
+            ->sortBy('herb')->values();
+
+        $header = $this->originHeader($delivery);
+
+        return [
+            'mode' => 'delivery',
+            'subjectLabel' => $this->entityLabel('delivery', (int) $this->entityId),
+            'header' => $header,
+            'checks' => $this->normalizeInspection($inspection),
+            'bags' => $bags,
+            'flags' => $this->flagsFromHeader($header, $this->normalizeInspection($inspection)),
+        ];
+    }
+
+    /**
+     * Mode C — Rohstoff: the herb, a table of its Gebinde (with origin per row),
+     * and a compact aggregated table of the Produkte it went into.
+     *
+     * @return array<string, mixed>
+     */
+    protected function printHerbData(): array
+    {
+        $herb = Herb::find($this->entityId);
+        if (! $herb) {
+            return ['mode' => 'herb', 'subjectLabel' => "#{$this->entityId}", 'flags' => []];
+        }
+
+        $bags = Bag::withTrashed()->with('delivery.supplier.bioInspector', 'delivery.media')
+            ->where('herb_id', $herb->id)
+            ->when($this->dateFrom || $this->dateTo, fn ($q) => $q->whereHas(
+                'delivery',
+                fn ($d) => $d
+                    ->when($this->dateFrom, fn ($x) => $x->whereDate('delivered_date', '>=', $this->dateFrom))
+                    ->when($this->dateTo, fn ($x) => $x->whereDate('delivered_date', '<=', $this->dateTo))
+            ))
+            ->get();
+
+        $gebinde = $bags->map(function (Bag $bag) {
+            $delivery = $bag->delivery;
+
+            return [
+                'charge' => $bag->charge,
+                'supplier' => $delivery?->supplier?->shortname ?? $delivery?->supplier?->company,
+                'oeko_code' => $delivery?->supplier?->bioInspector?->label,
+                'delivery_date' => $delivery?->delivered_date,
+                'size' => $bag->getSizeInKilo(),
+                'released' => (bool) ($delivery?->bio_inspection['approved'] ?? false),
+                'certificate' => (bool) $delivery?->getFirstMedia('certificate'),
+                'bio' => (bool) $bag->bio,
+            ];
+        })->sortByDesc('delivery_date')->values();
+
+        // Products this herb's bags fed (scoped to this herb only).
+        $products = Product::query()
+            ->whereHas('variants.positions.ingredients', fn ($q) => $q->whereIn('bag_id', $bags->pluck('id')))
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Product $p) => ['product' => $p->name])
+            ->values();
+
+        return [
+            'mode' => 'herb',
+            'subjectLabel' => $herb->name,
+            'herbStock' => $this->grams($herb->currentStock),
+            'gebinde' => $gebinde,
+            'products' => $products,
+            'flags' => $this->flagsFromGebindeTable($gebinde),
+        ];
+    }
+
+    /**
+     * Mode D — Produkt/Variante: recipe, variants, and this product's own
+     * bottlings with the Gebinde used in each. Strictly scoped to the product.
+     *
+     * @return array<string, mixed>
+     */
+    protected function printProductData(): array
+    {
+        $variantIds = $this->type === 'variant'
+            ? [(int) $this->entityId]
+            : Variant::where('product_id', $this->entityId)->pluck('id')->all();
+
+        $product = $this->type === 'variant'
+            ? Variant::with('product.type', 'product.herbs')->find($this->entityId)?->product
+            : Product::with('type', 'herbs')->find($this->entityId);
+
+        $fillings = BottlePosition::with(['bottle', 'variant', 'ingredients.bag.herb', 'ingredients.bag.delivery.supplier.bioInspector', 'ingredients.bag.delivery.media'])
+            ->whereIn('variant_id', $variantIds)
+            ->when($this->dateFrom || $this->dateTo, fn ($q) => $q->whereHas(
+                'bottle',
+                fn ($b) => $b
+                    ->when($this->dateFrom, fn ($x) => $x->whereDate('date', '>=', $this->dateFrom))
+                    ->when($this->dateTo, fn ($x) => $x->whereDate('date', '<=', $this->dateTo))
+            ))
+            ->get()
+            ->sortByDesc(fn ($p) => $p->bottle?->date)
+            ->values();
+
+        $recipe = $product
+            ? $product->herbs->map(fn (Herb $h) => ['herb' => $h->name, 'percentage' => (float) ($h->pivot->percentage ?? 0)])
+                ->sortByDesc('percentage')->values()
+            : collect();
+
+        $variants = Variant::whereIn('id', $variantIds)->get()
+            ->map(fn (Variant $v) => [
+                'size' => $v->size,
+                'ordernumber' => $v->ordernumber,
+                'fillings' => $fillings->where('variant_id', $v->id)->count(),
+            ])->sortBy('size')->values();
+
+        $bottlings = $fillings->map(function (BottlePosition $p) {
+            $bags = $p->ingredients->map->bag->filter()->unique('id')->sortBy(fn ($b) => $b->herb->name)->values();
+
+            return [
+                'charge' => $p->charge,
+                'date' => $p->bottle?->date,
+                'size' => $p->variant?->size,
+                'count' => (int) $p->count,
+                'bags' => $bags->map(fn (Bag $bag) => [
+                    'herb' => $bag->herb->name,
+                    'charge' => $bag->charge,
+                    'supplier' => $bag->delivery?->supplier?->shortname ?? $bag->delivery?->supplier?->company,
+                    'oeko_code' => $bag->delivery?->supplier?->bioInspector?->label,
+                    'released' => (bool) ($bag->delivery?->bio_inspection['approved'] ?? false),
+                    'certificate' => (bool) $bag->delivery?->getFirstMedia('certificate'),
+                    'bio' => (bool) $bag->bio,
+                ])->all(),
+            ];
+        });
+
+        return [
+            'mode' => 'product',
+            'subjectLabel' => $this->entityLabel($this->type, (int) $this->entityId),
+            'compound' => (bool) $product?->type?->compound,
+            'recipe' => $recipe,
+            'variants' => $variants,
+            'bottlings' => $bottlings,
+            'flags' => $this->flagsFromBottlings($bottlings),
+        ];
+    }
+
+    /**
+     * Mode E — Abfüllung: one bottling and its ingredient Gebinde (the recipe as
+     * actually used), each with origin/compliance.
+     *
+     * @return array<string, mixed>
+     */
+    protected function printFillingData(): array
+    {
+        $position = BottlePosition::with(['bottle', 'variant.product', 'ingredients.bag.herb', 'ingredients.bag.delivery.supplier.bioInspector', 'ingredients.bag.delivery.media'])
+            ->find($this->entityId);
+
+        if (! $position) {
+            return ['mode' => 'filling', 'subjectLabel' => "#{$this->entityId}", 'flags' => []];
+        }
+
+        $bags = $position->ingredients->map->bag->filter()->unique('id')
+            ->sortBy(fn ($b) => $b->herb->name)
+            ->map(fn (Bag $bag) => [
+                'bag_id' => $bag->id,
+                'herb' => $bag->herb->name,
+                'charge' => $bag->charge,
+                'supplier' => $bag->delivery?->supplier?->shortname ?? $bag->delivery?->supplier?->company,
+                'oeko_code' => $bag->delivery?->supplier?->bioInspector?->label,
+                'delivery_date' => $bag->delivery?->delivered_date,
+                'released' => (bool) ($bag->delivery?->bio_inspection['approved'] ?? false),
+                'certificate' => (bool) $bag->delivery?->getFirstMedia('certificate'),
+                'bio' => (bool) $bag->bio,
+            ])->values();
+
+        return [
+            'mode' => 'filling',
+            'subjectLabel' => $this->entityLabel('filling', (int) $this->entityId),
+            'filling' => [
+                'product' => $position->variant?->product?->name,
+                'size' => $position->variant?->size,
+                'charge' => $position->charge,
+                'date' => $position->bottle?->date,
+                'count' => (int) $position->count,
+            ],
+            'ingredients' => $bags,
+            'flags' => $this->flagsFromGebindeTable($bags),
+        ];
+    }
+
+    // --- print helpers --------------------------------------------------------
+
+    /**
+     * Full origin + usage view model for one bag (Mode A rows).
+     *
+     * @return array<string, mixed>
+     */
+    protected function gebindeRow(Bag $bag): array
+    {
+        $delivery = $bag->delivery;
+        $inspection = $delivery?->bio_inspection ?? [];
+
+        $usage = BottlePosition::with('variant.product.herbs', 'bottle')
+            ->whereHas('ingredients', fn ($q) => $q->where('bag_id', $bag->id))
+            ->get()
+            ->map(function (BottlePosition $p) use ($bag) {
+                // Share of this herb in the product's recipe, and the grams of
+                // this bag actually consumed by the bottling:
+                //   variant.size × Stück × Anteil%.
+                $herb = $p->variant?->product?->herbs->firstWhere('id', $bag->herb_id);
+                $percentage = (float) ($herb?->pivot->percentage ?? 0);
+                $grams = ($p->variant?->size ?? 0) * $p->count * ($percentage / 100);
+
+                return [
+                    'product' => $p->variant?->product?->name ?? 'Unbekannt',
+                    'size' => $p->variant?->size,
+                    'charge' => $p->charge,
+                    'date' => $p->bottle?->date,
+                    'count' => (int) $p->count,
+                    'percentage' => $percentage,
+                    'grams' => $grams,
+                ];
+            })
+            ->sortByDesc('date')->values();
+
+        // Per-bag mass balance (grams): delivered − used − loss = remaining.
+        $total = (float) $bag->size;
+        $remaining = $bag->getCurrentWithTrashed();
+        $loss = (float) $bag->trashed;
+        $used = $total - $remaining - $loss;
+
+        return array_merge($this->originHeader($delivery), [
+            'bag_id' => $bag->id,
+            'herb' => $bag->herb->name,
+            'charge' => $bag->charge,
+            'specification' => $bag->specification,
+            'size' => $bag->getSizeInKilo(),
+            'bio' => (bool) $bag->bio,
+            'bestbefore' => $bag->bestbefore,
+            'emptied' => $bag->trashed(),
+            'balance' => [
+                'delivered' => round($total),
+                'used' => round(max($used, 0)),
+                'loss' => round($loss),
+                'remaining' => round(max($remaining, 0)),
+            ],
+            'checks' => $this->normalizeInspection($inspection),
+            'usage' => $usage,
+        ]);
+    }
+
+    /**
+     * Shared origin fields for a delivery (supplier, Kontrollstelle, docs, release).
+     *
+     * @return array<string, mixed>
+     */
+    protected function originHeader(?Delivery $delivery): array
+    {
+        $supplier = $delivery?->supplier;
+        $inspection = $delivery?->bio_inspection ?? [];
+
+        return [
+            'supplier' => $supplier?->company,
+            'inspector' => $supplier?->bioInspector?->company,
+            'oeko_code' => $supplier?->bioInspector?->label,
+            'delivery_date' => $delivery?->delivered_date,
+            'released' => (bool) ($inspection['approved'] ?? false),
+            'documents' => [
+                'Zertifikat' => (bool) $delivery?->getFirstMedia('certificate'),
+                'Rechnung' => (bool) $delivery?->getFirstMedia('invoice'),
+                'Lieferschein' => (bool) $delivery?->getFirstMedia('deliveryNote'),
+            ],
+        ];
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @return list<string>
+     */
+    protected function flagsFromGebindeRows(Collection $rows): array
+    {
+        $flags = [];
+        foreach ($rows as $row) {
+            $prefix = "{$row['herb']} (Charge {$row['charge']})";
+            $flags = array_merge($flags, $this->headerFlags($prefix, $row, $row['bio']));
+            foreach ($row['checks'] as $check) {
+                if (! $check['ok']) {
+                    $flags[] = "{$prefix}: {$check['label']} — nicht erfüllt";
+                }
+            }
+        }
+
+        return array_values(array_unique($flags));
+    }
+
+    /**
+     * @param  array<string, mixed>  $header
+     * @param  list<array{label: string, ok: bool}>  $checks
+     * @return list<string>
+     */
+    protected function flagsFromHeader(array $header, array $checks): array
+    {
+        $flags = $this->headerFlags('Lieferung', $header, true);
+        foreach ($checks as $check) {
+            if (! $check['ok']) {
+                $flags[] = "Wareneingangskontrolle: {$check['label']} — nicht erfüllt";
+            }
+        }
+
+        return array_values(array_unique($flags));
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $gebinde
+     * @return list<string>
+     */
+    protected function flagsFromGebindeTable(Collection $gebinde): array
+    {
+        $flags = [];
+        foreach ($gebinde as $g) {
+            $prefix = isset($g['herb']) ? "{$g['herb']} (Charge {$g['charge']})" : "Charge {$g['charge']}";
+            $flags = array_merge($flags, $this->headerFlags($prefix, [
+                'delivery_date' => $g['delivery_date'] ?? true,
+                'released' => $g['released'],
+                'oeko_code' => $g['oeko_code'],
+                'supplier' => $g['supplier'],
+                'documents' => ['Zertifikat' => $g['certificate']],
+            ], $g['bio']));
+        }
+
+        return array_values(array_unique($flags));
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $bottlings
+     * @return list<string>
+     */
+    protected function flagsFromBottlings(Collection $bottlings): array
+    {
+        $flags = [];
+        foreach ($bottlings as $b) {
+            foreach ($b['bags'] as $bag) {
+                $flags = array_merge($flags, $this->headerFlags("{$bag['herb']} (Charge {$bag['charge']})", [
+                    'delivery_date' => true,
+                    'released' => $bag['released'],
+                    'oeko_code' => $bag['oeko_code'],
+                    'supplier' => $bag['supplier'],
+                    'documents' => ['Zertifikat' => $bag['certificate']],
+                ], $bag['bio']));
+            }
+        }
+
+        return array_values(array_unique($flags));
+    }
+
+    /**
+     * Common compliance checks on an origin header.
+     *
+     * @param  array<string, mixed>  $h
+     * @return list<string>
+     */
+    protected function headerFlags(string $prefix, array $h, bool $bio): array
+    {
+        $flags = [];
+        if (! $bio) {
+            $flags[] = "{$prefix}: nicht als Bio erfasst";
+        }
+        if (empty($h['delivery_date'])) {
+            $flags[] = "{$prefix}: keiner Lieferung zugeordnet";
+        }
+        if (! empty($h['delivery_date']) && empty($h['released'])) {
+            $flags[] = "{$prefix}: Lieferung nicht freigegeben";
+        }
+        if (! empty($h['delivery_date']) && empty($h['documents']['Zertifikat'])) {
+            $flags[] = "{$prefix}: Zertifikat fehlt";
+        }
+        if (empty($h['oeko_code']) && ! empty($h['supplier'])) {
+            $flags[] = "{$prefix}: Lieferant ohne Kontrollstelle";
+        }
+
+        return $flags;
     }
 
     public function hasQuery(): bool

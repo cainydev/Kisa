@@ -117,13 +117,15 @@ class MassBalance
 
     /**
      * Delivered grams per herb: SUM(bag.size) for deliveries in the window.
-     * One grouped query.
+     * One grouped query. Soft-deleted (emptied/discarded) bags are included —
+     * they were still received, so their size is part of the Eingang; otherwise
+     * every discarded bag would look like an unexplained shortfall.
      *
      * @return Collection<int, float>
      */
     protected function deliveredPerHerb(?string $from, ?string $to): Collection
     {
-        return Bag::query()
+        return Bag::withTrashed()
             ->when($from || $to, fn ($q) => $q->whereHas(
                 'delivery',
                 fn ($d) => $d
