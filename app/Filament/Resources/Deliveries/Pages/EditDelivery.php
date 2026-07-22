@@ -4,13 +4,20 @@ namespace App\Filament\Resources\Deliveries\Pages;
 
 use App\Filament\Resources\Deliveries\DeliveryResource;
 use App\Jobs\ExtractDocument;
+use App\Models\Herb;
 use App\Models\Supplier;
 use App\Services\DocumentExtraction\DeliveryNoteExtractionAgent;
 use App\Services\DocumentExtraction\ExtractionStatus;
+use App\Services\DocumentExtraction\HerbMatcher;
 use App\Services\DocumentExtraction\InvoiceExtractionAgent;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\View\View;
@@ -24,6 +31,14 @@ class EditDelivery extends EditRecord
      * Livewire page can poll it via the footer view's wire:poll.
      */
     public ?string $extractionStatusId = null;
+
+    /**
+     * Extracted delivery-note positions awaiting review, pre-matched to herbs.
+     * Seeded on poll completion, consumed by the reviewPositions modal.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    public array $pendingPositions = [];
 
     /**
      * Remove the actions from the bottom of the form.
@@ -45,6 +60,7 @@ class EditDelivery extends EditRecord
             $this->getCancelFormAction()->formId('form'),
             $this->fillFromDocumentAction('deliveryNote', 'Aus Lieferschein befüllen', DeliveryNoteExtractionAgent::class),
             $this->fillFromDocumentAction('invoice', 'Aus Rechnung befüllen', InvoiceExtractionAgent::class),
+            $this->reviewPositionsAction(),
             DeleteAction::make(),
         ];
     }
@@ -94,8 +110,57 @@ class EditDelivery extends EditRecord
     }
 
     /**
+     * The review modal for extracted positions. Opened programmatically via
+     * mountAction('reviewPositions') once extraction completes; its repeater is
+     * seeded from $pendingPositions. On submit it creates the Bag records — the
+     * human confirmation is the gate before anything is written to the database.
+     */
+    private function reviewPositionsAction(): Action
+    {
+        return Action::make('reviewPositions')
+            ->label('Positionen prüfen')
+            ->modalHeading('Erkannte Positionen prüfen')
+            ->modalDescription('Bitte die aus dem Lieferschein erkannten Positionen prüfen und Rohstoffe zuordnen, bevor sie angelegt werden.')
+            ->modalSubmitActionLabel('Positionen anlegen')
+            ->fillForm(fn (): array => ['positions' => $this->pendingPositions])
+            ->schema([
+                Repeater::make('positions')
+                    ->label('Positionen')
+                    ->schema([
+                        Select::make('herb_id')
+                            ->label('Rohstoff')
+                            ->options(fn (): array => Herb::query()->orderBy('fullname')->pluck('fullname', 'id')->all())
+                            ->searchable()
+                            ->required()
+                            ->columnSpan(2),
+                        TextInput::make('specification')
+                            ->label('Spezifikation'),
+                        TextInput::make('charge')
+                            ->label('Charge')
+                            ->required(),
+                        TextInput::make('size')
+                            ->label('Gebindegröße')
+                            ->numeric()
+                            ->suffix('g')
+                            ->required(),
+                        DatePicker::make('bestbefore')
+                            ->label('Haltbar bis'),
+                        Toggle::make('bio')
+                            ->label('Bio')
+                            ->default(true),
+                    ])
+                    ->columns(2)
+                    ->defaultItems(0),
+            ])
+            ->action(function (array $data): void {
+                $this->createPositions($data['positions'] ?? []);
+            });
+    }
+
+    /**
      * Called by the footer view's wire:poll. When the extraction finishes,
-     * map the fields onto the form for review, then stop polling.
+     * fill the header fields and, for delivery notes, open the positions
+     * review modal, then stop polling.
      */
     public function pollExtraction(): void
     {
@@ -122,74 +187,126 @@ class EditDelivery extends EditRecord
             return;
         }
 
-        $filled = $this->applyExtraction($status->result ?? []);
+        $result = $status->result ?? [];
         $this->extractionStatusId = null;
 
+        $filled = $this->applyHeader($result);
+
         Notification::make()
-            ->title('Felder aus dem Dokument befüllt. Bitte im Reiter „Allgemein" prüfen.')
-            ->body($filled === [] ? 'Keine verwertbaren Felder erkannt.' : implode("\n", $filled))
+            ->title('Dokument ausgewertet. Bitte im Reiter „Allgemein" prüfen.')
+            ->body($filled === [] ? 'Keine Kopfdaten erkannt.' : implode("\n", $filled))
             ->success()
             ->send();
+
+        $positions = $this->preparePositions($result['positions'] ?? []);
+
+        if ($positions !== []) {
+            $this->pendingPositions = $positions;
+            $this->mountAction('reviewPositions');
+        }
     }
 
     /**
-     * Map the extracted document fields onto the delivery form. Only the
-     * delivery date is set directly; the detected supplier name is matched to
-     * an existing supplier when possible, otherwise surfaced as a hint.
-     *
-     * Returns a human-readable list of what was filled, for the completion
-     * notification — the fields live on the "Allgemein" tab, so the user needs
-     * confirmation of what changed without switching tabs first.
+     * Fill the delivery header (date + supplier) from extracted data. Uses
+     * fillPartially so the DatePicker/Select components re-hydrate and render.
      *
      * @param  array<string, mixed>  $data
      * @return array<int, string>
      */
-    private function applyExtraction(array $data): array
+    private function applyHeader(array $data): array
     {
+        $values = [];
         $filled = [];
 
         $date = $data['delivered_date'] ?? $data['invoice_date'] ?? null;
 
         if (! empty($date)) {
-            $this->fillFormField('delivered_date', $date);
+            $values['delivered_date'] = $date;
             $filled[] = "Lieferdatum: {$date}";
         }
 
         $supplierName = $data['supplier_name'] ?? null;
 
         if (! empty($supplierName)) {
-            $filled[] = $this->suggestSupplier($supplierName);
+            $supplier = Supplier::query()
+                ->where('company', 'like', "%{$supplierName}%")
+                ->orWhere('shortname', 'like', "%{$supplierName}%")
+                ->first();
+
+            if ($supplier !== null) {
+                $values['supplier_id'] = $supplier->id;
+                $filled[] = "Lieferant: {$supplier->shortname}";
+            } else {
+                $filled[] = "Lieferant erkannt: {$supplierName} (kein Treffer — bitte manuell wählen)";
+            }
+        }
+
+        if ($values !== []) {
+            $this->form->fillPartially($values, array_keys($values));
         }
 
         return $filled;
     }
 
-    private function fillFormField(string $field, mixed $value): void
+    /**
+     * Map extracted positions to repeater rows, pre-matching each herb name to
+     * an existing Herb. Fields align with the BagsRelationManager form so the
+     * created records are consistent with manual entry.
+     *
+     * @param  array<int, array<string, mixed>>  $positions
+     * @return array<int, array<string, mixed>>
+     */
+    private function preparePositions(array $positions): array
     {
-        // The edit form binds to the `data` state path, so writing the value
-        // there (and letting Livewire re-render) is what actually updates the
-        // visible input — $this->form->fill() from a poll handler does not.
-        data_set($this->data, $field, $value);
+        $matcher = app(HerbMatcher::class);
+
+        return collect($positions)
+            ->map(fn (array $position): array => [
+                'herb_id' => $matcher->match($position['herb_name'] ?? null),
+                'specification' => $position['specification'] ?? null,
+                'charge' => $position['charge'] ?? null,
+                'size' => $position['size_grams'] ?? null,
+                'bestbefore' => $position['best_before'] ?? null,
+                'bio' => (bool) ($position['bio'] ?? true),
+            ])
+            ->all();
     }
 
     /**
-     * Match the detected supplier name to an existing supplier. On a match set
-     * the relation; otherwise leave supplier_id untouched for manual selection.
-     * Returns a description of the outcome for the completion notification.
+     * Create the reviewed positions as Bag records on this delivery.
+     *
+     * @param  array<int, array<string, mixed>>  $positions
      */
-    private function suggestSupplier(string $supplierName): string
+    private function createPositions(array $positions): void
     {
-        $supplier = Supplier::query()
-            ->where('company', 'like', "%{$supplierName}%")
-            ->orWhere('shortname', 'like', "%{$supplierName}%")
-            ->first();
+        $created = 0;
 
-        if ($supplier !== null) {
-            $this->fillFormField('supplier_id', $supplier->id);
+        foreach ($positions as $position) {
+            if (empty($position['herb_id']) || empty($position['charge'])) {
+                continue;
+            }
 
-            return "Lieferant: {$supplier->shortname}";
+            $this->record->bags()->create([
+                'herb_id' => $position['herb_id'],
+                'specification' => $position['specification'] ?? '',
+                'charge' => $position['charge'],
+                'size' => $position['size'] ?? 0,
+                'bestbefore' => $position['bestbefore'] ?? now()->addYears(2),
+                'steamed' => null,
+                'bio' => $position['bio'] ?? true,
+            ]);
+
+            $created++;
         }
 
-        return "Lieferant erkannt: {$supplierName} (kein Treffer — bitte manuell wählen)";
+        $this->pendingPositions = [];
+
+        Notification::make()
+            ->title("{$created} Position(en) angelegt.")
+            ->success()
+            ->send();
+
+        // Refresh so the Bags relation manager shows the new records.
+        $this->redirect(static::getResource()::getUrl('edit', ['record' => $this->record]));
     }
 }
