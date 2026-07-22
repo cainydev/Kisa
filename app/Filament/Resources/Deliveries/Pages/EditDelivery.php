@@ -122,11 +122,12 @@ class EditDelivery extends EditRecord
             return;
         }
 
-        $this->applyExtraction($status->result ?? []);
+        $filled = $this->applyExtraction($status->result ?? []);
         $this->extractionStatusId = null;
 
         Notification::make()
-            ->title('Felder aus dem Dokument befüllt. Bitte prüfen.')
+            ->title('Felder aus dem Dokument befüllt. Bitte im Reiter „Allgemein" prüfen.')
+            ->body($filled === [] ? 'Keine verwertbaren Felder erkannt.' : implode("\n", $filled))
             ->success()
             ->send();
     }
@@ -136,21 +137,31 @@ class EditDelivery extends EditRecord
      * delivery date is set directly; the detected supplier name is matched to
      * an existing supplier when possible, otherwise surfaced as a hint.
      *
+     * Returns a human-readable list of what was filled, for the completion
+     * notification — the fields live on the "Allgemein" tab, so the user needs
+     * confirmation of what changed without switching tabs first.
+     *
      * @param  array<string, mixed>  $data
+     * @return array<int, string>
      */
-    private function applyExtraction(array $data): void
+    private function applyExtraction(array $data): array
     {
+        $filled = [];
+
         $date = $data['delivered_date'] ?? $data['invoice_date'] ?? null;
 
         if (! empty($date)) {
             $this->fillFormField('delivered_date', $date);
+            $filled[] = "Lieferdatum: {$date}";
         }
 
         $supplierName = $data['supplier_name'] ?? null;
 
         if (! empty($supplierName)) {
-            $this->suggestSupplier($supplierName);
+            $filled[] = $this->suggestSupplier($supplierName);
         }
+
+        return $filled;
     }
 
     private function fillFormField(string $field, mixed $value): void
@@ -163,9 +174,10 @@ class EditDelivery extends EditRecord
 
     /**
      * Match the detected supplier name to an existing supplier. On a match set
-     * the relation; otherwise surface the name for manual selection.
+     * the relation; otherwise leave supplier_id untouched for manual selection.
+     * Returns a description of the outcome for the completion notification.
      */
-    private function suggestSupplier(string $supplierName): void
+    private function suggestSupplier(string $supplierName): string
     {
         $supplier = Supplier::query()
             ->where('company', 'like', "%{$supplierName}%")
@@ -175,13 +187,9 @@ class EditDelivery extends EditRecord
         if ($supplier !== null) {
             $this->fillFormField('supplier_id', $supplier->id);
 
-            return;
+            return "Lieferant: {$supplier->shortname}";
         }
 
-        Notification::make()
-            ->title("Lieferant erkannt: {$supplierName}")
-            ->body('Kein passender Lieferant gefunden — bitte manuell wählen.')
-            ->warning()
-            ->send();
+        return "Lieferant erkannt: {$supplierName} (kein Treffer — bitte manuell wählen)";
     }
 }
