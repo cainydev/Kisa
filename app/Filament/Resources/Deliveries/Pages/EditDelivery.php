@@ -155,9 +155,10 @@ class EditDelivery extends EditRecord
 
     private function fillFormField(string $field, mixed $value): void
     {
-        $state = $this->form->getRawState();
-        $state[$field] = $value;
-        $this->form->fill($state);
+        // The edit form binds to the `data` state path, so writing the value
+        // there (and letting Livewire re-render) is what actually updates the
+        // visible input — $this->form->fill() from a poll handler does not.
+        data_set($this->data, $field, $value);
     }
 
     /**
