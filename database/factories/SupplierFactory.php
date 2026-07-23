@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\BioInspector;
 use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -27,7 +26,6 @@ class SupplierFactory extends Factory
             'email' => $this->faker->companyEmail(),
             'phone' => $this->faker->phoneNumber(),
             'website' => $this->faker->url(),
-            'bio_inspector_id' => BioInspector::inRandomOrder()->first() ?? BioInspector::factory(),
         ];
     }
 }

@@ -386,18 +386,6 @@ class TableSettingSeeder extends Seeder
                         'alias' => 'Webseite',
                         'description' => '',
                     ],
-                    'bio_inspector_id' => [
-                        'primary' => false,
-                        'foreign' => [
-                            'table' => 'bio_inspectors',
-                            'column' => 'label',
-                        ],
-                        'withSort' => true,
-                        'format' => false,
-                        'width' => '3fr',
-                        'alias' => 'Kontrollstelle',
-                        'description' => 'Bio-Kontrollstelle',
-                    ],
                 ],
             ],
         ]);

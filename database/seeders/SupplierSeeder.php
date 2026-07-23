@@ -16,7 +16,6 @@ class SupplierSeeder extends Seeder
             'email' => 'info@galke.com',
             'phone' => '0532786810',
             'website' => 'www.galke.com',
-            'bio_inspector_id' => 1,
         ]);
         Supplier::create([
             'company' => 'Dragonspice Naturwaren',
@@ -25,7 +24,6 @@ class SupplierSeeder extends Seeder
             'email' => 'info@dragonspice.de',
             'phone' => '071215939980',
             'website' => 'www.dragonspice.de',
-            'bio_inspector_id' => 2,
         ]);
         Supplier::create([
             'company' => 'EDEL KRAUT GmbH',
@@ -34,7 +32,6 @@ class SupplierSeeder extends Seeder
             'email' => 'info@edel-kraut.de',
             'phone' => '08992777567',
             'website' => 'www.edel-kraut.de',
-            'bio_inspector_id' => 3,
         ]);
         Supplier::create([
             'company' => 'Mediterranean Soil',
@@ -43,7 +40,6 @@ class SupplierSeeder extends Seeder
             'email' => 'mediterraneansoil@gmail.com',
             'phone' => '+30-2541025108',
             'website' => 'www.mediterraneansoil.com',
-            'bio_inspector_id' => 4,
         ]);
         Supplier::create([
             'company' => 'Miraherba GmbH',
@@ -52,7 +48,6 @@ class SupplierSeeder extends Seeder
             'email' => 'info@miraherba.com',
             'phone' => '07141 1423570',
             'website' => 'www.miraherba.de',
-            'bio_inspector_id' => 3,
         ]);
         Supplier::create([
             'company' => 'Wollenhaupt Tee GmbH',
@@ -61,7 +56,6 @@ class SupplierSeeder extends Seeder
             'email' => 'info@wollenhaupt.com',
             'phone' => '040 728 30 300',
             'website' => 'www.wollenhaupt.com',
-            'bio_inspector_id' => 2,
         ]);
     }
 }
