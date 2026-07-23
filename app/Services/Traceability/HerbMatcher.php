@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\DocumentExtraction;
+namespace App\Services\Traceability;
 
 use App\Models\Herb;
 use Illuminate\Support\Str;

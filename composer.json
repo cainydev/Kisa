@@ -37,6 +37,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.8",
         "nyholm/psr7": "^1.8",
+        "outhebox/blade-flags": "^1.7",
         "spatie/browsershot": "^5.3",
         "spatie/laravel-backup": "^9.3",
         "spatie/laravel-discord-alerts": "^1.8",

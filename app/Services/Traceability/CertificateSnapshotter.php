@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\DocumentExtraction;
+namespace App\Services\Traceability;
 
 use App\Models\Certificate;
 use App\Models\Delivery;
@@ -16,7 +16,7 @@ class CertificateSnapshotter
      */
     public function snapshotFromSupplier(Delivery $delivery): ?Certificate
     {
-        $delivery->loadMissing('supplier.certificates');
+        $delivery->loadMissing('supplier.certificates.bioInspector');
 
         $certificate = $delivery->supplier?->certificateForDate($delivery->delivered_date);
 
@@ -27,11 +27,11 @@ class CertificateSnapshotter
         $this->applySnapshot($delivery, [
             'source_certificate_id' => $certificate->id,
             'certificate_number' => $certificate->certificate_number,
-            'operator_name' => $certificate->operator_name,
-            'control_body' => $certificate->control_body,
-            'control_body_code' => $certificate->control_body_code,
-            'activities' => $certificate->activities,
-            'product_categories' => $certificate->product_categories,
+            'operator_name' => $delivery->supplier?->company,
+            'control_body' => $certificate->bioInspector?->company,
+            'control_body_code' => $certificate->bioInspector?->label,
+            'activities' => $certificate->activities?->map(fn ($a) => $a->value)->all(),
+            'product_categories' => $certificate->product_categories?->map(fn ($c) => $c->value)->all(),
             'valid_from' => optional($certificate->valid_from)->toDateString(),
             'valid_until' => optional($certificate->valid_until)->toDateString(),
             'issued_at' => optional($certificate->issued_at)->toDateString(),
@@ -57,6 +57,30 @@ class CertificateSnapshotter
             $fields,
         );
         $delivery->save();
+    }
+
+    /**
+     * Clear a delivery's frozen certificate snapshot and its copied PDF. Used
+     * when the delivery's supplier or date changes, invalidating a snapshot
+     * that was resolved against the previous supplier/date.
+     */
+    public function clearSnapshot(Delivery $delivery): void
+    {
+        $delivery->certificate_snapshot = null;
+        $delivery->clearMediaCollection('certificate');
+        $delivery->save();
+    }
+
+    /**
+     * Re-resolve the snapshot for a delivery whose supplier or date changed:
+     * clear the stale snapshot, then snapshot the certificate now valid for the
+     * current supplier/date (which may be none).
+     */
+    public function resnapshot(Delivery $delivery): ?Certificate
+    {
+        $this->clearSnapshot($delivery);
+
+        return $this->snapshotFromSupplier($delivery->refresh());
     }
 
     /**
