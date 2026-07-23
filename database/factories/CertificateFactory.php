@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\CertificateActivity;
+use App\Enums\ProductCategory;
+use App\Models\BioInspector;
 use App\Models\Certificate;
 use App\Models\Supplier;
 use DateTimeInterface;
@@ -24,12 +27,10 @@ class CertificateFactory extends Factory
 
         return [
             'supplier_id' => Supplier::inRandomOrder()->first() ?? Supplier::factory(),
+            'bio_inspector_id' => BioInspector::inRandomOrder()->first() ?? BioInspector::factory(),
             'certificate_number' => $this->faker->bothify('??##??###??##'),
-            'operator_name' => $this->faker->company(),
-            'control_body' => $this->faker->randomElement(['ABCERT AG', 'KIWA', 'Grünstempel']),
-            'control_body_code' => 'DE-ÖKO-'.$this->faker->numberBetween(1, 70),
-            'activities' => $this->faker->randomElement(['Aufbereitung', 'Einfuhr', 'Aufbereitung, Einfuhr']),
-            'product_categories' => 'd) verarbeitete landwirtschaftliche Erzeugnisse',
+            'activities' => [CertificateActivity::Preparation, CertificateActivity::Import],
+            'product_categories' => [ProductCategory::UnprocessedPlants, ProductCategory::ProcessedFood],
             'valid_from' => $validFrom,
             'valid_until' => $validUntil,
             'issued_at' => $validFrom,

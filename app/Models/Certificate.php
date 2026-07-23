@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\CertificateActivity;
+use App\Enums\ProductCategory;
 use DateTimeInterface;
+use Illuminate\Database\Eloquent\Casts\AsEnumCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +26,8 @@ class Certificate extends Model implements HasMedia
             'valid_from' => 'date:Y-m-d',
             'valid_until' => 'date:Y-m-d',
             'issued_at' => 'date:Y-m-d',
+            'activities' => AsEnumCollection::of(CertificateActivity::class),
+            'product_categories' => AsEnumCollection::of(ProductCategory::class),
         ];
     }
 
@@ -51,11 +56,41 @@ class Certificate extends Model implements HasMedia
         return $this->belongsTo(Supplier::class);
     }
 
+    public function bioInspector(): BelongsTo
+    {
+        return $this->belongsTo(BioInspector::class);
+    }
+
     public function coversDate(DateTimeInterface $date): bool
     {
         return $this->valid_from !== null
             && $this->valid_until !== null
             && $this->valid_from->lessThanOrEqualTo($date)
             && $this->valid_until->greaterThanOrEqualTo($date);
+    }
+
+    /**
+     * A display-ready view of this certificate, resolving activity/category
+     * enums to their German labels. Mirrors the shape frozen into a delivery's
+     * certificate snapshot, so both the live create-preview and the frozen
+     * edit view render through the same template.
+     *
+     * @return array<string, mixed>
+     */
+    public function toSummary(): array
+    {
+        return [
+            'certificate_number' => $this->certificate_number,
+            'operator_name' => $this->supplier?->company,
+            'control_body' => $this->bioInspector?->company,
+            'control_body_code' => $this->bioInspector?->label,
+            'valid_from' => optional($this->valid_from)->toDateString(),
+            'valid_until' => optional($this->valid_until)->toDateString(),
+            'issued_at' => optional($this->issued_at)->toDateString(),
+            'issued_place' => $this->issued_place,
+            'activities' => collect($this->activities ?? [])->map->getLabel()->all(),
+            'product_categories' => collect($this->product_categories ?? [])->map->getLabel()->all(),
+            'document' => null,
+        ];
     }
 }
