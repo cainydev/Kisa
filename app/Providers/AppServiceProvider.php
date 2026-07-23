@@ -12,6 +12,7 @@ use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View;
+use Laravel\Passport\Passport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -55,5 +56,10 @@ class AppServiceProvider extends ServiceProvider
         Carbon::macro('endOfTime', function () {
             return Carbon::createFromFormat('Y-m-d H:i:s', '9999-12-31 23:59:59', 'UTC');
         });
+
+        // The MCP server is protected with OAuth via Passport; this is the
+        // consent screen shown to a user when an MCP client (e.g. Claude
+        // Desktop) requests access on their behalf.
+        Passport::authorizationView(fn ($parameters) => view('mcp.authorize', $parameters));
     }
 }

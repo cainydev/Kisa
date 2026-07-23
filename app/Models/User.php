@@ -6,15 +6,16 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Passport\Contracts\OAuthenticatable;
+use Laravel\Passport\HasApiTokens;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class User extends Authenticatable implements FilamentUser, HasMedia
+class User extends Authenticatable implements FilamentUser, HasMedia, OAuthenticatable
 {
-    use InteractsWithMedia, HasApiTokens;
+    use HasApiTokens, InteractsWithMedia;
 
     /**
      * The attributes that are mass assignable.
@@ -27,6 +28,7 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         'password',
         'permissions',
     ];
+
     /**
      * The attributes excluded from the model's JSON form.
      *
@@ -37,6 +39,7 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         'remember_token',
         'permissions',
     ];
+
     /**
      * The attributes that should be cast to native types.
      *
@@ -46,10 +49,9 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         'permissions' => 'array',
         'email_verified_at' => 'datetime',
     ];
+
     /**
      * The attributes for which you can use filters in url.
-     *
-     * @var array
      */
     protected array $allowedFilters = [
         'id',
@@ -57,10 +59,9 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         'email',
         'permissions',
     ];
+
     /**
      * The attributes for which can use sort in url.
-     *
-     * @var array
      */
     protected array $allowedSorts = [
         'id',

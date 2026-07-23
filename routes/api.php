@@ -39,4 +39,4 @@ Route::middleware(AuthenticateBillbeeRequest::class)
 
 Route::get('/{model}/autocomplete/{query}', function (string $model, string $query) {
     return ['model' => $model, 'query' => $query];
-})->middleware('auth:sanctum');
+})->middleware('auth:api');
