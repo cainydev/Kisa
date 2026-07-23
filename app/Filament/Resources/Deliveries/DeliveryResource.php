@@ -6,8 +6,7 @@ use App\Filament\Resources\Deliveries\Pages\CreateDelivery;
 use App\Filament\Resources\Deliveries\Pages\EditDelivery;
 use App\Filament\Resources\Deliveries\Pages\ListDeliveries;
 use App\Filament\Resources\Deliveries\RelationManagers\BagsRelationManager;
-use App\Filament\Resources\DeliveryResource\Pages;
-use App\Filament\Resources\DeliveryResource\RelationManagers;
+use App\Filament\Resources\Suppliers\SupplierResource;
 use App\Models\Delivery;
 use App\Models\Supplier;
 use App\Models\User;
@@ -24,7 +23,10 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
@@ -32,18 +34,22 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class DeliveryResource extends Resource
 {
     protected static ?string $model = Delivery::class;
 
     protected static ?string $modelLabel = 'Lieferung';
+
     protected static ?string $pluralModelLabel = 'Lieferungen';
 
     protected static ?string $recordTitleAttribute = 'title';
 
     protected static ?int $navigationSort = 30;
+
     protected static string|\UnitEnum|null $navigationGroup = 'Bestand';
+
     protected static string|\BackedEnum|null $navigationIcon = 'carbon-delivery';
 
     public static function getGlobalSearchResultTitle(Model $record): string|Htmlable
@@ -70,23 +76,28 @@ class DeliveryResource extends Resource
                 Tabs::make()->tabs([
                     Tab::make('Allgemein')->schema([
                         DatePicker::make('delivered_date')
-                            ->label("Lieferdatum")
+                            ->label('Lieferdatum')
                             ->default(now())
+                            ->live(onBlur: true)
                             ->required(),
                         Select::make('user_id')
-                            ->label("Empfänger")
+                            ->label('Empfänger')
                             ->relationship('user', 'name')
-                            ->default(fn() => User::where('name', 'Marcus Wagner')->first()->id)
+                            ->default(fn () => User::where('name', 'Marcus Wagner')->first()->id)
                             ->required(),
                         Select::make('supplier_id')
-                            ->label("Lieferant")
+                            ->label('Lieferant')
                             ->relationship('supplier', 'shortname')
-                            ->default(fn() => Supplier::where('shortname', 'Galke')->first()->id)
+                            ->default(fn () => Supplier::where('shortname', 'Galke')->first()->id)
+                            ->live()
                             ->required(),
+                        View::make('filament.deliveries.certificate-panel')
+                            ->viewData(fn (Get $get, ?Delivery $record): array => static::certificatePanelData($get, $record))
+                            ->columnSpanFull(),
                     ]),
                     Tab::make('Dokumente')->schema([
                         SpatieMediaLibraryFileUpload::make('invoice')
-                            ->label("Rechnung")
+                            ->label('Rechnung')
                             ->hintIcon('heroicon-s-document-text')
                             ->acceptedFileTypes(['application/pdf'])
                             ->collection('invoice')
@@ -94,41 +105,33 @@ class DeliveryResource extends Resource
                             ->previewable()
                             ->maxFiles(1),
                         SpatieMediaLibraryFileUpload::make('deliveryNote')
-                            ->label("Lieferschwein")
+                            ->label('Lieferschwein')
                             ->hintIcon('heroicon-s-clipboard-document-check')
                             ->acceptedFileTypes(['application/pdf'])
                             ->collection('deliveryNote')
                             ->downloadable()
                             ->previewable()
                             ->maxFiles(1),
-                        SpatieMediaLibraryFileUpload::make('certificate')
-                            ->label("Zertifikat")
-                            ->hintIcon('heroicon-s-shield-check')
-                            ->acceptedFileTypes(['application/pdf'])
-                            ->collection('certificate')
-                            ->downloadable()
-                            ->previewable()
-                            ->maxFiles(1)
-                    ])->columns(['md' => 3]),
+                    ])->columns(['md' => 2]),
                     Tab::make('Eingangskontrolle')->schema([
                         Grid::make([
                             'default' => 1,
                             'sm' => 2,
                             'lg' => 3,
                         ])->schema([
-                            Section::make("Allgemein")->schema([
+                            Section::make('Allgemein')->schema([
                                 DatePicker::make('bio_inspection.date')
-                                    ->label("Kontrolldatum")
+                                    ->label('Kontrolldatum')
                                     ->default(now())
                                     ->required(),
                                 Toggle::make('bio_inspection.approved')
-                                    ->label("Ware freigegeben?")
+                                    ->label('Ware freigegeben?')
                                     ->default(true),
                                 Toggle::make('bio_inspection.certificateValid')
-                                    ->label("Codenummer der Kontrollstelle gültig?")
+                                    ->label('Codenummer der Kontrollstelle gültig?')
                                     ->default(true),
                                 Toggle::make('bio_inspection.goodsMatchValidity')
-                                    ->label("Entspricht die Ware dem Zertizierungsbereich?")
+                                    ->label('Entspricht die Ware dem Zertizierungsbereich?')
                                     ->default(true),
                             ])
                                 ->extraAttributes(['class' => 'h-full'])
@@ -136,38 +139,103 @@ class DeliveryResource extends Resource
                                     'sm' => 2,
                                     'lg' => 1,
                                 ]),
-                            Section::make("Dokumentenkontrolle")->schema([
+                            Section::make('Dokumentenkontrolle')->schema([
                                 Toggle::make('bio_inspection.hasInvoice')
-                                    ->label("Rechnung vorhanden?")
+                                    ->label('Rechnung vorhanden?')
                                     ->default(true),
                                 Toggle::make('bio_inspection.codeOnInvoice')
-                                    ->label("Codenummer der Kontrollstelle auf Rechnung? ")
+                                    ->label('Codenummer der Kontrollstelle auf Rechnung? ')
                                     ->default(true),
                                 Toggle::make('bio_inspection.hasDeliveryNote')
-                                    ->label("Lieferschein vorhanden? ")
+                                    ->label('Lieferschein vorhanden? ')
                                     ->default(true),
                                 Toggle::make('bio_inspection.codeOnDeliveryNote')
-                                    ->label("Codenummer der Kontrollstelle auf Lieferschein? ")
+                                    ->label('Codenummer der Kontrollstelle auf Lieferschein? ')
                                     ->default(false),
                             ])->extraAttributes(['class' => 'h-full'])->columnSpan(1),
-                            Section::make("Gebindekontrolle")->schema([
+                            Section::make('Gebindekontrolle')->schema([
                                 Toggle::make('bio_inspection.codeOnBag')
-                                    ->label("Codenummer der Kontrollstelle auf Gebinde? ")
+                                    ->label('Codenummer der Kontrollstelle auf Gebinde? ')
                                     ->default(true),
                                 Toggle::make('bio_inspection.damaged')
-                                    ->label("Beschädigung?")
+                                    ->label('Beschädigung?')
                                     ->default(false),
                                 Toggle::make('bio_inspection.pestInfection')
-                                    ->label("Schädlingsbefall?")
+                                    ->label('Schädlingsbefall?')
                                     ->default(false),
                                 TextInput::make('bio_inspection.notes')
-                                    ->label("Bei Befund (Bemerkungen): ")
-                                    ->default(""),
+                                    ->label('Bei Befund (Bemerkungen): ')
+                                    ->default(''),
                             ])->extraAttributes(['class' => 'h-full'])->columnSpan(1),
-                        ])
+                        ]),
                     ]),
-                ])->columnSpan('full')
+                ])->columnSpan('full'),
             ]);
+    }
+
+    /**
+     * Build the data for the certificate panel.
+     *
+     * On an existing delivery whose supplier + date still match what is saved,
+     * show the certificate frozen onto it at intake (the real audit record). If
+     * the operator has changed the supplier or date in the form, show a live
+     * preview of the certificate the new selection will resolve to — this is
+     * what will replace the snapshot on save — flagged as pending.
+     *
+     * On create, live-resolve the certificate covering the chosen supplier +
+     * date so the operator sees what will be snapshotted (or a warning that
+     * none covers the date).
+     *
+     * @return array{summary: array<string, mixed>|null, frozen: bool, pending: bool, replacesExisting: bool, supplierUrl: string|null}
+     */
+    protected static function certificatePanelData(Get $get, ?Delivery $record): array
+    {
+        $supplierId = $get('supplier_id');
+        $date = $get('delivered_date');
+
+        $supplierUrl = filled($supplierId)
+            ? SupplierResource::getUrl('edit', ['record' => $supplierId])
+            : null;
+
+        $hasExistingSnapshot = $record?->certificateSummary() !== null;
+
+        if ($record?->exists) {
+            $unchanged = (int) $supplierId === (int) $record->supplier_id
+                && ! blank($date)
+                && Carbon::parse($date)->isSameDay($record->delivered_date);
+
+            if ($unchanged) {
+                return [
+                    'summary' => $record->certificateSummary(),
+                    'frozen' => true,
+                    'pending' => false,
+                    'replacesExisting' => false,
+                    'supplierUrl' => $supplierUrl,
+                ];
+            }
+        }
+
+        if (blank($supplierId) || blank($date)) {
+            return [
+                'summary' => null,
+                'frozen' => false,
+                'pending' => (bool) $record?->exists,
+                'replacesExisting' => $hasExistingSnapshot,
+                'supplierUrl' => $supplierUrl,
+            ];
+        }
+
+        $certificate = Supplier::with('certificates.bioInspector')
+            ->find($supplierId)
+            ?->certificateForDate(Carbon::parse($date));
+
+        return [
+            'summary' => $certificate?->toSummary(),
+            'frozen' => false,
+            'pending' => (bool) $record?->exists,
+            'replacesExisting' => $hasExistingSnapshot,
+            'supplierUrl' => $supplierUrl,
+        ];
     }
 
     public static function table(Table $table): Table
@@ -176,17 +244,28 @@ class DeliveryResource extends Resource
             ->defaultSort('delivered_date', 'desc')
             ->columns([
                 TextColumn::make('supplier.shortname')
-                    ->label("Lieferant")
+                    ->label('Lieferant')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('delivered_date')
                     ->date('d.m.Y')
-                    ->label("Lieferdatum")
+                    ->label('Lieferdatum')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('user.name')
-                    ->label("Empfänger")
+                    ->label('Empfänger')
                     ->sortable(),
+                IconColumn::make('certificate_status')
+                    ->label('Zertifikat')
+                    ->alignCenter()
+                    ->tooltip(fn (Delivery $record): string => $record->certificateSummary() === null
+                        ? 'Kein Zertifikat eingefroren'
+                        : 'Zertifikat '.$record->certificateSummary()['control_body_code'])
+                    ->state(fn (Delivery $record): bool => $record->certificateSummary() !== null)
+                    ->trueIcon('heroicon-s-shield-check')
+                    ->falseIcon('heroicon-s-shield-exclamation')
+                    ->trueColor('success')
+                    ->falseColor('warning'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -196,24 +275,24 @@ class DeliveryResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('charges')
-                    ->getStateUsing(fn(Delivery $record) => $record->bags->pluck('charge')->unique()->join(', '))
+                    ->getStateUsing(fn (Delivery $record) => $record->bags->pluck('charge')->unique()->join(', '))
                     ->hidden()
-                    ->searchable()
+                    ->searchable(),
             ])
             ->filters([
                 SelectFilter::make('supplier')
-                    ->label("Lieferant")
+                    ->label('Lieferant')
                     ->relationship('supplier', 'shortname'),
                 TernaryFilter::make('has_files')
                     ->label('Hat Dokumente')
                     ->trueLabel('Ja')
                     ->falseLabel('Nein')
                     ->queries(
-                        true: fn($query) => $query->whereHas('media'),
-                        false: fn($query) => $query->whereDoesntHave('media'),
+                        true: fn ($query) => $query->whereHas('media'),
+                        false: fn ($query) => $query->whereDoesntHave('media'),
                     ),
                 SelectFilter::make('herbs')
-                    ->label("Enthält Rohstoff")
+                    ->label('Enthält Rohstoff')
                     ->multiple()
                     ->searchable()
                     ->relationship('bags.herb', 'name'),
@@ -237,7 +316,7 @@ class DeliveryResource extends Resource
     public static function getRelations(): array
     {
         return [
-            BagsRelationManager::class
+            BagsRelationManager::class,
         ];
     }
 
