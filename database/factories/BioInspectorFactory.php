@@ -20,6 +20,7 @@ class BioInspectorFactory extends Factory
         return [
             'company' => $this->faker->company().' AG',
             'label' => 'DE-ÖKO-'.$this->faker->numberBetween(1, 70),
+            'country' => 'DE',
         ];
     }
 }
