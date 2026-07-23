@@ -18,7 +18,7 @@ class HerbFactory extends Factory
             'fullname' => $this->faker->word(),
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
-            'supplier_id' => Supplier::inRandomOrder()->first(),
+            'supplier_id' => Supplier::inRandomOrder()->first() ?? Supplier::factory(),
         ];
     }
 }
