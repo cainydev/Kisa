@@ -5,20 +5,29 @@ use App\Http\Middleware\AuthenticateBillbeeRequest;
 use App\Http\Middleware\ValidateBackupToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Spatie\Backup\BackupDestination\BackupDestination;
 
 Route::middleware('auth:web')->get('/tokens/create', function (Request $request) {
     $token = $request->user()->createToken($request->token_name);
+
     return ['token' => $token->plainTextToken];
 });
 
 Route::middleware(ValidateBackupToken::class)->get('/backup', function (Request $request) {
-    $files = collect(Storage::files(config('backup.backup.name')))
-        ->where(fn($s) => str($s)->endsWith('zip'))
-        ->sortDesc();
+    $backupName = config('backup.backup.name');
+    $disks = config('backup.backup.destination.disks', []);
 
-    if ($files->isEmpty()) return response(['message' => 'No backups found.'], 204);
+    $newest = collect($disks)
+        ->map(fn (string $disk) => BackupDestination::create($disk, $backupName)->newestBackup())
+        ->filter()
+        ->sortByDesc(fn ($backup) => $backup->date())
+        ->first();
 
-    return Storage::download($files->first());
+    if ($newest === null || ! $newest->exists()) {
+        return response(['message' => 'No backups found.'], 204);
+    }
+
+    return $newest->disk()->download($newest->path());
 })->name('backup');
 
 Route::middleware(AuthenticateBillbeeRequest::class)
