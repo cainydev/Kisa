@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Delivery;
-use App\Services\DocumentExtraction\CertificateSnapshotter;
+use App\Services\Traceability\CertificateSnapshotter;
 use Illuminate\Console\Command;
 
 class BackfillCertificateSnapshots extends Command
@@ -19,7 +19,7 @@ class BackfillCertificateSnapshots extends Command
 
         $deliveries = Delivery::query()
             ->whereNull('certificate_snapshot')
-            ->with('supplier.certificates')
+            ->with('supplier.certificates.bioInspector')
             ->get();
 
         if ($deliveries->isEmpty()) {
@@ -31,13 +31,19 @@ class BackfillCertificateSnapshots extends Command
         $this->info(($apply ? 'Applying' : 'Dry run —').' backfill for '.$deliveries->count().' deliveries.');
 
         $matched = 0;
-        $unmatched = 0;
+
+        /** @var array<int, array<string, string>> $gaps Deliveries with no covering certificate. */
+        $gaps = [];
 
         foreach ($deliveries as $delivery) {
             $certificate = $delivery->supplier?->certificateForDate($delivery->delivered_date);
 
             if ($certificate === null) {
-                $unmatched++;
+                $gaps[] = [
+                    'supplier' => $delivery->supplier?->shortname ?? $delivery->supplier?->company ?? '?',
+                    'date' => $delivery->delivered_date->toDateString(),
+                    'delivery' => (string) $delivery->id,
+                ];
 
                 continue;
             }
@@ -50,7 +56,7 @@ class BackfillCertificateSnapshots extends Command
                 $delivery->supplier->shortname,
                 $delivery->delivered_date->toDateString(),
                 $certificate->certificate_number ?? '?',
-                $certificate->control_body_code ?? '?',
+                $certificate->bioInspector?->label ?? '?',
             ));
 
             if ($apply) {
@@ -59,9 +65,22 @@ class BackfillCertificateSnapshots extends Command
         }
 
         $this->newLine();
-        $this->info("Matched: {$matched}   Unmatched (no valid certificate): {$unmatched}");
+        $this->info("Backfilled: {$matched}   Gaps (no covering certificate): ".count($gaps));
+
+        if ($gaps !== []) {
+            $this->newLine();
+            $this->warn('Deliveries missing a certificate for their intake date — upload the covering certificate for these suppliers:');
+
+            $bySupplier = collect($gaps)->groupBy('supplier')->sortKeys();
+
+            foreach ($bySupplier as $supplier => $rows) {
+                $dates = collect($rows)->pluck('date')->sort()->values();
+                $this->line(sprintf('  %s — %d Lieferung(en): %s', $supplier, $dates->count(), $dates->implode(', ')));
+            }
+        }
 
         if (! $apply && $matched > 0) {
+            $this->newLine();
             $this->comment('Re-run with --apply to persist these snapshots.');
         }
 

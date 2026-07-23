@@ -6,13 +6,11 @@ use App\Filament\Resources\Suppliers\Pages\CreateSupplier;
 use App\Filament\Resources\Suppliers\Pages\EditSupplier;
 use App\Filament\Resources\Suppliers\Pages\ListSuppliers;
 use App\Filament\Resources\Suppliers\RelationManagers\CertificatesRelationManager;
-use App\Models\BioInspector;
 use App\Models\Supplier;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -59,11 +57,6 @@ class SupplierResource extends Resource
                 TextInput::make('website')
                     ->label('Webseite')
                     ->maxLength(255),
-                Select::make('bio_inspector_id')
-                    ->label('Kontrollstelle')
-                    ->relationship('bioInspector')
-                    ->getOptionLabelFromRecordUsing(fn (BioInspector $record): string => "{$record->company} ({$record->label})")
-                    ->required(),
             ]);
     }
 
@@ -89,9 +82,10 @@ class SupplierResource extends Resource
                     ->openUrlInNewTab()
                     ->formatStateUsing(fn (Supplier $record): string => str($record->website)->replaceFirst('www.', ''))
                     ->searchable(),
-                TextColumn::make('bioInspector.company')
-                    ->label('Kontrollstelle')
-                    ->sortable()
+                TextColumn::make('current_control_body')
+                    ->label('Kontrollstelle (aktuell)')
+                    ->state(fn (Supplier $record): ?string => $record->currentBioInspector()?->company)
+                    ->placeholder('— kein gültiges Zertifikat —')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->dateTime()

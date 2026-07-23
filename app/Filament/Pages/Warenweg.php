@@ -224,7 +224,7 @@ class Warenweg extends Page
      */
     protected function printGebindeData(): array
     {
-        $with = ['herb', 'delivery.supplier.bioInspector', 'delivery.media'];
+        $with = ['herb', 'delivery.supplier', 'delivery.media'];
 
         $bags = $this->type === 'charge'
             ? Bag::withTrashed()->with($with)->where('charge', $this->charge)->get()
@@ -248,7 +248,7 @@ class Warenweg extends Page
      */
     protected function printDeliveryData(): array
     {
-        $delivery = Delivery::with('supplier.bioInspector', 'media')->find($this->entityId);
+        $delivery = Delivery::with('supplier', 'media')->find($this->entityId);
 
         if (! $delivery) {
             return ['mode' => 'delivery', 'subjectLabel' => "#{$this->entityId}", 'flags' => []];
@@ -292,7 +292,7 @@ class Warenweg extends Page
             return ['mode' => 'herb', 'subjectLabel' => "#{$this->entityId}", 'flags' => []];
         }
 
-        $bags = Bag::withTrashed()->with('delivery.supplier.bioInspector', 'delivery.media')
+        $bags = Bag::withTrashed()->with('delivery.supplier', 'delivery.media')
             ->where('herb_id', $herb->id)
             ->when($this->dateFrom || $this->dateTo, fn ($q) => $q->whereHas(
                 'delivery',
@@ -308,7 +308,7 @@ class Warenweg extends Page
             return [
                 'charge' => $bag->charge,
                 'supplier' => $delivery?->supplier?->shortname ?? $delivery?->supplier?->company,
-                'oeko_code' => $delivery?->supplier?->bioInspector?->label,
+                'oeko_code' => $delivery?->frozenOekoCode(),
                 'delivery_date' => $delivery?->delivered_date,
                 'size' => $bag->getSizeInKilo(),
                 'released' => (bool) ($delivery?->bio_inspection['approved'] ?? false),
@@ -351,7 +351,7 @@ class Warenweg extends Page
             ? Variant::with('product.type', 'product.herbs')->find($this->entityId)?->product
             : Product::with('type', 'herbs')->find($this->entityId);
 
-        $fillings = BottlePosition::with(['bottle', 'variant', 'ingredients.bag.herb', 'ingredients.bag.delivery.supplier.bioInspector', 'ingredients.bag.delivery.media'])
+        $fillings = BottlePosition::with(['bottle', 'variant', 'ingredients.bag.herb', 'ingredients.bag.delivery.supplier', 'ingredients.bag.delivery.media'])
             ->whereIn('variant_id', $variantIds)
             ->when($this->dateFrom || $this->dateTo, fn ($q) => $q->whereHas(
                 'bottle',
@@ -387,7 +387,7 @@ class Warenweg extends Page
                     'herb' => $bag->herb->name,
                     'charge' => $bag->charge,
                     'supplier' => $bag->delivery?->supplier?->shortname ?? $bag->delivery?->supplier?->company,
-                    'oeko_code' => $bag->delivery?->supplier?->bioInspector?->label,
+                    'oeko_code' => $bag->delivery?->frozenOekoCode(),
                     'released' => (bool) ($bag->delivery?->bio_inspection['approved'] ?? false),
                     'certificate' => (bool) $bag->delivery?->getFirstMedia('certificate'),
                     'bio' => (bool) $bag->bio,
@@ -414,7 +414,7 @@ class Warenweg extends Page
      */
     protected function printFillingData(): array
     {
-        $position = BottlePosition::with(['bottle', 'variant.product', 'ingredients.bag.herb', 'ingredients.bag.delivery.supplier.bioInspector', 'ingredients.bag.delivery.media'])
+        $position = BottlePosition::with(['bottle', 'variant.product', 'ingredients.bag.herb', 'ingredients.bag.delivery.supplier', 'ingredients.bag.delivery.media'])
             ->find($this->entityId);
 
         if (! $position) {
@@ -428,7 +428,7 @@ class Warenweg extends Page
                 'herb' => $bag->herb->name,
                 'charge' => $bag->charge,
                 'supplier' => $bag->delivery?->supplier?->shortname ?? $bag->delivery?->supplier?->company,
-                'oeko_code' => $bag->delivery?->supplier?->bioInspector?->label,
+                'oeko_code' => $bag->delivery?->frozenOekoCode(),
                 'delivery_date' => $bag->delivery?->delivered_date,
                 'released' => (bool) ($bag->delivery?->bio_inspection['approved'] ?? false),
                 'certificate' => (bool) $bag->delivery?->getFirstMedia('certificate'),
@@ -523,8 +523,8 @@ class Warenweg extends Page
 
         return [
             'supplier' => $supplier?->company,
-            'inspector' => $supplier?->bioInspector?->company,
-            'oeko_code' => $supplier?->bioInspector?->label,
+            'inspector' => $delivery?->frozenControlBody(),
+            'oeko_code' => $delivery?->frozenOekoCode(),
             'delivery_date' => $delivery?->delivered_date,
             'released' => (bool) ($inspection['approved'] ?? false),
             'documents' => [
@@ -920,7 +920,7 @@ class Warenweg extends Page
     {
         $g = new GraphAccumulator("delivery:{$deliveryId}");
 
-        $delivery = Delivery::with('supplier.bioInspector', 'media')->find($deliveryId);
+        $delivery = Delivery::with('supplier', 'media')->find($deliveryId);
         if (! $delivery) {
             return $g;
         }
@@ -1091,7 +1091,7 @@ class Warenweg extends Page
     {
         return Bag::withTrashed()->with([
             'herb',
-            'delivery.supplier.bioInspector',
+            'delivery.supplier',
             'delivery.media',
         ]);
     }
@@ -1170,15 +1170,16 @@ class Warenweg extends Page
             return;
         }
 
-        $inspector = $supplier->bioInspector;
+        $oekoCode = $delivery->frozenOekoCode();
+        $controlBody = $delivery->frozenControlBody();
         $g->node("supplier:{$supplier->id}", [
             'type' => 'supplier',
             'label' => $supplier->shortname ?: $supplier->company,
-            'sublabel' => $inspector?->label,
-            'meta' => $inspector?->company,
-            'gap' => $inspector === null,
-            'gapReasons' => $inspector === null ? ['Lieferant ohne Kontrollstelle'] : [],
-            'badge' => $inspector?->label,
+            'sublabel' => $oekoCode,
+            'meta' => $controlBody,
+            'gap' => $oekoCode === null,
+            'gapReasons' => $oekoCode === null ? ['Lieferung ohne Kontrollstellen-Snapshot'] : [],
+            'badge' => $oekoCode,
         ]);
 
         $inspection = $delivery->bio_inspection ?? [];
@@ -1271,8 +1272,8 @@ class Warenweg extends Page
         $id = (int) $id;
 
         return match ($type) {
-            'supplier' => ($s = Supplier::with('bioInspector')->find($id)) ? $this->supplierDetail($s) : null,
-            'delivery' => ($d = Delivery::with('supplier.bioInspector', 'media')->find($id)) ? $this->deliveryDetail($d) : null,
+            'supplier' => ($s = Supplier::with('certificates.bioInspector')->find($id)) ? $this->supplierDetail($s) : null,
+            'delivery' => ($d = Delivery::with('supplier', 'media')->find($id)) ? $this->deliveryDetail($d) : null,
             'bag' => ($b = Bag::withTrashed()->with('herb')->find($id)) ? $this->bagDetail($b) : null,
             'filling' => ($p = BottlePosition::with('variant.product.type', 'bottle')->find($id)) ? $this->fillingDetail($p) : null,
             'herb' => ($h = Herb::find($id)) ? $this->herbDetail($h) : null,
@@ -1328,14 +1329,14 @@ class Warenweg extends Page
      */
     protected function supplierDetail($supplier): array
     {
-        $inspector = $supplier->bioInspector;
+        $inspector = $supplier->currentBioInspector();
 
         return [
             'title' => $supplier->company,
             'rows' => array_values(array_filter([
                 ['label' => 'Kurzname', 'value' => $supplier->shortname],
-                ['label' => 'Kontrollstelle', 'value' => $inspector?->company],
-                ['label' => 'Kontrollstellen-Nr.', 'value' => $inspector?->label, 'highlight' => true],
+                ['label' => 'Kontrollstelle (aktuell)', 'value' => $inspector?->company],
+                ['label' => 'Kontrollstellen-Nr. (aktuell)', 'value' => $inspector?->label, 'highlight' => true],
                 $supplier->contact ? ['label' => 'Kontakt', 'value' => $supplier->contact] : null,
                 $supplier->email ? ['label' => 'E-Mail', 'value' => $supplier->email] : null,
                 $supplier->phone ? ['label' => 'Telefon', 'value' => $supplier->phone] : null,

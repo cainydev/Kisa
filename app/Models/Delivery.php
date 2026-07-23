@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\CertificateActivity;
+use App\Enums\ProductCategory;
+use App\Services\Traceability\CertificateSnapshotter;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +28,39 @@ class Delivery extends Model implements HasMedia
         'bio_inspection' => 'array',
         'certificate_snapshot' => 'array',
     ];
+
+    /**
+     * Guards the certificate re-resolve against re-entrancy: the resnapshot
+     * itself saves the delivery, which would otherwise fire this hook again.
+     */
+    protected static bool $resnapshotting = false;
+
+    /**
+     * When a delivery's supplier or delivery date changes, any existing
+     * certificate snapshot was resolved against the old supplier/date and is
+     * now stale. Re-resolve it against the new values so the frozen record can
+     * never contradict the delivery it belongs to.
+     */
+    protected static function booted(): void
+    {
+        static::updated(function (Delivery $delivery): void {
+            if (static::$resnapshotting) {
+                return;
+            }
+
+            if (! $delivery->wasChanged(['supplier_id', 'delivered_date'])) {
+                return;
+            }
+
+            static::$resnapshotting = true;
+
+            try {
+                app(CertificateSnapshotter::class)->resnapshot($delivery);
+            } finally {
+                static::$resnapshotting = false;
+            }
+        });
+    }
 
     public function registerMediaCollections(): void
     {
@@ -77,6 +113,63 @@ class Delivery extends Model implements HasMedia
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    /**
+     * The Öko-Kontrollstellen-Code (e.g. "DE-ÖKO-039") frozen onto this
+     * delivery at intake, i.e. the control body that certified these goods on
+     * the delivery date. This is the audit-authoritative source — prefer it
+     * over the supplier's current control body, which may since have changed.
+     */
+    public function frozenOekoCode(): ?string
+    {
+        return $this->certificate_snapshot['control_body_code'] ?? null;
+    }
+
+    /**
+     * The control body's name frozen onto this delivery at intake.
+     */
+    public function frozenControlBody(): ?string
+    {
+        return $this->certificate_snapshot['control_body'] ?? null;
+    }
+
+    /**
+     * A display-ready view of the certificate frozen onto this delivery at
+     * intake, with the stored activity/category codes resolved to their German
+     * labels. Returns null when no certificate was snapshotted.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function certificateSummary(): ?array
+    {
+        $snapshot = $this->certificate_snapshot;
+
+        if (empty($snapshot) || empty($snapshot['control_body_code'])) {
+            return null;
+        }
+
+        $activities = collect($snapshot['activities'] ?? [])
+            ->map(fn (string $value): string => CertificateActivity::tryFrom($value)?->getLabel() ?? $value)
+            ->all();
+
+        $categories = collect($snapshot['product_categories'] ?? [])
+            ->map(fn (string $value): string => ProductCategory::tryFrom($value)?->getLabel() ?? $value)
+            ->all();
+
+        return [
+            'certificate_number' => $snapshot['certificate_number'] ?? null,
+            'operator_name' => $snapshot['operator_name'] ?? null,
+            'control_body' => $snapshot['control_body'] ?? null,
+            'control_body_code' => $snapshot['control_body_code'] ?? null,
+            'valid_from' => $snapshot['valid_from'] ?? null,
+            'valid_until' => $snapshot['valid_until'] ?? null,
+            'issued_at' => $snapshot['issued_at'] ?? null,
+            'issued_place' => $snapshot['issued_place'] ?? null,
+            'activities' => $activities,
+            'product_categories' => $categories,
+            'document' => $this->getFirstMedia('certificate'),
+        ];
     }
 
     public function bags(): HasMany
