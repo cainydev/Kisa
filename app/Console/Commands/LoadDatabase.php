@@ -9,20 +9,23 @@ use Symfony\Component\Process\Process;
 class LoadDatabase extends Command
 {
     protected $signature = 'db:load {file : The SQL dump file to load into the database}';
+
     protected $description = 'Load a SQL dump into the current database connection';
 
     public function handle(): int
     {
         $file = $this->argument('file');
 
-        if (!file_exists($file)) {
+        if (! file_exists($file)) {
             $this->error("File not found: $file");
+
             return static::FAILURE;
         }
 
         if (App::environment('production')) {
-            if (!$this->confirm('You are in production! Do you really want to load this database dump? This will overwrite data.', false)) {
-                $this->warn("Aborted.");
+            if (! $this->confirm('You are in production! Do you really want to load this database dump? This will overwrite data.', false)) {
+                $this->warn('Aborted.');
+
                 return static::SUCCESS;
             }
         }
@@ -32,7 +35,7 @@ class LoadDatabase extends Command
 
         $username = config("database.connections.$connection.username");
         $password = config("database.connections.$connection.password");
-        $host = config("database.connections.$connection.host", "127.0.0.1");
+        $host = config("database.connections.$connection.host", '127.0.0.1');
         $port = config("database.connections.$connection.port");
         $database = config("database.connections.$connection.database");
 
@@ -52,6 +55,7 @@ class LoadDatabase extends Command
 
             default:
                 $this->error("Unsupported database driver: $driver");
+
                 return static::FAILURE;
         }
     }
@@ -60,50 +64,51 @@ class LoadDatabase extends Command
     {
         $command = $driver === 'mariadb' ? 'mariadb' : 'mysql';
 
-        // Build command parts
         $cmd = [
             $command,
             "--user=$username",
             "--host=$host",
-            "--database=$database"
+            "--database=$database",
         ];
 
         if ($port) {
             $cmd[] = "--port=$port";
         }
 
-        // Handle password
-        if (!empty($password)) {
-            $cmd[] = "--password=$password";
+        // A passwordless connection makes the client warn that server-cert
+        // verification is disabled. That's a local/dev setup, so skip SSL
+        // outright to silence the noise; a real password keeps SSL intact.
+        if (empty($password)) {
+            $cmd[] = '--skip-ssl';
         }
 
-        // Add input file redirection
-        $cmd[] = "<";
-        $cmd[] = escapeshellarg($file);
+        $this->info("Executing: {$command} --user={$username} --host={$host} --database={$database}".($port ? " --port={$port}" : ''));
 
-        // Convert to shell command
-        $shellCommand = implode(' ', $cmd);
-
-        $this->info("Executing: " . str_replace("--password=$password", "--password=***", $shellCommand));
-
-        $process = Process::fromShellCommandline($shellCommand);
-        $process->setTimeout(300); // 5 minutes timeout
+        // Feed the dump via stdin (no shell redirection) and pass the password
+        // through MYSQL_PWD rather than the command line. Keeping the password
+        // off the argv both hides it from the process list and avoids the
+        // client's "insecure passwordless login" SSL warning.
+        $process = new Process($cmd, null, ['MYSQL_PWD' => $password]);
+        $process->setInput(fopen($file, 'r'));
+        $process->setTimeout(300);
 
         $process->run(function ($type, $buffer) {
-            if (Process::ERR === $type) {
+            if ($type === Process::ERR) {
                 $this->error($buffer);
             } else {
                 $this->line($buffer);
             }
         });
 
-        if (!$process->isSuccessful()) {
-            $this->error("Load failed with exit code: " . $process->getExitCode());
-            $this->error("Error output: " . $process->getErrorOutput());
+        if (! $process->isSuccessful()) {
+            $this->error('Load failed with exit code: '.$process->getExitCode());
+            $this->error('Error output: '.$process->getErrorOutput());
+
             return static::FAILURE;
         }
 
-        $this->info("Database loaded successfully.");
+        $this->info('Database loaded successfully.');
+
         return static::SUCCESS;
     }
 
@@ -117,7 +122,7 @@ class LoadDatabase extends Command
             "--username=$username",
             "--host=$host",
             "--dbname=$database",
-            "--file=$file"
+            "--file=$file",
         ];
 
         if ($port) {
@@ -128,26 +133,29 @@ class LoadDatabase extends Command
         $process->setTimeout(300);
 
         $process->run(function ($type, $buffer) {
-            if (Process::ERR === $type) {
+            if ($type === Process::ERR) {
                 $this->error($buffer);
             } else {
                 $this->line($buffer);
             }
         });
 
-        if (!$process->isSuccessful()) {
-            $this->error("Load failed: " . $process->getErrorOutput());
+        if (! $process->isSuccessful()) {
+            $this->error('Load failed: '.$process->getErrorOutput());
+
             return static::FAILURE;
         }
 
-        $this->info("Database loaded successfully.");
+        $this->info('Database loaded successfully.');
+
         return static::SUCCESS;
     }
 
     private function loadSqliteDump(string $file, string $database): int
     {
-        if (!file_exists($database)) {
+        if (! file_exists($database)) {
             $this->error("SQLite database file not found: $database");
+
             return static::FAILURE;
         }
 
@@ -157,19 +165,21 @@ class LoadDatabase extends Command
         $process->setTimeout(300);
 
         $process->run(function ($type, $buffer) {
-            if (Process::ERR === $type) {
+            if ($type === Process::ERR) {
                 $this->error($buffer);
             } else {
                 $this->line($buffer);
             }
         });
 
-        if (!$process->isSuccessful()) {
-            $this->error("Load failed: " . $process->getErrorOutput());
+        if (! $process->isSuccessful()) {
+            $this->error('Load failed: '.$process->getErrorOutput());
+
             return static::FAILURE;
         }
 
-        $this->info("Database loaded successfully.");
+        $this->info('Database loaded successfully.');
+
         return static::SUCCESS;
     }
 }
