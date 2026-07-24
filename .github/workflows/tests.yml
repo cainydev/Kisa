@@ -49,16 +49,13 @@ jobs:
           restore-keys: composer-${{ runner.os }}-
 
       - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress --no-scripts
+        run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Install Node dependencies
         run: bun install --frozen-lockfile
 
       - name: Build assets
         run: bun run build
-
-      - name: Run Composer post-install scripts
-        run: composer run-script post-autoload-dump
 
       - name: Verify platform requirements
         run: composer check-platform-reqs
