@@ -19,10 +19,8 @@ use Illuminate\Support\Collection;
  *   Eingang (deliveries)  →  Verbrauch (fillings) + Ausschuss (verworfen) + Bestand
  *
  * Inflow is dated by the delivery date; consumption by the bottling date. Used
- * grams are not stored — they are variant.size × position.count × recipe-% —
- * but the whole balance is still computed with set-based aggregate queries
- * (a handful of grouped queries total), never per-model loops, so the page is
- * fast enough to run live.
+ * grams come from ingredients.amount, snapshotted at bottling. The balance is
+ * computed with a handful of grouped aggregate queries, never per-model loops.
  */
 class MassBalance
 {
@@ -155,27 +153,22 @@ class MassBalance
     }
 
     /**
-     * Consumed grams per herb, computed set-based in a single grouped query:
-     * SUM(variant.size × position.count × recipe-%). Dated by bottling date.
+     * Consumed grams per herb: SUM(ingredients.amount), the grams frozen at
+     * bottling time. Dated by bottling date. One grouped query.
      *
      * @return Collection<int, float>
      */
     protected function usedPerHerb(?string $from, ?string $to): Collection
     {
         return Ingredient::query()
-            ->join('bottle_positions', 'bottle_positions.id', '=', 'ingredients.bottle_position_id')
-            ->join('variants', 'variants.id', '=', 'bottle_positions.variant_id')
-            ->join('herb_product', function ($join) {
-                $join->on('herb_product.product_id', '=', 'variants.product_id')
-                    ->on('herb_product.herb_id', '=', 'ingredients.herb_id');
-            })
             ->when($from || $to, function ($q) use ($from, $to) {
-                $q->join('bottles', 'bottles.id', '=', 'bottle_positions.bottle_id')
+                $q->join('bottle_positions', 'bottle_positions.id', '=', 'ingredients.bottle_position_id')
+                    ->join('bottles', 'bottles.id', '=', 'bottle_positions.bottle_id')
                     ->when($from, fn ($x) => $x->whereDate('bottles.date', '>=', $from))
                     ->when($to, fn ($x) => $x->whereDate('bottles.date', '<=', $to));
             })
             ->groupBy('ingredients.herb_id')
-            ->selectRaw('ingredients.herb_id as herb_id, SUM(variants.size * bottle_positions.count * herb_product.percentage / 100) as total')
+            ->selectRaw('ingredients.herb_id as herb_id, SUM(ingredients.amount) as total')
             ->pluck('total', 'herb_id')
             ->map(fn ($v) => (float) $v);
     }

@@ -462,16 +462,15 @@ class Warenweg extends Page
         $delivery = $bag->delivery;
         $inspection = $delivery?->bio_inspection ?? [];
 
-        $usage = BottlePosition::with('variant.product.herbs', 'bottle')
+        $usage = BottlePosition::with('variant.product.herbs', 'bottle', 'ingredients')
             ->whereHas('ingredients', fn ($q) => $q->where('bag_id', $bag->id))
             ->get()
             ->map(function (BottlePosition $p) use ($bag) {
-                // Share of this herb in the product's recipe, and the grams of
-                // this bag actually consumed by the bottling:
-                //   variant.size × Stück × Anteil%.
+                // Recipe share of this herb (informational, as of today) and
+                // the grams actually drawn from this bag, frozen at bottling.
                 $herb = $p->variant?->product?->herbs->firstWhere('id', $bag->herb_id);
                 $percentage = (float) ($herb?->pivot->percentage ?? 0);
-                $grams = ($p->variant?->size ?? 0) * $p->count * ($percentage / 100);
+                $grams = (float) ($p->ingredients->firstWhere('bag_id', $bag->id)?->amount ?? 0);
 
                 return [
                     'product' => $p->variant?->product?->name ?? 'Unbekannt',

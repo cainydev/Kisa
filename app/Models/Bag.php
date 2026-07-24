@@ -42,17 +42,7 @@ class Bag extends Model
      */
     public function getCurrent(): float
     {
-        $sum = 0;
-        foreach ($this->ingredients as $i) {
-            $variant = $i->position->variant;
-            foreach ($variant->product->herbs as $herb) {
-                if ($herb->id == $this->herb->id) {
-                    $sum += ($variant->size * $i->position->count) * ($herb->pivot->percentage / 100);
-                }
-            }
-        }
-
-        return $this->size - $sum;
+        return $this->size - (float) $this->ingredients->sum('amount');
     }
 
     /**
@@ -126,20 +116,9 @@ class Bag extends Model
      */
     public function getCompoundUsage(): float
     {
-        $sum = 0;
-        foreach ($this->ingredients as $i) {
-            $variant = $i->position->variant;
-            if (! $variant->product->type->compound) {
-                continue;
-            }
-            foreach ($variant->product->herbs as $herb) {
-                if ($herb->id == $this->herb->id) {
-                    $sum += ($variant->size * $i->position->count) * ($herb->pivot->percentage / 100);
-                }
-            }
-        }
-
-        return $sum;
+        return (float) $this->ingredients
+            ->filter(fn (Ingredient $ingredient) => $ingredient->position->variant->product->type->compound)
+            ->sum('amount');
     }
 
     /**
@@ -147,20 +126,9 @@ class Bag extends Model
      */
     public function getNonCompoundUsage(): float
     {
-        $sum = 0;
-        foreach ($this->ingredients as $i) {
-            $variant = $i->position->variant;
-            if ($variant->product->type->compound) {
-                continue;
-            }
-            foreach ($variant->product->herbs as $herb) {
-                if ($herb->id == $this->herb->id) {
-                    $sum += ($variant->size * $i->position->count) * ($herb->pivot->percentage / 100);
-                }
-            }
-        }
-
-        return $sum;
+        return (float) $this->ingredients
+            ->reject(fn (Ingredient $ingredient) => $ingredient->position->variant->product->type->compound)
+            ->sum('amount');
     }
 
     /**

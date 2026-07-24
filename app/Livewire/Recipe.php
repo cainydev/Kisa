@@ -29,8 +29,9 @@ class Recipe extends Component
             ->toArray();
 
         foreach ($this->ingredients as $ingredient) {
-            if (!array_key_exists($ingredient->herb_id, $this->bags))
+            if (! array_key_exists($ingredient->herb_id, $this->bags)) {
                 $this->bags[$ingredient->herb_id] = null;
+            }
         }
 
         $this->herb = $this->ingredients->first()?->herb_id ?? null;
@@ -47,11 +48,11 @@ class Recipe extends Component
                 ->delete();
 
             if ($bag !== null) {
-                Ingredient::insert($this->positions->map(fn(BottlePosition $position) => [
+                $this->positions->each(fn (BottlePosition $position) => Ingredient::create([
                     'bottle_position_id' => $position->id,
                     'herb_id' => $this->herb,
-                    'bag_id' => $bag
-                ])->all());
+                    'bag_id' => $bag,
+                ]));
             }
         }
     }
@@ -62,16 +63,17 @@ class Recipe extends Component
         if ($this->positions->isEmpty()) {
             return collect();
         }
+
         return $this->positions->first()->variant->product->recipeIngredients->sortByDesc('percentage');
     }
 
     #[Computed]
     public function steps(): array
     {
-        return $this->ingredients->map(fn(RecipeIngredient $i) => [
+        return $this->ingredients->map(fn (RecipeIngredient $i) => [
             'key' => $i->herb_id,
             'label' => $i->herb->name,
-            'description' => "{$this->amounts[$i->herb_id]}g"
+            'description' => "{$this->amounts[$i->herb_id]}g",
         ])->all();
     }
 
@@ -85,7 +87,7 @@ class Recipe extends Component
     public function totalGramms(): int
     {
         return $this->positions
-            ->map(fn(BottlePosition $p) => $p->variant->size * $p->count)
+            ->map(fn (BottlePosition $p) => $p->variant->size * $p->count)
             ->sum();
     }
 
@@ -93,7 +95,7 @@ class Recipe extends Component
     public function amounts(): array
     {
         return $this->positions->first()->variant->product->recipeIngredients->mapWithKeys(function (RecipeIngredient $i) {
-            return [$i->herb_id => $this->positions->sum(fn(BottlePosition $p) => $p->count * $p->variant->size * ($i->percentage / 100.))];
+            return [$i->herb_id => $this->positions->sum(fn (BottlePosition $p) => $p->count * $p->variant->size * ($i->percentage / 100.))];
         })->all();
     }
 

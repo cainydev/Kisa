@@ -26,6 +26,7 @@ class BottlePosition extends Model
 
     /**
      * Always queries the related product variant
+     *
      * @var string[]
      */
     protected $with = ['variant'];
@@ -39,12 +40,21 @@ class BottlePosition extends Model
             $pos->charge = $pos->getCharge();
             $pos->save();
         });
+
+        static::updated(function (self $pos) {
+            if ($pos->wasChanged('count')) {
+                $pos->ingredients()->get()->each(
+                    fn (Ingredient $ingredient) => $ingredient->update(['amount' => $ingredient->computeAmount()])
+                );
+            }
+        });
     }
 
     /**
      * Returns the K&W Charge of the bottle position.
      * Case 1) Returns a generated charge if it has multiple or none ingredients
      * Case 2) Returns the supplier charge if it has exactly one ingredient
+     *
      * @return string|null The generated charge number
      */
     public function getCharge(): ?string
@@ -52,7 +62,10 @@ class BottlePosition extends Model
         $ingredients = $this->variant->product->recipeIngredients;
 
         if ($ingredients->count() === 1) {
-            if ($this->ingredients->isEmpty()) return null;
+            if ($this->ingredients->isEmpty()) {
+                return null;
+            }
+
             return $this->ingredients->first()->bag->charge;
         } else {
             $bottlePositionsToday =
@@ -64,13 +77,12 @@ class BottlePosition extends Model
                     })
                     ->count();
 
-            return $this->bottle->date->format('ymd') . $bottlePositionsToday + 1;
+            return $this->bottle->date->format('ymd').$bottlePositionsToday + 1;
         }
     }
 
     /**
      * The ingredients used in the process of completing this position
-     * @return HasMany
      */
     public function ingredients(): HasMany
     {
@@ -79,14 +91,18 @@ class BottlePosition extends Model
 
     /**
      * Update the stock for this variant in Billbee
+     *
      * @return bool True, if stock is updated
+     *
      * @throws QuotaExceededException
      */
     public function upload(): bool
     {
-        if ($this->uploaded) return true;
+        if ($this->uploaded) {
+            return true;
+        }
 
-        if (!$this->hasAllBags()) {
+        if (! $this->hasAllBags()) {
             Notification::make()
                 ->warning()
                 ->title('Einlagern fehlgeschlagen')
@@ -122,16 +138,16 @@ class BottlePosition extends Model
                 $newStock = $response->data->currentStock;
 
                 $this->variant->update([
-                    'stock' => $newStock
+                    'stock' => $newStock,
                 ]);
 
                 $this->update([
-                    'uploaded' => true
+                    'uploaded' => true,
                 ]);
 
                 Notification::make()
                     ->title('Einlagern erfolgreich')
-                    ->body('Neuer Bestand in Billbee: ' . $newStock)
+                    ->body('Neuer Bestand in Billbee: '.$newStock)
                     ->success()
                     ->send();
 
@@ -139,7 +155,7 @@ class BottlePosition extends Model
             } catch (Exception $e) {
                 Notification::make()
                     ->title('Einlagern fehlgeschlagen')
-                    ->body('Es ist ein Fehler aufgetreten: ' . $e->getMessage())
+                    ->body('Es ist ein Fehler aufgetreten: '.$e->getMessage())
                     ->danger()
                     ->send();
 
@@ -169,7 +185,7 @@ class BottlePosition extends Model
         return $this->getBagFor($herb) !== null;
     }
 
-    public function getBagFor(Herb $herb): Bag|null
+    public function getBagFor(Herb $herb): ?Bag
     {
         return $this->ingredients
             ->firstWhere('herb_id', $herb->id)
@@ -180,7 +196,6 @@ class BottlePosition extends Model
 
     /**
      * The related bottle process
-     * @return BelongsTo
      */
     public function bottle(): BelongsTo
     {
@@ -189,7 +204,6 @@ class BottlePosition extends Model
 
     /**
      * The related product variant
-     * @return BelongsTo
      */
     public function variant(): BelongsTo
     {
