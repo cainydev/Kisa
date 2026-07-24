@@ -3,11 +3,9 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Resources\Bottles\BottleResource;
-use App\Models\Bottle;
-use App\Models\Order;
-use App\Models\OrderPosition;
 use App\Models\Variant;
-use App\Support\Stats\VariantStats;
+use App\Services\Production\ProductionPlan;
+use App\Services\Production\ProductionPlanner;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -114,75 +112,7 @@ class NecessaryBottle extends Widget implements HasActions, HasSchemas, HasTable
                     ]),
             ], FiltersLayout::AboveContent)
             ->filtersFormColumns(['xs' => 1, 'sm' => 2, 'xl' => 4])
-            ->records(function (array $filters): Collection {
-                $maxDateOption = $filters['max_date']['max_date'] ?? 'lastweek';
-                $maxDate = match ($maxDateOption) {
-                    'yesterday' => Carbon::yesterday()->startOfDay(),
-                    'last3days' => Carbon::now()->subDays(3)->startOfDay(),
-                    'lastweek' => Carbon::now()->subDays(7)->startOfDay(),
-                    'lastmonth' => Carbon::now()->subMonth()->startOfDay(),
-                    default => Carbon::now()->subDays(7)->startOfDay(),
-                };
-                $extrapolateMonths = filled($filters['extrapolate_months']['extrapolate_months'] ?? null)
-                    ? (int) $filters['extrapolate_months']['extrapolate_months']
-                    : $this->defaultExtrapolateMonths;
-                $extrapolateMaxSize = filled($filters['extrapolate_max_size']['extrapolate_max_size'] ?? null)
-                    ? (int) $filters['extrapolate_max_size']['extrapolate_max_size']
-                    : $this->defaultExtrapolateMaxSize;
-                $roundUp = $filters['round_up_quantity']['round_up_quantity'] ?? 'none';
-
-                // fetch order positions for paid but not shipped orders since maxDate
-                $positions = Order::with(['positions.variant', 'positions.order'])
-                    ->whereNotNull('paid_at')
-                    ->whereNull('shipped_at')
-                    ->where('created_at', '>=', $maxDate)
-                    ->whereHas('positions')
-                    ->get()
-                    ->flatMap(fn (Order $order) => $order->positions->map(fn (OrderPosition $p) => $p->setRelation('order', $order)));
-
-                // Build records grouped by variant_id
-                $grouped = $positions->groupBy(fn (OrderPosition $p) => $p->variant_id);
-
-                return $grouped->mapWithKeys(function ($group) use ($extrapolateMonths, $extrapolateMaxSize, $roundUp) {
-                    $variant = $group->first()->variant ?? Variant::find($group->first()->variant_id);
-                    $variantLabel = $variant ? ($variant->title ?? $variant->name ?? '#'.$variant->id) : ('#'.$group->first()->variant_id);
-                    $stock = $variant?->stock ?? 0;
-                    $orderRefs = $group->map(fn ($p) => $p->order?->order_number ?? $p->order?->reference ?? $p->order_id)->unique()->values()->all();
-                    $averageMonthlySales = $variant ? VariantStats::for($variant)->averageMonthlySales() : 0;
-                    $minBatchSize = 1;
-                    if ($variant && $stock < 0) {
-                        // Billbee already decremented stock when the order arrived, so a negative
-                        // value is exactly the open shortfall we need to produce.
-                        $shortfall = -$stock;
-                        if ($variant->size <= $extrapolateMaxSize) {
-                            $projectedNeeded = $extrapolateMonths * $averageMonthlySales;
-                            $minNeededQuantity = max($minBatchSize, $shortfall, (int) ceil($projectedNeeded));
-                        } else {
-                            // For big/special sizes, just cover the shortfall.
-                            $minNeededQuantity = max($minBatchSize, $shortfall);
-                        }
-                        if ($roundUp !== 'none') {
-                            $roundValue = (int) $roundUp;
-                            $minNeededQuantity = $roundValue * (int) ceil($minNeededQuantity / $roundValue);
-                        }
-                        $perVariantHerbs = method_exists($variant, 'herbsNeededFor') ? ($variant->herbsNeededFor($minNeededQuantity) ?: []) : [];
-
-                        return [
-                            $variant->id => [
-                                'variant_id' => $variant->id,
-                                'variant_label' => $variantLabel,
-                                'stock' => $stock,
-                                'min_needed_quantity' => $minNeededQuantity,
-                                'order_references' => $orderRefs,
-                                'per_variant_herbs' => $perVariantHerbs,
-                                'original_positions' => $group->pluck('id')->all(),
-                            ],
-                        ];
-                    }
-
-                    return [];
-                });
-            })
+            ->records(fn (array $filters): Collection => app(ProductionPlanner::class)->plan($this->planFromFilters($filters)))
             ->columns([
                 TextColumn::make('variant_label')
                     ->label('Variante'),
@@ -210,25 +140,8 @@ class NecessaryBottle extends Widget implements HasActions, HasSchemas, HasTable
                                 ->send();
                             throw new Halt;
                         }
-                        $bottle = Bottle::create([
-                            'date' => now(),
-                            'user_id' => auth()->user()->id,
-                            'note' => 'Auto bottle '.now()->format('Y-m-d H:i'),
-                        ]);
-                        foreach ($records as $rec) {
-                            $roundUp = $this->filters['round_up_quantity'] ?? 'none';
-                            $finalQuantity = $rec['min_needed_quantity'];
-                            if ($roundUp !== 'none') {
-                                $roundValue = (int) $roundUp;
-                                $finalQuantity = $roundValue * (int) ceil($finalQuantity / $roundValue);
-                            }
-                            $bottle->positions()->create([
-                                'variant_id' => $rec['variant_id'],
-                                'count' => $finalQuantity,
-                            ]);
-                        }
 
-                        return redirect(BottleResource::getUrl('edit', ['record' => $bottle->id]));
+                        return $this->createBottleFrom($records);
                     })
                     ->color('gray'),
                 BulkAction::make('createBottleSelected')
@@ -240,29 +153,52 @@ class NecessaryBottle extends Widget implements HasActions, HasSchemas, HasTable
                                 ->send();
                             throw new Halt;
                         }
-                        $bottle = Bottle::create([
-                            'date' => now(),
-                            'user_id' => auth()->user()->id,
-                            'note' => 'Auto bottle '.now()->format('Y-m-d H:i'),
-                        ]);
-                        foreach ($records as $rec) {
-                            $roundUp = $this->filters['round_up_quantity'] ?? 'none';
-                            $finalQuantity = $rec['min_needed_quantity'];
-                            if ($roundUp !== 'none') {
-                                $roundValue = (int) $roundUp;
-                                $finalQuantity = $roundValue * (int) ceil($finalQuantity / $roundValue);
-                            }
-                            $bottle->positions()->create([
-                                'variant_id' => $rec['variant_id'],
-                                'count' => $finalQuantity,
-                            ]);
-                        }
 
-                        return redirect(BottleResource::getUrl('edit', ['record' => $bottle->id]));
+                        return $this->createBottleFrom($records);
                     })
                     ->requiresConfirmation()
                     ->color('primary'),
             ])
             ->emptyStateHeading('Keine anstehenden Abfüllungen notwendig.');
+    }
+
+    /**
+     * Translate the raw Filament filter state into a typed production plan.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    protected function planFromFilters(array $filters): ProductionPlan
+    {
+        $since = match ($filters['max_date']['max_date'] ?? 'lastweek') {
+            'yesterday' => Carbon::yesterday()->startOfDay(),
+            'last3days' => Carbon::now()->subDays(3)->startOfDay(),
+            'lastmonth' => Carbon::now()->subMonth()->startOfDay(),
+            default => Carbon::now()->subDays(7)->startOfDay(),
+        };
+
+        $roundUp = $filters['round_up_quantity']['round_up_quantity'] ?? 'none';
+
+        return new ProductionPlan(
+            since: $since,
+            extrapolateMonths: filled($filters['extrapolate_months']['extrapolate_months'] ?? null)
+                ? (int) $filters['extrapolate_months']['extrapolate_months']
+                : $this->defaultExtrapolateMonths,
+            extrapolateMaxSize: filled($filters['extrapolate_max_size']['extrapolate_max_size'] ?? null)
+                ? (int) $filters['extrapolate_max_size']['extrapolate_max_size']
+                : $this->defaultExtrapolateMaxSize,
+            roundUpTo: $roundUp === 'none' ? 0 : (int) $roundUp,
+        );
+    }
+
+    /**
+     * Create a bottling from the given planned rows and redirect to it.
+     *
+     * @param  Collection<int, array<string, mixed>>  $records
+     */
+    protected function createBottleFrom(Collection $records): mixed
+    {
+        $bottle = app(ProductionPlanner::class)->createBottle($records, auth()->user());
+
+        return redirect(BottleResource::getUrl('edit', ['record' => $bottle->id]));
     }
 }

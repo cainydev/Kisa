@@ -15,6 +15,7 @@ use Filament\Tables\Table;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use UnitEnum;
@@ -184,18 +185,7 @@ class Mengenfluss extends Page implements HasTable
      */
     public function totals(): array
     {
-        return $this->totalsCache ??= (function (): array {
-            $rows = $this->allRows();
-
-            return [
-                'herbs' => $rows->count(),
-                'delivered' => round($rows->sum('delivered'), 1),
-                'used' => round($rows->sum('used'), 1),
-                'trashed' => round($rows->sum('trashed'), 1),
-                'stock' => round($rows->sum('stock'), 1),
-                'implausible' => $rows->where('plausible', false)->count(),
-            ];
-        })();
+        return $this->totalsCache ??= MassBalance::totalsForRows($this->allRows());
     }
 
     protected function flush(): void
@@ -210,7 +200,7 @@ class Mengenfluss extends Page implements HasTable
      */
     public function kg(float|int $grams): string
     {
-        return number_format($grams / 1000, 1, ',', '.').' kg';
+        return Number::kilos($grams, 1);
     }
 
     public function table(Table $table): Table

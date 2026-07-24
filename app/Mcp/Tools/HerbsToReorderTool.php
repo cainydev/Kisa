@@ -2,9 +2,9 @@
 
 namespace App\Mcp\Tools;
 
-use App\Models\Herb;
-use App\Support\Stats\HerbStats;
+use App\Services\Stats\DepletionForecast;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -22,21 +22,8 @@ class HerbsToReorderTool extends Tool
         ]);
 
         $withinDays = (int) ($validated['within_days'] ?? 30);
-        $deadline = now()->addDays($withinDays);
 
-        $rows = Herb::query()->with('supplier')->get()
-            ->map(function (Herb $herb): array {
-                $stats = HerbStats::for($herb);
-
-                return [
-                    'herb' => $herb,
-                    'stock' => $stats->currentStock(),
-                    'depletion' => $stats->estimatedDepletionDate(),
-                ];
-            })
-            ->filter(fn ($r) => $r['depletion'] !== null && $r['depletion']->lessThanOrEqualTo($deadline))
-            ->sortBy('depletion')
-            ->values();
+        $rows = app(DepletionForecast::class)->herbs($withinDays);
 
         if ($rows->isEmpty()) {
             return Response::text("No herbs are projected to run out within {$withinDays} days.");
@@ -44,12 +31,12 @@ class HerbsToReorderTool extends Tool
 
         $lines = $rows->map(function (array $r): string {
             $herb = $r['herb'];
-            $stock = number_format($r['stock'] / 1000, 2);
+            $stock = Number::kilos($r['stock']);
             $when = $r['depletion']->format('d.m.Y');
             $days = (int) now()->diffInDays($r['depletion'], false);
             $supplier = $herb->supplier?->shortname ?? '—';
 
-            return "• {$herb->name} — {$stock} kg, erschöpft am {$when} (in {$days} Tagen), Lieferant: {$supplier}";
+            return "• {$herb->name} — {$stock}, erschöpft am {$when} (in {$days} Tagen), Lieferant: {$supplier}";
         })->implode("\n");
 
         return Response::text("Herbs to reorder within {$withinDays} days ({$rows->count()}):\n{$lines}");

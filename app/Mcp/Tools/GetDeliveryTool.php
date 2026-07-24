@@ -5,6 +5,7 @@ namespace App\Mcp\Tools;
 use App\Models\Bag;
 use App\Models\Delivery;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -29,9 +30,9 @@ class GetDeliveryTool extends Tool
 
         $bags = $delivery->bags
             ->map(function (Bag $b): string {
-                $size = number_format($b->size / 1000, 2);
+                $size = Number::kilos($b->size);
 
-                return "  • Charge {$b->charge}: {$b->herb?->name} — {$size} kg".($b->bio ? ' (bio)' : ' (konventionell)');
+                return "  • Charge {$b->charge}: {$b->herb?->name} — {$size}".($b->bio ? ' (bio)' : ' (konventionell)');
             })
             ->implode("\n");
 

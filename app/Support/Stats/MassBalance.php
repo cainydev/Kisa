@@ -65,12 +65,11 @@ class MassBalance
                 $waste = (float) $trashed->get($herbId, 0);
 
                 // Live current stock: everything ever received minus everything
-                // ever used and discarded. Clamped at zero.
-                $stock = max(
-                    (float) $lifetimeIn->get($herbId, 0)
-                        - (float) $lifetimeUsed->get($herbId, 0)
-                        - $waste,
-                    0.0,
+                // ever used and discarded, through the canonical definition.
+                $stock = HerbStock::fromAggregates(
+                    (float) $lifetimeIn->get($herbId, 0),
+                    (float) $lifetimeUsed->get($herbId, 0),
+                    $waste,
                 );
 
                 // Signed balance over the window: Eingang − (Verbrauch + Ausschuss).
@@ -101,8 +100,18 @@ class MassBalance
      */
     public function totals(): array
     {
-        $rows = $this->rows();
+        return self::totalsForRows($this->rows());
+    }
 
+    /**
+     * Aggregate summary totals from already-computed balance rows, so callers
+     * that have cached the rows don't trigger a second row pass.
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @return array<string, float|int>
+     */
+    public static function totalsForRows(Collection $rows): array
+    {
         return [
             'herbs' => $rows->count(),
             'delivered' => round($rows->sum('delivered'), 1),

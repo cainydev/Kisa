@@ -2,7 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Filament\Support\StockUploadNotification;
 use App\Models\BottlePosition;
+use App\Services\Billbee\UploadBottlePositionStock;
 use Exception;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -18,11 +20,11 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
-class BottlePositionList extends Component implements HasForms, HasTable, HasActions
+class BottlePositionList extends Component implements HasActions, HasForms, HasTable
 {
     use InteractsWithActions;
-    use InteractsWithTable;
     use InteractsWithForms;
+    use InteractsWithTable;
 
     public Collection $positions;
 
@@ -39,14 +41,14 @@ class BottlePositionList extends Component implements HasForms, HasTable, HasAct
             ->columns([
                 TextColumn::make('count')
                     ->label('')
-                    ->formatStateUsing(fn($state) => "{$state}x"),
+                    ->formatStateUsing(fn ($state) => "{$state}x"),
                 TextColumn::make('variant.product.name')
                     ->label('Produkt'),
                 TextColumn::make('variant.size')
                     ->badge()
                     ->label('')
                     ->grow()
-                    ->formatStateUsing(fn($state) => $state . 'g'),
+                    ->formatStateUsing(fn ($state) => $state.'g'),
                 TextColumn::make('variant.stock')
                     ->label('Bestand'),
                 TextColumn::make('charge')
@@ -65,17 +67,18 @@ class BottlePositionList extends Component implements HasForms, HasTable, HasAct
                         $record->save();
                     }),
                 Action::make('upload')
-                    ->disabled(fn(BottlePosition $position) => $position->uploaded)
+                    ->disabled(fn (BottlePosition $position) => $position->uploaded)
                     ->label(function (BottlePosition $position) {
                         return $position->uploaded ? 'Eingelagert' : 'Einlagern';
                     })
                     ->action(function (BottlePosition $record) {
-                        $record->upload();
+                        $result = app(UploadBottlePositionStock::class)->handle($record);
+                        StockUploadNotification::make($result)->send();
                     })
                     ->button()
                     ->color('gray')
                     ->icon('icon-billbee')
-                    ->iconSize(IconSize::Large)
+                    ->iconSize(IconSize::Large),
             ]);
     }
 

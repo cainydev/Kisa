@@ -5,6 +5,7 @@ namespace App\Mcp\Tools;
 use App\Models\Bag;
 use App\Models\Ingredient;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -48,7 +49,7 @@ class TraceChargeTool extends Tool
                 ->map(function (Ingredient $ing): string {
                     $pos = $ing->position;
                     $product = $pos?->variant?->product?->name ?? '—';
-                    $size = $pos?->variant ? number_format($pos->variant->size / 1000, 2).' kg' : '—';
+                    $size = $pos?->variant ? Number::kilos($pos->variant->size) : '—';
                     $date = $pos?->bottle?->date?->format('d.m.Y') ?? '—';
                     $charge = $pos?->charge ?? '—';
 

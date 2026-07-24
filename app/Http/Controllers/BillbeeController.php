@@ -12,21 +12,20 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+
 use function response;
 
 class BillbeeController extends Controller
 {
     /**
      * Handle incoming post request and delegate to responsible handler
-     *
-     * @param Request $request
-     * @return Response
      */
     public function post(Request $request): Response
     {
         if ($request->query('Action')) {
-            if (!in_array($request->query('Action'), ['SetStock', 'SetOrderState'])) {
+            if (! in_array($request->query('Action'), ['SetStock', 'SetOrderState'])) {
                 Log::info("[BillbeeController.post]: Invalid action '{$request->query('Action')}'");
+
                 return response('Not implemented', 501);
             }
 
@@ -41,13 +40,10 @@ class BillbeeController extends Controller
 
     /**
      * Update the stock quantity of a variant
-     *
-     * @param Request $request
-     * @return Response
      */
     private function setStock(Request $request): Response
     {
-        if (!$request->has(['ProductId', 'AvailableStock'])) {
+        if (! $request->has(['ProductId', 'AvailableStock'])) {
             return response('Bad Request', 400);
         }
 
@@ -70,7 +66,7 @@ class BillbeeController extends Controller
 
         if ($variants->isEmpty()) {
             return response('Product not found', 400);
-        } else if ($variants->count() > 1) {
+        } elseif ($variants->count() > 1) {
             return response('Multiple products found', 400);
         }
 
@@ -87,15 +83,13 @@ class BillbeeController extends Controller
 
     /**
      * Handle incoming get requests and delegate to responsible handler
-     *
-     * @param Request $request
-     * @return JsonResponse|Response
      */
     public function get(Request $request): JsonResponse|Response
     {
         if ($request->query('Action')) {
-            if (!in_array($request->query('Action'), ['GetOrders', 'GetProduct'])) {
+            if (! in_array($request->query('Action'), ['GetOrders', 'GetProduct'])) {
                 Log::info("[BillbeeController.get]: Invalid action '{$request->query('Action')}'");
+
                 return response('Not implemented', 501);
             }
 
@@ -110,34 +104,29 @@ class BillbeeController extends Controller
 
     /**
      * Get all orders
-     *
-     * @return JsonResponse
      */
     private function getOrders(): JsonResponse
     {
-        Log::info("[BillbeeController.getOrders]: Got getOrders request. Returning empty.");
+        Log::info('[BillbeeController.getOrders]: Got getOrders request. Returning empty.');
 
         return response()->json([
             'paging' => [
                 'page' => 1,
                 'totalCount' => 1,
-                'totalPages' => 1
+                'totalPages' => 1,
             ],
-            'orders' => []
+            'orders' => [],
         ]);
     }
 
     /**
      * Get a specific product. Only implemented in order for setStock to work.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     private function getProduct(Request $request): JsonResponse
     {
-        if (!$request->has('ProductId') || $request->get('ProductId') === '') {
-            Log::info("[BillbeeController.getProduct]: Got getProduct request with bad parameters.", [
-                'ProductId' => $request->get('ProductId')
+        if (! $request->has('ProductId') || $request->get('ProductId') === '') {
+            Log::info('[BillbeeController.getProduct]: Got getProduct request with bad parameters.', [
+                'ProductId' => $request->get('ProductId'),
             ]);
 
             return response()->json('Bad Request', 400);
@@ -151,8 +140,9 @@ class BillbeeController extends Controller
             ->orWhere('sku', $productId)
             ->first();
 
-        if (!$variant) {
+        if (! $variant) {
             Log::warning("[BillbeeController.getProduct]: Could find variant for {$productId}.");
+
             return response()->json('Bad Request', 400);
         }
 
@@ -168,27 +158,30 @@ class BillbeeController extends Controller
 
     /**
      * Update the state of an order
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     private function setOrderState(Request $request): JsonResponse
     {
-        if (!$request->has('OrderId') && !$request->has('NewStateId')) {
-            Log::info("[BillbeeController.setOrderState]: Got setOrderState request with bad parameters.", [
+        if (! $request->has('OrderId') || ! $request->has('NewStateId')) {
+            Log::info('[BillbeeController.setOrderState]: Got setOrderState request with bad parameters.', [
                 'OrderId' => $request->get('OrderId'),
-                'NewStateId' => $request->get('NewStateId')
+                'NewStateId' => $request->get('NewStateId'),
             ]);
 
             return response()->json('Bad Request', 400);
         }
 
-        Log::info("[BillbeeController.setOrderState]: Got setOrderState request.", [
+        Log::info('[BillbeeController.setOrderState]: Got setOrderState request.', [
             'OrderId' => $request->get('OrderId'),
-            'NewStateId' => $request->get('NewStateId')
+            'NewStateId' => $request->get('NewStateId'),
         ]);
 
-        $order = Order::where('billbee_id', $request->get('OrderId'))->firstOrFail();
+        $order = Order::where('billbee_id', $request->get('OrderId'))->first();
+
+        if ($order === null) {
+            Log::info("[BillbeeController.setOrderState]: No order found for Billbee id {$request->get('OrderId')}; acknowledging to stop retries.");
+
+            return response()->json('Order not found', 200);
+        }
 
         $order->status = $request->get('NewStateId');
         $order->save();

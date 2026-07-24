@@ -4,6 +4,7 @@ namespace App\Filament\Tables\Columns;
 
 use Closure;
 use Filament\Tables\Columns\Column;
+use Illuminate\Support\Number;
 
 class SparklineColumn extends Column
 {
@@ -14,6 +15,7 @@ class SparklineColumn extends Column
     public function threshold(int|float|Closure|null $threshold): static
     {
         $this->threshold = $threshold;
+
         return $this;
     }
 
@@ -26,7 +28,7 @@ class SparklineColumn extends Column
     {
         $data = $this->getState();
 
-        if (empty($data) || !is_array($data) || count($data) < 2) {
+        if (empty($data) || ! is_array($data) || count($data) < 2) {
             return '';
         }
 
@@ -34,7 +36,9 @@ class SparklineColumn extends Column
         $max = max($data);
         $min = min($data);
         $delta = $max - $min;
-        if ($delta == 0) $delta = 1;
+        if ($delta == 0) {
+            $delta = 1;
+        }
 
         $width = 100;
         $height = 30;
@@ -60,13 +64,15 @@ class SparklineColumn extends Column
 
         // 3. Convert to SVG string
         return collect($smoothedPoints)
-            ->map(fn($p) => implode(',', $p))
+            ->map(fn ($p) => implode(',', $p))
             ->implode(' ');
     }
 
     protected function smoothPoints(array $points): array
     {
-        if (count($points) < 3) return $points;
+        if (count($points) < 3) {
+            return $points;
+        }
 
         $newPoints = [];
         $newPoints[] = $points[0]; // Always keep the start point
@@ -78,12 +84,12 @@ class SparklineColumn extends Column
 
             $Q = [
                 0.75 * $p0[0] + 0.25 * $p1[0],
-                0.75 * $p0[1] + 0.25 * $p1[1]
+                0.75 * $p0[1] + 0.25 * $p1[1],
             ];
 
             $R = [
                 0.25 * $p0[0] + 0.75 * $p1[0],
-                0.25 * $p0[1] + 0.75 * $p1[1]
+                0.25 * $p0[1] + 0.75 * $p1[1],
             ];
 
             $newPoints[] = $Q;
@@ -91,6 +97,7 @@ class SparklineColumn extends Column
         }
 
         $newPoints[] = end($points); // Always keep the end point
+
         return $newPoints;
     }
 
@@ -98,7 +105,7 @@ class SparklineColumn extends Column
     {
         $data = $this->getState();
 
-        if (empty($data) || !is_array($data) || count($data) < 2) {
+        if (empty($data) || ! is_array($data) || count($data) < 2) {
             return [];
         }
 
@@ -115,7 +122,7 @@ class SparklineColumn extends Column
                 // Position the bar so it roughly lines up with the data point
                 'x' => $index * $barWidth,
                 'width' => $barWidth,
-                'value' => number_format($value, 1, ',', '.') . ' g', // Format the amount
+                'value' => Number::grams($value, 1), // Format the amount
             ];
         }
 

@@ -9,6 +9,7 @@ use App\Services\Traceability\CertificateSnapshotter;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -84,7 +85,7 @@ class CreateDeliveryTool extends Tool
         $certificate = app(CertificateSnapshotter::class)->snapshotFromSupplier($delivery->refresh());
 
         $bagList = collect($validated['bags'])
-            ->map(fn (array $b, int $i): string => "  • {$resolved[$i]->name} — Charge {$b['charge']}, ".number_format($b['size_grams'] / 1000, 2).' kg')
+            ->map(fn (array $b, int $i): string => "  • {$resolved[$i]->name} — Charge {$b['charge']}, ".Number::kilos($b['size_grams']))
             ->implode("\n");
 
         $certLine = $certificate !== null

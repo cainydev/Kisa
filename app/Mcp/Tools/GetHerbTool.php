@@ -6,6 +6,7 @@ use App\Mcp\Concerns\ResolvesEntities;
 use App\Models\Bag;
 use App\Support\Stats\HerbStats;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -31,7 +32,7 @@ class GetHerbTool extends Tool
         }
 
         $stats = HerbStats::for($herb);
-        $stock = number_format($stats->currentStock() / 1000, 2);
+        $stock = Number::kilos($stats->currentStock());
         $depletion = $stats->estimatedDepletionDate()?->format('d.m.Y') ?? 'unbekannt';
 
         $products = $herb->products()->get()
@@ -44,17 +45,17 @@ class GetHerbTool extends Tool
             ->limit(5)
             ->get()
             ->map(function (Bag $b): string {
-                $remaining = number_format($b->getCurrentWithTrashed() / 1000, 2);
+                $remaining = Number::kilos($b->getCurrentWithTrashed());
                 $supplier = $b->delivery?->supplier?->shortname ?? '—';
 
-                return "  • Charge {$b->charge}: {$remaining} kg übrig (von {$supplier})";
+                return "  • Charge {$b->charge}: {$remaining} übrig (von {$supplier})";
             })
             ->implode("\n");
 
         $text = "Herb #{$herb->id}: {$herb->name}\n"
             ."Vollname: {$herb->fullname}\n"
             .'Lieferant: '.($herb->supplier?->shortname ?? '—')."\n"
-            ."Aktueller Bestand: {$stock} kg\n"
+            ."Aktueller Bestand: {$stock}\n"
             ."Voraussichtlich erschöpft: {$depletion}\n\n"
             .'Verwendet in Produkten:'."\n".($products ?: '  (keine)')."\n\n"
             .'Aktuelle Chargen:'."\n".($recentBags ?: '  (keine)');

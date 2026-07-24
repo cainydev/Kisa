@@ -22,7 +22,7 @@ class ValidateBackupToken
 
         if (! $validKey || ! hash_equals($validKey, $providedKey ?? '')) {
             if (filled(config('discord-alerts.webhook_urls.default'))) {
-                DiscordAlert::message("Someone tried to download a backup but failed. ProvidedKey: $providedKey, validKey: $validKey");
+                DiscordAlert::message('Someone tried to download a backup but failed authentication.');
             }
 
             abort(401, 'Unauthorized: Invalid backup access key');

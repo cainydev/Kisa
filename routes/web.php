@@ -21,12 +21,3 @@ Route::middleware(['web', Authenticate::class])
             ->name('labels.preview')
             ->where('page', '[a-zA-Z0-9_-]+');
     });
-
-Route::get('/test', function () {
-    // \App\Services\HerbUsageStatistics::generateAll();
-    // GenerateHerbUsageStatistics::dispatch();
-    // \App\Jobs\GenerateVariantSalesStatistics::dispatch();
-    // \App\Services\VariantStatisticsService::generateAll();
-
-    return view('test');
-});

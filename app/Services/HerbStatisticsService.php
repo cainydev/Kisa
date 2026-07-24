@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\Bag;
 use App\Models\Herb;
 use App\Support\Stats\HerbStats;
+use App\Support\Stats\HerbStock;
 use App\Support\Stats\TimeSeriesQuery;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -27,7 +27,7 @@ class HerbStatisticsService extends AbstractStatistics
         foreach ($models as $herb) {
             $usage = static::dailyUsage($herb, $start);
             $restocks = static::dailyRestocks($herb, $start);
-            $currentStock = (float) $herb->bags->sum(fn (Bag $bag) => $bag->getCurrentWithTrashed());
+            $currentStock = HerbStock::forBags($herb->bags);
 
             $netChanges = $restocks->keys()
                 ->merge($usage->keys())

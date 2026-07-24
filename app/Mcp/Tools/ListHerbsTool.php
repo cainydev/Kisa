@@ -5,6 +5,7 @@ namespace App\Mcp\Tools;
 use App\Models\Herb;
 use App\Support\Stats\HerbStats;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -43,10 +44,10 @@ class ListHerbsTool extends Tool
 
         $lines = $rows->map(function (array $r): string {
             $herb = $r['herb'];
-            $stock = number_format($r['stock'] / 1000, 2);
+            $stock = Number::kilos($r['stock']);
             $supplier = $herb->supplier?->shortname ?? '—';
 
-            return "• #{$herb->id} {$herb->name} — {$stock} kg (Lieferant: {$supplier})";
+            return "• #{$herb->id} {$herb->name} — {$stock} (Lieferant: {$supplier})";
         })->implode("\n");
 
         $header = $threshold !== null

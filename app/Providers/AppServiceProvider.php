@@ -4,12 +4,14 @@ namespace App\Providers;
 
 use App\Labels\Hyphenator;
 use App\Labels\TemplateRegistry;
+use App\Support\Weight;
 use Carbon\Carbon;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View;
 use Laravel\Passport\Passport;
@@ -63,6 +65,9 @@ class AppServiceProvider extends ServiceProvider
         Carbon::macro('endOfTime', function () {
             return Carbon::createFromFormat('Y-m-d H:i:s', '9999-12-31 23:59:59', 'UTC');
         });
+
+        Number::macro('kilos', fn (int|float $grams, int $precision = 2): string => Weight::kilos($grams, $precision));
+        Number::macro('grams', fn (int|float $grams, int $precision = 0): string => Weight::grams($grams, $precision));
 
         // The MCP server is protected with OAuth via Passport; this is the
         // consent screen shown to a user when an MCP client (e.g. Claude

@@ -5,6 +5,7 @@ namespace App\Mcp\Tools;
 use App\Mcp\Concerns\ResolvesEntities;
 use App\Models\Variant;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -43,10 +44,10 @@ class CreateVariantTool extends Tool
             'stock' => 0,
         ]);
 
-        $size = number_format($variant->size / 1000, 2);
+        $size = Number::kilos($variant->size);
 
         return Response::text(
-            "Created variant #{$variant->id} of \"{$product->name}\": {$size} kg"
+            "Created variant #{$variant->id} of \"{$product->name}\": {$size}"
             .($variant->sku ? ", SKU {$variant->sku}" : '').'.'
         );
     }

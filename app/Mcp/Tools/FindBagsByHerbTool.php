@@ -5,6 +5,7 @@ namespace App\Mcp\Tools;
 use App\Mcp\Concerns\ResolvesEntities;
 use App\Models\Bag;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -45,13 +46,13 @@ class FindBagsByHerbTool extends Tool
         }
 
         $lines = $bags->map(function (Bag $b): string {
-            $remaining = number_format($b->getCurrentWithTrashed() / 1000, 2);
-            $size = number_format($b->size / 1000, 2);
+            $remaining = Number::kilos($b->getCurrentWithTrashed());
+            $size = Number::kilos($b->size);
             $supplier = $b->delivery?->supplier?->shortname ?? '—';
             $lastUsed = $b->lastBottledAt()?->format('d.m.Y') ?? 'nie';
             $status = $b->trashed() ? ' — ENTSORGT' : '';
 
-            return "• Bag #{$b->id} Charge {$b->charge}: {$remaining}/{$size} kg übrig{$status}\n"
+            return "• Bag #{$b->id} Charge {$b->charge}: {$remaining}/{$size} übrig{$status}\n"
                 ."    zuletzt abgefüllt: {$lastUsed}, Lieferant: {$supplier}";
         })->implode("\n");
 

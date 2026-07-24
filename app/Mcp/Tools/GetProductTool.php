@@ -6,6 +6,7 @@ use App\Mcp\Concerns\ResolvesEntities;
 use App\Models\Herb;
 use App\Models\Variant;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -41,9 +42,9 @@ class GetProductTool extends Tool
         $variants = $product->variants
             ->sortBy('size')
             ->map(function (Variant $v): string {
-                $size = number_format($v->size / 1000, 2);
+                $size = Number::kilos($v->size);
 
-                return "  • {$size} kg — SKU {$v->sku} (Bestand: {$v->stock})";
+                return "  • {$size} — SKU {$v->sku} (Bestand: {$v->stock})";
             })
             ->implode("\n");
 

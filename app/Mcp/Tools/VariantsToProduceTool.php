@@ -2,9 +2,9 @@
 
 namespace App\Mcp\Tools;
 
-use App\Models\Variant;
-use App\Support\Stats\VariantStats;
+use App\Services\Stats\DepletionForecast;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -20,21 +20,8 @@ class VariantsToProduceTool extends Tool
         ]);
 
         $withinDays = (int) ($validated['within_days'] ?? 30);
-        $deadline = now()->addDays($withinDays);
 
-        $rows = Variant::query()->with('product')->get()
-            ->map(function (Variant $variant): array {
-                $stats = VariantStats::for($variant);
-
-                return [
-                    'variant' => $variant,
-                    'depletion' => $stats->estimatedDepletionDate(),
-                    'avgDaily' => $stats->averageDailySales(),
-                ];
-            })
-            ->filter(fn ($r) => $r['depletion'] !== null && $r['depletion']->lessThanOrEqualTo($deadline))
-            ->sortBy('depletion')
-            ->values();
+        $rows = app(DepletionForecast::class)->variants($withinDays);
 
         if ($rows->isEmpty()) {
             return Response::text("No variants are projected to run out within {$withinDays} days (note: this relies on generated sales statistics).");
@@ -42,11 +29,11 @@ class VariantsToProduceTool extends Tool
 
         $lines = $rows->map(function (array $r): string {
             $v = $r['variant'];
-            $size = number_format($v->size / 1000, 2);
+            $size = Number::kilos($v->size);
             $when = $r['depletion']->format('d.m.Y');
             $days = (int) now()->diffInDays($r['depletion'], false);
 
-            return "• {$v->product?->name} {$size} kg (SKU {$v->sku}) — Bestand {$v->stock}, erschöpft am {$when} (in {$days} Tagen)";
+            return "• {$v->product?->name} {$size} (SKU {$v->sku}) — Bestand {$v->stock}, erschöpft am {$when} (in {$days} Tagen)";
         })->implode("\n");
 
         return Response::text("Variants to produce within {$withinDays} days ({$rows->count()}):\n{$lines}");

@@ -5,6 +5,7 @@ namespace App\Mcp\Tools;
 use App\Models\Variant;
 use App\Support\Stats\VariantStats;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -31,13 +32,13 @@ class GetVariantTool extends Tool
         }
 
         $stats = VariantStats::for($variant);
-        $size = number_format($variant->size / 1000, 2);
+        $size = Number::kilos($variant->size);
         $avgDaily = number_format($stats->averageDailySales(), 2);
         $depletion = $stats->estimatedDepletionDate()?->format('d.m.Y') ?? 'unbekannt';
 
         $text = "Variant #{$variant->id}\n"
             .'Produkt: '.($variant->product?->name ?? '—')."\n"
-            ."Größe: {$size} kg\n"
+            ."Größe: {$size}\n"
             .'SKU: '.($variant->sku ?? '—').' · EAN: '.($variant->ean ?? '—')."\n"
             ."Bestand: {$variant->stock}\n"
             ."Ø Verkauf/Tag: {$avgDaily}\n"

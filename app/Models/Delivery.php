@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CertificateActivity;
 use App\Enums\ProductCategory;
 use App\Services\Traceability\CertificateSnapshotter;
+use App\Support\Traceability\BioInspection;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -113,6 +114,15 @@ class Delivery extends Model implements HasMedia
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    /**
+     * The goods-inbound organic inspection recorded on this delivery, wrapped
+     * so its checklist and release state have a single source of truth.
+     */
+    public function bioInspection(): BioInspection
+    {
+        return BioInspection::fromArray($this->bio_inspection);
     }
 
     /**

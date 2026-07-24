@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Bottles\Pages;
 
 use App\Filament\Resources\Bottles\BottleResource;
+use App\Filament\Support\StockUploadNotification;
 use App\Models\Bottle;
 use App\Models\BottlePosition;
+use App\Services\Billbee\UploadBottlePositionStock;
 use Exception;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -23,6 +25,7 @@ use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
+
 use function route;
 
 class Recipes extends Page implements HasActions, HasSchemas, HasTable
@@ -33,7 +36,6 @@ class Recipes extends Page implements HasActions, HasSchemas, HasTable
 
     protected static string $resource = BottleResource::class;
 
-    /** @var Bottle */
     public Bottle $bottle;
 
     public array $bags = [];
@@ -42,10 +44,10 @@ class Recipes extends Page implements HasActions, HasSchemas, HasTable
     public bool $grouped = true;
 
     #[Url(as: 'tab', keep: true)]
-    public string|null $activeTab = null;
+    public ?string $activeTab = null;
 
     #[Url(as: 'group', keep: true)]
-    public string|null $activeGroupedTab = null;
+    public ?string $activeGroupedTab = null;
 
     protected string $view = 'filament.resources.bottle-resource.pages.recipes';
 
@@ -60,14 +62,15 @@ class Recipes extends Page implements HasActions, HasSchemas, HasTable
         if ($this->bottle->positions->isEmpty()) {
             $this->activeTab = null;
             $this->activeGroupedTab = null;
+
             return;
         }
 
-        if (!$this->activeTab || !$this->bottle->positions->pluck('id')->contains($this->activeTab)) {
+        if (! $this->activeTab || ! $this->bottle->positions->pluck('id')->contains($this->activeTab)) {
             $this->activeTab = $this->bottle->positions->first()->id;
         }
 
-        if (!$this->activeGroupedTab || !$this->groups->keys()->contains($this->activeGroupedTab)) {
+        if (! $this->activeGroupedTab || ! $this->groups->keys()->contains($this->activeGroupedTab)) {
             if ($this->activeGroupedTab) {
                 $groupCount = $this->groups->count();
                 $ids = str($this->activeGroupedTab)->after('g-')->explode('-');
@@ -76,12 +79,13 @@ class Recipes extends Page implements HasActions, HasSchemas, HasTable
                     return $positions->pluck('id')->contains($ids->first());
                 })->keys()->first();
 
-                if ($this->grouped)
+                if ($this->grouped) {
                     Notification::make()
                         ->title('Gruppen zusammengeführt.')
                         ->body('Zwei Gruppen wurden automatisch zusammengeführt weil die Zutaten identisch sind.')
                         ->success()
                         ->send();
+                }
             } else {
                 $this->activeGroupedTab = $this->groups->keys()->first();
             }
@@ -94,7 +98,7 @@ class Recipes extends Page implements HasActions, HasSchemas, HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn() => BottlePosition::whereIn('id', $this->positions()->pluck('id'))->with(['variant.product']))
+            ->query(fn () => BottlePosition::whereIn('id', $this->positions()->pluck('id'))->with(['variant.product']))
             ->columnManager(false)
             ->paginated(false)
             ->columns([
@@ -106,7 +110,7 @@ class Recipes extends Page implements HasActions, HasSchemas, HasTable
                     ->label('Produkt'),
                 TextColumn::make('variant.size')
                     ->label('')
-                    ->formatStateUsing(fn($state) => "{$state}g")
+                    ->formatStateUsing(fn ($state) => "{$state}g")
                     ->grow()
                     ->badge(),
                 TextColumn::make('variant.stock')
@@ -126,17 +130,18 @@ class Recipes extends Page implements HasActions, HasSchemas, HasTable
                         $record->save();
                     }),
                 Action::make('upload')
-                    ->disabled(fn(BottlePosition $position) => $position->uploaded)
+                    ->disabled(fn (BottlePosition $position) => $position->uploaded)
                     ->label(function (BottlePosition $position) {
                         return $position->uploaded ? 'Eingelagert' : 'Einlagern';
                     })
                     ->action(function (BottlePosition $record) {
-                        $record->upload();
+                        $result = app(UploadBottlePositionStock::class)->handle($record);
+                        StockUploadNotification::make($result)->send();
                     })
                     ->button()
                     ->color('gray')
                     ->icon('icon-billbee')
-                    ->iconSize(IconSize::Large)
+                    ->iconSize(IconSize::Large),
             ]);
     }
 
@@ -170,17 +175,18 @@ class Recipes extends Page implements HasActions, HasSchemas, HasTable
 
         return $this->bottle->positions->groupBy(function ($item) {
             $attachedBags = $item->ingredients->pluck('bag_id')->sort();
-            if ($attachedBags->isEmpty()) return "{$item->variant->product_id}";
+            if ($attachedBags->isEmpty()) {
+                return "{$item->variant->product_id}";
+            }
+
             return "{$item->variant->product_id}-{$attachedBags->implode('-')}";
-        })->mapWithKeys(fn(Collection $positions) => [
-            "g-{$positions->pluck('id')->implode('-')}" => $positions
+        })->mapWithKeys(fn (Collection $positions) => [
+            "g-{$positions->pluck('id')->implode('-')}" => $positions,
         ]);
     }
 
     /**
      * Change the page title.
-     *
-     * @return string|Htmlable
      */
     public function getTitle(): string|Htmlable
     {
@@ -195,10 +201,10 @@ class Recipes extends Page implements HasActions, HasSchemas, HasTable
                 ->color('gray')
                 ->url(route('filament.admin.resources.bottles.edit', ['record' => $this->bottle->id])),
             Action::make('group')
-                ->color(fn() => $this->grouped ? 'info' : 'gray')
-                ->label(fn() => $this->grouped ? 'Gruppiert' : 'Nicht gruppiert')
-                ->icon(fn() => $this->grouped ? 'heroicon-s-link' : 'heroicon-s-link-slash')
-                ->action(fn() => $this->grouped = !$this->grouped),
+                ->color(fn () => $this->grouped ? 'info' : 'gray')
+                ->label(fn () => $this->grouped ? 'Gruppiert' : 'Nicht gruppiert')
+                ->icon(fn () => $this->grouped ? 'heroicon-s-link' : 'heroicon-s-link-slash')
+                ->action(fn () => $this->grouped = ! $this->grouped),
         ];
     }
 }

@@ -5,6 +5,7 @@ namespace App\Mcp\Tools;
 use App\Models\Bag;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Number;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
@@ -44,12 +45,12 @@ class DiscardBagsTool extends Tool
                 continue;
             }
 
-            $remaining = number_format($bag->getCurrentWithTrashed() / 1000, 2);
+            $remaining = Number::kilos($bag->getCurrentWithTrashed());
             $lastUsed = $bag->lastBottledAt()?->format('d.m.Y') ?? 'nie';
 
             DB::transaction(fn () => $bag->discard());
 
-            $discarded[] = "#{$id} Charge {$bag->charge} ({$bag->herb?->name}): {$remaining} kg entsorgt, zuletzt abgefüllt {$lastUsed}";
+            $discarded[] = "#{$id} Charge {$bag->charge} ({$bag->herb?->name}): {$remaining} entsorgt, zuletzt abgefüllt {$lastUsed}";
         }
 
         $parts = [];

@@ -2,11 +2,6 @@
 
 namespace App\Models;
 
-use App\Facades\Billbee;
-use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
-use BillbeeDe\BillbeeAPI\Model\Stock;
-use Exception;
-use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -67,18 +62,19 @@ class BottlePosition extends Model
             }
 
             return $this->ingredients->first()->bag->charge;
-        } else {
-            $bottlePositionsToday =
-                BottlePosition::all()
-                    ->where('bottle.date', $this->bottle->date)
-                    ->where('created_at', '<', $this->created_at)
-                    ->filter(function ($pos) {
-                        return $pos->variant->product->recipeIngredients->count() > 1;
-                    })
-                    ->count();
-
-            return $this->bottle->date->format('ymd').$bottlePositionsToday + 1;
         }
+
+        $day = $this->bottle->date->toDateString();
+
+        $earlierToday = BottlePosition::query()
+            ->where('id', '<', $this->getKey())
+            ->whereHas('bottle', fn ($query) => $query->whereDate('date', $day))
+            ->whereHas('variant.product.recipeIngredients', null, '>=', 2)
+            ->count();
+
+        $sequence = $earlierToday + 1;
+
+        return $this->bottle->date->format('ymd').$sequence;
     }
 
     /**
@@ -87,89 +83,6 @@ class BottlePosition extends Model
     public function ingredients(): HasMany
     {
         return $this->hasMany(Ingredient::class);
-    }
-
-    /**
-     * Update the stock for this variant in Billbee
-     *
-     * @return bool True, if stock is updated
-     *
-     * @throws QuotaExceededException
-     */
-    public function upload(): bool
-    {
-        if ($this->uploaded) {
-            return true;
-        }
-
-        if (! $this->hasAllBags()) {
-            Notification::make()
-                ->warning()
-                ->title('Einlagern fehlgeschlagen')
-                ->body('Es sind nicht alle verwendeten Rohstoffe zugewiesen.')
-                ->send();
-
-            return false;
-        }
-
-        if (empty($this->charge)) {
-            $this->charge = $this->getCharge();
-            $this->save();
-        }
-
-        if (empty($this->charge) || $this->charge === 'CHARGE_NOT_CALCULATABLE') {
-            Notification::make()
-                ->danger()
-                ->title('Einlagern fehlgeschlagen')
-                ->body('Die Charge wurde nicht angegeben und konnte nicht berechnet werden.')
-                ->send();
-
-            return false;
-        }
-
-        if ($billbeeProduct = $this->variant->fetchBillbeeProduct()) {
-            try {
-                $newStock = Stock::fromProduct($billbeeProduct);
-                $newStock->deltaQuantity = $this->count;
-                $newStock->newQuantity = $newStock->oldQuantity + $this->count;
-                $newStock->reason = "Einlagerung $this->charge";
-
-                $response = Billbee::products()->updateStock($newStock);
-                $newStock = $response->data->currentStock;
-
-                $this->variant->update([
-                    'stock' => $newStock,
-                ]);
-
-                $this->update([
-                    'uploaded' => true,
-                ]);
-
-                Notification::make()
-                    ->title('Einlagern erfolgreich')
-                    ->body('Neuer Bestand in Billbee: '.$newStock)
-                    ->success()
-                    ->send();
-
-                return true;
-            } catch (Exception $e) {
-                Notification::make()
-                    ->title('Einlagern fehlgeschlagen')
-                    ->body('Es ist ein Fehler aufgetreten: '.$e->getMessage())
-                    ->danger()
-                    ->send();
-
-                return false;
-            }
-        } else {
-            Notification::make()
-                ->title('Einlagern fehlgeschlagen')
-                ->body('Es konnte kein passendes Billbee-Produkt gefunden werden.')
-                ->danger()
-                ->send();
-
-            return false;
-        }
     }
 
     public function hasAllBags(): bool

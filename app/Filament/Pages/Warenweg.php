@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Variant;
 use App\Support\PrintPdf;
+use App\Support\Traceability\BioInspection;
 use App\Support\Warenweg\GraphAccumulator;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -23,6 +24,7 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Number;
 use Livewire\Attributes\Url;
 use UnitEnum;
 
@@ -254,7 +256,7 @@ class Warenweg extends Page
             return ['mode' => 'delivery', 'subjectLabel' => "#{$this->entityId}", 'flags' => []];
         }
 
-        $inspection = $delivery->bio_inspection ?? [];
+        $checks = $delivery->bioInspection()->checks();
 
         $bags = Bag::withTrashed()->with('herb')->where('delivery_id', $delivery->id)->get()
             ->map(fn (Bag $bag) => [
@@ -273,9 +275,9 @@ class Warenweg extends Page
             'mode' => 'delivery',
             'subjectLabel' => $this->entityLabel('delivery', (int) $this->entityId),
             'header' => $header,
-            'checks' => $this->normalizeInspection($inspection),
+            'checks' => $checks,
             'bags' => $bags,
-            'flags' => $this->flagsFromHeader($header, $this->normalizeInspection($inspection)),
+            'flags' => $this->flagsFromHeader($header, $checks),
         ];
     }
 
@@ -311,7 +313,7 @@ class Warenweg extends Page
                 'oeko_code' => $delivery?->frozenOekoCode(),
                 'delivery_date' => $delivery?->delivered_date,
                 'size' => $bag->getSizeInKilo(),
-                'released' => (bool) ($delivery?->bio_inspection['approved'] ?? false),
+                'released' => (bool) $delivery?->bioInspection()->isApproved(),
                 'certificate' => (bool) $delivery?->getFirstMedia('certificate'),
                 'bio' => (bool) $bag->bio,
             ];
@@ -388,7 +390,7 @@ class Warenweg extends Page
                     'charge' => $bag->charge,
                     'supplier' => $bag->delivery?->supplier?->shortname ?? $bag->delivery?->supplier?->company,
                     'oeko_code' => $bag->delivery?->frozenOekoCode(),
-                    'released' => (bool) ($bag->delivery?->bio_inspection['approved'] ?? false),
+                    'released' => (bool) $bag->delivery?->bioInspection()->isApproved(),
                     'certificate' => (bool) $bag->delivery?->getFirstMedia('certificate'),
                     'bio' => (bool) $bag->bio,
                 ])->all(),
@@ -430,7 +432,7 @@ class Warenweg extends Page
                 'supplier' => $bag->delivery?->supplier?->shortname ?? $bag->delivery?->supplier?->company,
                 'oeko_code' => $bag->delivery?->frozenOekoCode(),
                 'delivery_date' => $bag->delivery?->delivered_date,
-                'released' => (bool) ($bag->delivery?->bio_inspection['approved'] ?? false),
+                'released' => (bool) $bag->delivery?->bioInspection()->isApproved(),
                 'certificate' => (bool) $bag->delivery?->getFirstMedia('certificate'),
                 'bio' => (bool) $bag->bio,
             ])->values();
@@ -460,7 +462,7 @@ class Warenweg extends Page
     protected function gebindeRow(Bag $bag): array
     {
         $delivery = $bag->delivery;
-        $inspection = $delivery?->bio_inspection ?? [];
+        $inspection = BioInspection::fromArray($delivery?->bio_inspection);
 
         $usage = BottlePosition::with('variant.product.herbs', 'bottle', 'ingredients')
             ->whereHas('ingredients', fn ($q) => $q->where('bag_id', $bag->id))
@@ -505,7 +507,7 @@ class Warenweg extends Page
                 'loss' => round($loss),
                 'remaining' => round(max($remaining, 0)),
             ],
-            'checks' => $this->normalizeInspection($inspection),
+            'checks' => $inspection->checks(),
             'usage' => $usage,
         ]);
     }
@@ -518,14 +520,13 @@ class Warenweg extends Page
     protected function originHeader(?Delivery $delivery): array
     {
         $supplier = $delivery?->supplier;
-        $inspection = $delivery?->bio_inspection ?? [];
 
         return [
             'supplier' => $supplier?->company,
             'inspector' => $delivery?->frozenControlBody(),
             'oeko_code' => $delivery?->frozenOekoCode(),
             'delivery_date' => $delivery?->delivered_date,
-            'released' => (bool) ($inspection['approved'] ?? false),
+            'released' => BioInspection::fromArray($delivery?->bio_inspection)->isApproved(),
             'documents' => [
                 'Zertifikat' => (bool) $delivery?->getFirstMedia('certificate'),
                 'Rechnung' => (bool) $delivery?->getFirstMedia('invoice'),
@@ -1155,9 +1156,9 @@ class Warenweg extends Page
 
         $this->emitSupplierDelivery($g, $delivery);
 
-        $inspection = $delivery->bio_inspection ?? [];
-        $released = (bool) ($inspection['approved'] ?? false);
-        $openFindings = $this->countOpenFindings($inspection);
+        $inspection = $delivery->bioInspection();
+        $released = $inspection->isApproved();
+        $openFindings = $inspection->openFindingCount();
 
         $g->edge("delivery:{$delivery->id}", "bag:{$bag->id}", gap: ! $released || $openFindings > 0);
     }
@@ -1181,9 +1182,9 @@ class Warenweg extends Page
             'badge' => $oekoCode,
         ]);
 
-        $inspection = $delivery->bio_inspection ?? [];
-        $released = (bool) ($inspection['approved'] ?? false);
-        $openFindings = $this->countOpenFindings($inspection);
+        $inspection = $delivery->bioInspection();
+        $released = $inspection->isApproved();
+        $openFindings = $inspection->openFindingCount();
         $hasCertificate = (bool) $delivery->getFirstMedia('certificate');
 
         $reasons = [];
@@ -1348,14 +1349,14 @@ class Warenweg extends Page
      */
     protected function deliveryDetail(Delivery $delivery): array
     {
-        $inspection = $delivery->bio_inspection ?? [];
+        $inspection = $delivery->bioInspection();
 
         return [
             'title' => 'Lieferung vom '.($delivery->delivered_date?->format('d.m.Y') ?? '—'),
             'url' => $this->deliveryUrl($delivery),
             'urlLabel' => 'Zur Lieferung',
-            'released' => (bool) ($inspection['approved'] ?? false),
-            'checks' => $this->normalizeInspection($inspection),
+            'released' => $inspection->isApproved(),
+            'checks' => $inspection->checks(),
             'documents' => array_values(array_filter([
                 $this->documentRow($delivery, 'certificate', 'Zertifikat'),
                 $this->documentRow($delivery, 'invoice', 'Rechnung'),
@@ -1494,8 +1495,8 @@ class Warenweg extends Page
     protected function grams(float|int $g): string
     {
         return $g >= 1000
-            ? number_format($g / 1000, 1, ',', '.').' kg'
-            : number_format($g, 0, ',', '.').' g';
+            ? Number::kilos($g, 1)
+            : Number::grams($g);
     }
 
     /**
@@ -1541,49 +1542,5 @@ class Warenweg extends Page
         } catch (\Throwable) {
             return null;
         }
-    }
-
-    /**
-     * @param  array<string, mixed>  $inspection
-     * @return list<array{label: string, ok: bool}>
-     */
-    protected function normalizeInspection(array $inspection): array
-    {
-        $positive = [
-            'certificateValid' => 'Kontrollstellen-Nr. gültig',
-            'goodsMatchValidity' => 'Ware entspricht Zertifizierungsbereich',
-            'hasInvoice' => 'Rechnung vorhanden',
-            'codeOnInvoice' => 'Kontrollstellen-Nr. auf Rechnung',
-            'hasDeliveryNote' => 'Lieferschein vorhanden',
-            'codeOnDeliveryNote' => 'Kontrollstellen-Nr. auf Lieferschein',
-            'codeOnBag' => 'Kontrollstellen-Nr. auf Gebinde',
-        ];
-
-        $negative = [
-            'damaged' => 'Keine Beschädigung',
-            'pestInfection' => 'Kein Schädlingsbefall',
-        ];
-
-        $checks = [];
-
-        foreach ($positive as $key => $label) {
-            $checks[] = ['label' => $label, 'ok' => (bool) ($inspection[$key] ?? false)];
-        }
-
-        foreach ($negative as $key => $label) {
-            $checks[] = ['label' => $label, 'ok' => ! (bool) ($inspection[$key] ?? false)];
-        }
-
-        return $checks;
-    }
-
-    /**
-     * @param  array<string, mixed>  $inspection
-     */
-    protected function countOpenFindings(array $inspection): int
-    {
-        return collect($this->normalizeInspection($inspection))
-            ->reject(fn (array $check) => $check['ok'])
-            ->count();
     }
 }
