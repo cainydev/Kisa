@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Mcp;
 
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -36,5 +37,24 @@ class McpOAuthTest extends TestCase
             'method' => 'tools/list',
             'id' => 1,
         ])->assertUnauthorized();
+    }
+
+    public function test_the_authorize_endpoint_redirects_guests_to_the_panel_login(): void
+    {
+        $client = app('Laravel\Passport\ClientRepository')->createAuthorizationCodeGrantClient(
+            name: 'Test Client',
+            redirectUris: ['https://example.com/callback'],
+            confidential: false,
+        );
+
+        $this->get('/oauth/authorize?'.http_build_query([
+            'client_id' => $client->id,
+            'redirect_uri' => 'https://example.com/callback',
+            'response_type' => 'code',
+            'scope' => 'mcp:use',
+            'state' => 'state',
+            'code_challenge' => 'fC299vdQkeMU7uADK8_jZYfBGeGpsOJ4Hh3CN5wTATc',
+            'code_challenge_method' => 'S256',
+        ]))->assertRedirect(Filament::getPanel('admin')->getLoginUrl());
     }
 }
