@@ -22,15 +22,20 @@ class DiscordWebhookHandler extends AbstractProcessingHandler
 
     public function __construct(
         Level $level = Level::Debug,
-        bool  $bubble = true,
-    )
-    {
+        bool $bubble = true,
+    ) {
         parent::__construct($level, $bubble);
     }
 
     protected function write(LogRecord $record): void
     {
-        if ($record->level->isLowerThan($this->level)) return;
+        if ($record->level->isLowerThan($this->level)) {
+            return;
+        }
+
+        if (blank(config('discord-alerts.webhook_urls.default'))) {
+            return;
+        }
 
         $emoji = self::LEVEL_EMOJIS[$record->level->getName()] ?? '📝';
 
