@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Herb;
-use App\Settings\StatsSettings;
+use App\Services\HerbStatisticsService;
 use App\Support\Stats\HerbStats;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -28,11 +28,10 @@ class DebugStats extends Command
         $this->info("🔍 DEBUGGING HERB: {$herb->name} (ID: {$id})");
         $this->line(str_repeat('-', 50));
 
-        // 1. CHECK SETTINGS
-        $settings = app(StatsSettings::class);
-        $startDate = $settings->startDate;
-        $daysDiff = $startDate->diffInDays(now());
-        $this->comment('📅 Configured Start Date: '.$startDate->toDateString()." ({$daysDiff} days ago)");
+        // 1. CHECK WINDOW
+        $startDate = HerbStatisticsService::windowStart();
+        $daysDiff = (int) $startDate->diffInDays(now());
+        $this->comment('📅 Derived Window Start: '.$startDate->toDateString()." ({$daysDiff} days ago)");
 
         // 2. CHECK SOURCE DATA (SQL)
         $this->line("\n📊 SQL SOURCE CHECK (Last 10 entries):");

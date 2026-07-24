@@ -2,11 +2,29 @@
 
 namespace App\Services;
 
+use App\Models\Bottle;
+use App\Models\Delivery;
+use App\Models\Order;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 abstract class AbstractStatistics
 {
+    /**
+     * First day of the stats window: the earliest recorded event across
+     * orders, bottlings and deliveries.
+     */
+    public static function windowStart(): Carbon
+    {
+        $earliest = collect([
+            Order::query()->min('date'),
+            Bottle::query()->min('date'),
+            Delivery::query()->min('delivered_date'),
+        ])->filter()->min();
+
+        return $earliest ? Carbon::parse($earliest)->startOfDay() : now()->startOfDay();
+    }
+
     /**
      * Generate and persist statistics for all entities.
      */

@@ -1,13 +1,12 @@
 <?php
 
 use App\Settings\BillbeeSettings;
-use App\Settings\StatsSettings;
-use Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository;
-use Spatie\LaravelSettings\SettingsRepositories\RedisSettingsRepository;
-use Spatie\LaravelSettings\SettingsCasts\DateTimeInterfaceCast;
-use Spatie\LaravelSettings\SettingsCasts\DateTimeZoneCast;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelSettings\SettingsCasts\DataCast;
+use Spatie\LaravelSettings\SettingsCasts\DateTimeInterfaceCast;
+use Spatie\LaravelSettings\SettingsCasts\DateTimeZoneCast;
+use Spatie\LaravelSettings\SettingsRepositories\DatabaseSettingsRepository;
+use Spatie\LaravelSettings\SettingsRepositories\RedisSettingsRepository;
 
 return [
 
@@ -17,7 +16,6 @@ return [
      */
     'settings' => [
         BillbeeSettings::class,
-        StatsSettings::class,
     ],
 
     /*
@@ -76,7 +74,7 @@ return [
     'global_casts' => [
         DateTimeInterface::class => DateTimeInterfaceCast::class,
         DateTimeZone::class => DateTimeZoneCast::class,
-//        Spatie\DataTransferObject\DataTransferObject::class => Spatie\LaravelSettings\SettingsCasts\DtoCast::class,
+        //        Spatie\DataTransferObject\DataTransferObject::class => Spatie\LaravelSettings\SettingsCasts\DtoCast::class,
         Data::class => DataCast::class,
     ],
 

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Bag;
 use App\Models\Herb;
-use App\Settings\StatsSettings;
 use App\Support\Stats\HerbStats;
 use App\Support\Stats\TimeSeriesQuery;
 use Carbon\Carbon;
@@ -20,7 +19,7 @@ class HerbStatisticsService extends AbstractStatistics
 
     public static function generate(Collection $models): void
     {
-        $start = app(StatsSettings::class)->startDate->copy()->startOfDay();
+        $start = static::windowStart();
         $end = now()->startOfDay();
 
         $models->loadMissing('bags.ingredients');

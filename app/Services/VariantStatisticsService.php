@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Variant;
-use App\Settings\StatsSettings;
 use App\Support\Stats\VariantStats;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -17,7 +16,7 @@ class VariantStatisticsService extends AbstractStatistics
 
     public static function generate(Collection $models): void
     {
-        $start = app(StatsSettings::class)->startDate->copy()->startOfDay();
+        $start = static::windowStart();
         $end = now()->startOfDay();
 
         foreach ($models as $variant) {

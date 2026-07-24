@@ -8,10 +8,6 @@
                                x-on:click="activeTab = 'billbee'">
             Billbee
         </x-filament::tabs.item>
-        <x-filament::tabs.item alpine-active="activeTab === 'stats'"
-                               x-on:click="activeTab = 'stats'">
-            Statistik
-        </x-filament::tabs.item>
     </x-filament::tabs>
 
     <div>
@@ -20,9 +16,6 @@
         </div>
         <div x-show="activeTab == 'billbee'">
             <livewire:edit-billbee-settings/>
-        </div>
-        <div x-show="activeTab == 'stats'">
-            <livewire:edit-stats-settings/>
         </div>
     </div>
 </x-filament-panels::page>
