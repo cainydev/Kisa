@@ -20,11 +20,13 @@ return new class extends Migration
         });
 
         DB::statement(<<<'SQL'
-            UPDATE ingredients i
-            JOIN bottle_positions bp ON i.bottle_position_id = bp.id
-            JOIN variants v ON bp.variant_id = v.id
-            LEFT JOIN herb_product hp ON hp.product_id = v.product_id AND hp.herb_id = i.herb_id
-            SET i.amount = ROUND(COALESCE(v.size * bp.count * hp.percentage / 100, 0), 2)
+            UPDATE ingredients SET amount = ROUND(COALESCE((
+                SELECT v.size * bp.count * hp.percentage / 100
+                FROM bottle_positions bp
+                JOIN variants v ON bp.variant_id = v.id
+                LEFT JOIN herb_product hp ON hp.product_id = v.product_id AND hp.herb_id = ingredients.herb_id
+                WHERE bp.id = ingredients.bottle_position_id
+            ), 0), 2)
         SQL);
 
         Schema::table('ingredients', function (Blueprint $table) {
