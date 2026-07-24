@@ -25,3 +25,22 @@ frankenphp
 
 **/caddy
 frankenphp-worker.php
+
+# Boost-generated agent guidelines & skills (regenerate with `pa boost:update`).
+# The hand-written sources live in /.ai; /.mcp.json is committed on purpose.
+/.claude
+/.junie
+/.github/copilot-instructions.md
+/.github/skills
+/.cursor
+/.zed
+/.kiro
+/.codex
+/.pi
+/.amp
+/.factory
+/.agents
+/AGENTS.md
+/CLAUDE.md
+/GEMINI.md
+/boost.json
