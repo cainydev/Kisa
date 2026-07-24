@@ -20,7 +20,7 @@ jobs:
         with:
           php-version: '8.4'
           coverage: none
-          extensions: curl, pdo, sqlite
+          extensions: curl, pdo, sqlite, xdebug
 
       - name: Copy environment file
         run: cp .env.example .env
