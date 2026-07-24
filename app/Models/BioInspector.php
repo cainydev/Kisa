@@ -41,16 +41,6 @@ class BioInspector extends Model
     }
 
     /**
-     * Returns all suppliers supervised by the bioInspector
-     *
-     * @return HasMany The relationship
-     */
-    public function suppliers(): HasMany
-    {
-        return $this->hasMany(Supplier::class);
-    }
-
-    /**
      * Returns all certificates issued under this control body.
      *
      * @return HasMany The relationship
