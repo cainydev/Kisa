@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
-use App\Jobs\AnalyzeHerb;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Redis;
 
 class Bag extends Model
 {
@@ -26,32 +25,20 @@ class Bag extends Model
         'steamed' => 'date:Y-m-d',
     ];
 
-    /**
-     * Lifecycle hooks
-     * @return void
-     */
-    protected static function booted(): void
-    {
-        static::updated(function (Bag $bag) {
-            AnalyzeHerb::dispatch($bag->herb);
-        });
-    }
-
     public function title(): Attribute
     {
-        return new Attribute(get: fn() => $this->herb->name . ' ' . $this->specification . ' (' . $this->charge . ')');
+        return new Attribute(get: fn () => $this->herb->name.' '.$this->specification.' ('.$this->charge.')');
     }
 
     public function discard(): bool
     {
         $this->update(['trashed' => $this->getCurrent()]);
+
         return $this->delete();
     }
 
     /**
      * Returns the current amount in this bag in g
-     *
-     * @return float
      */
     public function getCurrent(): float
     {
@@ -70,19 +57,16 @@ class Bag extends Model
 
     /**
      * Get the computed identifier of this bag.
-     * @return Attribute
      */
     public function identifier(): Attribute
     {
         return new Attribute(get: function () {
-            return $this->specification . ' ' . $this->herb->fullname . $this->getSizeInKilo();
+            return $this->specification.' '.$this->herb->fullname.$this->getSizeInKilo();
         });
     }
 
     /**
      * Returns the size formatted in kg
-     *
-     * @return string
      */
     public function getSizeInKilo(): string
     {
@@ -90,22 +74,7 @@ class Bag extends Model
     }
 
     /**
-     * @return mixed
-     */
-    public function redisCurrent(): Attribute
-    {
-        $redisQuery = "bag:$this->id:remaining";
-
-        return new Attribute(
-            get: fn() => floatval(Redis::get($redisQuery)),
-            set: fn($value) => Redis::set($redisQuery, $value) && $value
-        );
-    }
-
-    /**
      * Returns the herb that this bag contains
-     *
-     * @return BelongsTo
      */
     public function herb(): BelongsTo
     {
@@ -114,8 +83,6 @@ class Bag extends Model
 
     /**
      * Returns the delivery this bag was delivered in
-     *
-     * @return BelongsTo
      */
     public function delivery(): BelongsTo
     {
@@ -125,8 +92,6 @@ class Bag extends Model
     /**
      * Returns all the Ingredients where this bag is used in an efficient manner.
      * (Hopefully 1 query for all... not...)
-     *
-     * @return Collection
      */
     public function getIngredientsWithRelations(): Collection
     {
@@ -138,8 +103,6 @@ class Bag extends Model
 
     /**
      * Returns the relation with all the Ingredients where this bag is used
-     *
-     * @return HasMany
      */
     public function ingredients(): HasMany
     {
@@ -147,16 +110,26 @@ class Bag extends Model
     }
 
     /**
+     * The date this bag was most recently drawn from into a bottling, or null
+     * if it has never been used. Walks ingredients -> position -> bottle.
+     */
+    public function lastBottledAt(): ?Carbon
+    {
+        return $this->ingredients
+            ->map(fn (Ingredient $i) => $i->position?->bottle?->date)
+            ->filter()
+            ->max();
+    }
+
+    /**
      * Returns the current amount used by compound products
-     *
-     * @return float
      */
     public function getCompoundUsage(): float
     {
         $sum = 0;
         foreach ($this->ingredients as $i) {
             $variant = $i->position->variant;
-            if (!$variant->product->type->compound) {
+            if (! $variant->product->type->compound) {
                 continue;
             }
             foreach ($variant->product->herbs as $herb) {
@@ -171,8 +144,6 @@ class Bag extends Model
 
     /**
      * Returns the current amount used by non-compound products
-     *
-     * @return float
      */
     public function getNonCompoundUsage(): float
     {
@@ -194,8 +165,6 @@ class Bag extends Model
 
     /**
      * Returns the current amount (With trashed) in percent
-     *
-     * @return float
      */
     public function getCurrentPercentage(): float
     {
@@ -205,8 +174,6 @@ class Bag extends Model
     /**
      * Returns the current amount in this bag in g,
      * taking also the trashed amount into account.
-     *
-     * @return float
      */
     public function getCurrentWithTrashed(): float
     {
@@ -215,8 +182,6 @@ class Bag extends Model
 
     /**
      * Returns the size formatted in g
-     *
-     * @return string
      */
     public function getSizeInGramm(): string
     {

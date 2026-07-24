@@ -8,10 +8,13 @@ use App\Mcp\Tools\CreateDeliveryTool;
 use App\Mcp\Tools\CreateHerbTool;
 use App\Mcp\Tools\CreateProductTool;
 use App\Mcp\Tools\CreateSupplierTool;
+use App\Mcp\Tools\DiscardBagsTool;
+use App\Mcp\Tools\FindBagsByHerbTool;
 use App\Mcp\Tools\GetDeliveryTool;
 use App\Mcp\Tools\GetHerbTool;
 use App\Mcp\Tools\ListHerbsTool;
 use App\Mcp\Tools\ListSuppliersTool;
+use App\Models\Bag;
 use App\Models\BioInspector;
 use App\Models\Certificate;
 use App\Models\Delivery;
@@ -307,5 +310,97 @@ class KisServerTest extends TestCase
                 ['herb' => 'Minze', 'percentage' => 40],
             ],
         ])->assertOk()->assertSee('nicht 100');
+    }
+
+    // ---- Bags: find by herb & discard --------------------------------------
+
+    /**
+     * Create an active (non-discarded) bag for a herb, defeating the factory's
+     * random afterCreating discard so tests are deterministic.
+     */
+    private function activeBag(Herb $herb, array $attributes = []): Bag
+    {
+        $bag = Bag::factory()->create(['herb_id' => $herb->id, ...$attributes]);
+
+        if ($bag->trashed()) {
+            $bag->restore();
+        }
+
+        return $bag;
+    }
+
+    public function test_find_bags_by_herb_lists_active_bags_only_by_default(): void
+    {
+        $herb = Herb::factory()->create(['name' => 'Salbei']);
+        $active = $this->activeBag($herb, ['charge' => 'AKTIV1']);
+        $gone = $this->activeBag($herb, ['charge' => 'WEG1']);
+        $gone->discard();
+
+        KisServer::tool(FindBagsByHerbTool::class, ['herb' => 'Salbei'])
+            ->assertOk()
+            ->assertSee('AKTIV1')
+            ->assertDontSee('WEG1');
+    }
+
+    public function test_find_bags_by_herb_includes_discarded_when_requested(): void
+    {
+        $herb = Herb::factory()->create(['name' => 'Thymian']);
+        $this->activeBag($herb, ['charge' => 'AKTIV2']);
+        $gone = $this->activeBag($herb, ['charge' => 'WEG2']);
+        $gone->discard();
+
+        KisServer::tool(FindBagsByHerbTool::class, [
+            'herb' => 'Thymian',
+            'include_discarded' => true,
+        ])
+            ->assertOk()
+            ->assertSee('AKTIV2')
+            ->assertSee('WEG2')
+            ->assertSee('ENTSORGT');
+    }
+
+    public function test_find_bags_by_herb_errors_when_herb_unknown(): void
+    {
+        KisServer::tool(FindBagsByHerbTool::class, ['herb' => 'Gibtsnicht'])
+            ->assertHasErrors();
+    }
+
+    public function test_discard_bags_discards_multiple_by_id(): void
+    {
+        $herb = Herb::factory()->create(['name' => 'Lavendel']);
+        $a = $this->activeBag($herb);
+        $b = $this->activeBag($herb);
+
+        KisServer::tool(DiscardBagsTool::class, ['bag_ids' => [$a->id, $b->id]])
+            ->assertOk()
+            ->assertSee('Entsorgt (2)');
+
+        $this->assertTrue($a->fresh()->trashed());
+        $this->assertTrue($b->fresh()->trashed());
+    }
+
+    public function test_discard_bags_skips_unknown_and_already_discarded(): void
+    {
+        $herb = Herb::factory()->create(['name' => 'Ringelblume']);
+        $active = $this->activeBag($herb);
+        $already = $this->activeBag($herb);
+        $already->discard();
+
+        KisServer::tool(DiscardBagsTool::class, [
+            'bag_ids' => [$active->id, $already->id, 999999],
+        ])
+            ->assertOk()
+            ->assertSee('Entsorgt (1)')
+            ->assertSee('Übersprungen (2)')
+            ->assertSee('bereits entsorgt')
+            ->assertSee('nicht gefunden');
+
+        $this->assertTrue($active->fresh()->trashed());
+    }
+
+    public function test_discard_bags_errors_when_nothing_discarded(): void
+    {
+        KisServer::tool(DiscardBagsTool::class, ['bag_ids' => [999999]])
+            ->assertHasErrors();
     }
 }

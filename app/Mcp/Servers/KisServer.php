@@ -9,7 +9,9 @@ use App\Mcp\Tools\CreateHerbTool;
 use App\Mcp\Tools\CreateProductTool;
 use App\Mcp\Tools\CreateSupplierTool;
 use App\Mcp\Tools\CreateVariantTool;
+use App\Mcp\Tools\DiscardBagsTool;
 use App\Mcp\Tools\FindBagByChargeTool;
+use App\Mcp\Tools\FindBagsByHerbTool;
 use App\Mcp\Tools\GetDeliveryTool;
 use App\Mcp\Tools\GetHerbTool;
 use App\Mcp\Tools\GetProductTool;
@@ -74,6 +76,8 @@ class KisServer extends Server
         VariantsToProduceTool::class,
         // Bags & traceability
         FindBagByChargeTool::class,
+        FindBagsByHerbTool::class,
+        DiscardBagsTool::class,
         TraceChargeTool::class,
         // Cross-entity analysis
         StockOverviewTool::class,
