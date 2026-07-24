@@ -37,12 +37,6 @@ jobs:
       - name: Copy environment file
         run: cp .env.example .env
 
-      - name: Install Node dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build assets
-        run: bun run build
-
       - name: Get Composer cache directory
         id: composer-cache
         run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
@@ -55,7 +49,16 @@ jobs:
           restore-keys: composer-${{ runner.os }}-
 
       - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: composer install --prefer-dist --no-interaction --no-progress --no-scripts
+
+      - name: Install Node dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build assets
+        run: bun run build
+
+      - name: Run Composer post-install scripts
+        run: composer run-script post-autoload-dump
 
       - name: Verify platform requirements
         run: composer check-platform-reqs
