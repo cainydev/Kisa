@@ -2,135 +2,122 @@
 
 namespace App\Services;
 
+use App\Models\Bag;
 use App\Models\Herb;
 use App\Settings\StatsSettings;
+use App\Support\Stats\HerbStats;
+use App\Support\Stats\TimeSeriesQuery;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class HerbStatisticsService extends AbstractStatistics
 {
-    public const string CACHE_PREFIX = 'herb_stats';
-
     public static function generateAll(): void
     {
-        Herb::chunk(50, fn($herbs) => static::generate($herbs));
+        Herb::chunk(50, fn ($herbs) => static::generate($herbs));
     }
 
     public static function generate(Collection $models): void
     {
-        $startDate = app(StatsSettings::class)->startDate;
-        $period = self::days($startDate);
+        $start = app(StatsSettings::class)->startDate->copy()->startOfDay();
+        $end = now()->startOfDay();
+
+        $models->loadMissing('bags.ingredients');
 
         foreach ($models as $herb) {
-            // 1. Calculate TRUE Daily Usage (Production + Trash)
-            $dailyUsage = static::calculateTotalDailyUsage($herb, $startDate);
+            $usage = static::dailyUsage($herb, $start);
+            $restocks = static::dailyRestocks($herb, $start);
+            $currentStock = (float) $herb->bags->sum(fn (Bag $bag) => $bag->getCurrentWithTrashed());
 
-            // 2. Calculate Daily Restock (Incoming Bags)
-            // Uses 'created_at' and 'size' (initial amount)
-            $dailyRestock = $herb->bags()
-                ->withTrashed()
-                ->where('created_at', '>=', $startDate)
-                ->selectRaw('DATE(created_at) as date, SUM(size) as total')
-                ->groupBy('date')
-                ->pluck('total', 'date');
+            $netChanges = $restocks->keys()
+                ->merge($usage->keys())
+                ->unique()
+                ->mapWithKeys(fn (string $date) => [$date => ($restocks[$date] ?? 0) - ($usage[$date] ?? 0)]);
 
-            // 3. Current Stock Anchor
-            $currentStock = $herb->bags->sum(fn($b) => $b->getCurrentWithTrashed());
+            $stockLevels = static::sparseStockLevels($netChanges, $currentStock, $start, $end);
 
-            // 4. Calculate Net Changes
-            $netChanges = collect();
-            foreach ($period as $date) {
-                $d = $date->toDateString();
-                $usage = $dailyUsage[$d] ?? 0;
-                $restock = $dailyRestock[$d] ?? 0;
+            $totalDays = max((int) $start->diffInDays($end) + 1, 1);
+            $recentStart = $start->copy()->max(now()->subDays(89)->startOfDay());
+            $recentDays = max((int) $recentStart->diffInDays($end) + 1, 1);
+            $recentKey = $recentStart->toDateString();
 
-                if ($usage > 0 || $restock > 0) {
-                    $netChanges[$d] = $restock - $usage;
-                }
-            }
+            $recentAverage = $usage->filter(fn (float $total, string $date) => $date >= $recentKey)->sum() / $recentDays;
+            $allTimeAverage = $usage->sum() / $totalDays;
+            $rate = $recentAverage > 0 ? $recentAverage : $allTimeAverage;
 
-            // 5. Reconstruct History
-            // Remember: Ensure your AbstractStatistics::reconstructHistory does NOT clamp to 0
-            // so the graph floats correctly even if data is missing.
-            $dailyStock = static::reconstructHistory(
-                $netChanges,
-                $currentStock,
-                $period
+            $usageSeries = fn (): TimeSeriesQuery => new TimeSeriesQuery($usage, 'sum', $start, $end);
+
+            $herb->stats = new HerbStats(
+                start: HerbStats::dayFrom($start),
+                end: HerbStats::dayFrom($end),
+                generatedAt: now()->toImmutable(),
+                currentStock: $currentStock,
+                usage: $usage->all(),
+                stock: $stockLevels->all(),
+                totalUsage: (float) $usage->sum(),
+                averageDailyUsage: (float) $allTimeAverage,
+                averageWeeklyUsage: (float) ($usageSeries()->lastWeeks(52)->get()->avg() ?? 0),
+                averageMonthlyUsage: (float) ($usageSeries()->lastMonths(12)->get()->avg() ?? 0),
+                depletionDate: static::extrapolateDate($currentStock, $rate)->toImmutable(),
             );
 
-            // 6. Metrics
-            $recentAvg = $dailyUsage->reverse()->take(90)->avg();
-            $allTimeAvg = $dailyUsage->avg() ?: 0;
-            $rate = ($recentAvg > 0) ? $recentAvg : $allTimeAvg;
-
-            $depletionDate = self::extrapolateDate($currentStock, $rate);
-
-            // 7. Store to Redis
-            $baseKey = self::CACHE_PREFIX . ":{$herb->id}";
-
-            Cache::putMany([
-                "{$baseKey}:usage:daily" => $dailyUsage,
-                "{$baseKey}:stock:daily" => $dailyStock,
-                "{$baseKey}:stock:current" => $currentStock,
-                "{$baseKey}:usage:total" => $dailyUsage->sum(),
-                "{$baseKey}:depletion_date" => $depletionDate->toIso8601String(),
-                "{$baseKey}:generated_at" => now()->toIso8601String(),
-            ], self::CACHE_LONG);
+            $herb->timestamps = false;
+            $herb->saveQuietly();
+            $herb->timestamps = true;
         }
     }
 
     /**
-     * Combines Production Usage (Ingredients) + Trash Usage (Deleted Bags)
+     * True daily usage in grams (production ingredients + discarded bags)
+     * since $start, sparse and keyed by Y-m-d.
+     *
+     * @return Collection<string, float>
      */
-    protected static function calculateTotalDailyUsage(Herb $herb, $startDate): Collection
+    protected static function dailyUsage(Herb $herb, Carbon $start): Collection
     {
-        // A. Production Usage (Ingredients)
-        $productionUsage = DB::table('ingredients', 'i')
-            ->join('bags as b', 'i.bag_id', '=', 'b.id')
+        $production = DB::table('ingredients', 'i')
             ->join('bottle_positions as bp', 'i.bottle_position_id', '=', 'bp.id')
-            ->join('variants as v', 'bp.variant_id', '=', 'v.id')
-            ->join('products as p', 'v.product_id', '=', 'p.id')
-            ->join('herb_product as hp', function ($join) {
-                $join->on('hp.product_id', '=', 'p.id')
-                    ->on('hp.herb_id', '=', 'b.herb_id');
-            })
-            ->where('b.herb_id', $herb->id)
-            ->whereBetween('i.created_at', [$startDate->startOfDay(), now()->endOfDay()])
-            ->select(
-                DB::raw('DATE(i.created_at) as time'),
-                DB::raw('ROUND(COALESCE(SUM(
-                        v.`size` *
-                        (hp.`percentage` / 100.0) *
-                        bp.`count`
-                    ), 0)) as total')
-            )
-            ->groupBy(DB::raw('time'))
-            ->pluck('total', 'time');
+            ->join('bottles as bo', 'bp.bottle_id', '=', 'bo.id')
+            ->where('i.herb_id', $herb->id)
+            ->where('bo.date', '>=', $start)
+            ->selectRaw('DATE(bo.date) as day, ROUND(SUM(i.amount)) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
 
-        // B. Trash Usage (Deleted Bags)
-        // We look for bags that were deleted (discarded) and have a trash value
-        $trashUsage = $herb->bags()
-            ->onlyTrashed() // Crucial: Only look at discarded bags
-            ->where('deleted_at', '>=', $startDate->startOfDay())
+        $trash = $herb->bags()
+            ->onlyTrashed()
+            ->where('deleted_at', '>=', $start)
             ->where('trashed', '>', 0)
-            ->selectRaw('DATE(deleted_at) as date, SUM(trashed) as total')
-            ->groupBy('date')
-            ->pluck('total', 'date');
+            ->selectRaw('DATE(deleted_at) as day, SUM(trashed) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
 
-        // C. Merge timelines
-        $combined = collect();
-        // Use the master period to ensure we cover all days properly
-        $period = self::days($startDate);
+        return $production->keys()
+            ->merge($trash->keys())
+            ->unique()
+            ->mapWithKeys(fn (string $date) => [$date => (float) ($production[$date] ?? 0) + (float) ($trash[$date] ?? 0)])
+            ->sortKeys();
+    }
 
-        foreach ($period as $date) {
-            $d = $date->toDateString();
-            $prod = $productionUsage[$d] ?? 0;
-            $waste = $trashUsage[$d] ?? 0;
-
-            $combined[$d] = $prod + $waste;
-        }
-
-        return $combined;
+    /**
+     * Incoming grams (delivered bag sizes) per day since $start, sparse and
+     * keyed by Y-m-d. Dated by the physical delivery date — bags are often
+     * entered into the system long after the goods arrived, which would
+     * otherwise place usage before its restock.
+     *
+     * @return Collection<string, float>
+     */
+    protected static function dailyRestocks(Herb $herb, Carbon $start): Collection
+    {
+        return DB::table('bags', 'b')
+            ->leftJoin('deliveries as d', 'b.delivery_id', '=', 'd.id')
+            ->where('b.herb_id', $herb->id)
+            ->whereRaw('COALESCE(d.delivered_date, DATE(b.created_at)) >= ?', [$start->toDateString()])
+            ->selectRaw('COALESCE(d.delivered_date, DATE(b.created_at)) as day, SUM(b.size) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day')
+            ->map(fn ($total) => (float) $total)
+            ->sortKeys();
     }
 }

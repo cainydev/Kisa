@@ -15,6 +15,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class Reorder extends TableWidget
 {
     public int $extrapolateMonths = 3;
+
     protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
@@ -22,7 +23,7 @@ class Reorder extends TableWidget
         return $table
             ->heading('Nachbestellung & Lagerprognose')
             ->description('Diese Übersicht zeigt dir, welche Kräuter bald leer sind.')
-            ->records(fn($sortColumn, $sortDirection, $search) => $this->records($sortColumn, $sortDirection, $search))
+            ->records(fn ($sortColumn, $sortDirection, $search) => $this->records($sortColumn, $sortDirection, $search))
             ->columnManager(false)
             ->searchable(false)
             ->paginated([12, 20, 25, 50, 100, 'all'])
@@ -37,34 +38,34 @@ class Reorder extends TableWidget
                     ->label('Leer ab')
                     ->badge()
                     ->size(TextSize::Large)
-                    ->state(fn(Herb $record) => HerbStats::for($record)->estimatedDepletionDate()?->toIso8601String())
+                    ->state(fn (Herb $record) => HerbStats::for($record)->estimatedDepletionDate()?->toIso8601String())
                     ->formatStateUsing(function ($state) {
-                        if (!$state) return 'Unbekannt';
+                        if (! $state) {
+                            return 'Unbekannt';
+                        }
                         $date = Carbon::parse($state);
+
                         return $date->year > 3000 ? 'Nie' : $date->format('d.m.Y');
                     })
-                    ->color(fn(Herb $record) => $this->getStockColor($record))
+                    ->color(fn (Herb $record) => $this->getStockColor($record))
                     ->sortable(),
 
                 SparklineColumn::make('stock_history')
                     ->label('Verlauf (1 Jahr)')
-                    ->getStateUsing(fn(Herb $record) => HerbStats::for($record)
+                    ->getStateUsing(fn (Herb $record) => HerbStats::for($record)
                         ->stock()
                         ->lastWeeks(52)
                         ->toChartArray()
                     )
-                    ->threshold(function (Herb $record) {
-                        $avgDaily = HerbStats::for($record)->usage()->get()->avg() ?? 0;
-                        return $avgDaily * 30;
-                    }),
+                    ->threshold(fn (Herb $record) => HerbStats::for($record)->averageDailyUsage() * 30),
 
                 TextColumn::make('currentStock')
                     ->label('Bestand')
                     ->size(TextSize::Large)
                     ->numeric(1, '.', ',')
                     ->suffix(' g')
-                    ->state(fn(Herb $record) => HerbStats::for($record)->currentStock())
-                    ->color(fn(Herb $record) => $this->getStockColor($record))
+                    ->state(fn (Herb $record) => HerbStats::for($record)->currentStock())
+                    ->color(fn (Herb $record) => $this->getStockColor($record))
                     ->sortable(),
 
                 TextColumn::make('averageDailyUsage')
@@ -72,7 +73,7 @@ class Reorder extends TableWidget
                     ->numeric(1, '.', ',')
                     ->suffix(' g')
                     ->tooltip('Durchschnitt aller verfügbaren Daten')
-                    ->state(fn(Herb $record) => HerbStats::for($record)->usage()->get()->avg() ?? 0)
+                    ->state(fn (Herb $record) => HerbStats::for($record)->averageDailyUsage())
                     ->sortable(),
 
                 TextColumn::make('averageWeeklyUsage')
@@ -80,7 +81,7 @@ class Reorder extends TableWidget
                     ->numeric(1, '.', ',')
                     ->suffix(' g')
                     ->toggleable(true, true)
-                    ->state(fn(Herb $record) => HerbStats::for($record)->usage()->lastWeeks(52)->get()->avg() ?? 0)
+                    ->state(fn (Herb $record) => HerbStats::for($record)->averageWeeklyUsage())
                     ->sortable(),
 
                 TextColumn::make('averageMonthlyUsage')
@@ -88,7 +89,7 @@ class Reorder extends TableWidget
                     ->numeric(1, '.', ',')
                     ->suffix(' g')
                     ->toggleable()
-                    ->state(fn(Herb $record) => HerbStats::for($record)->usage()->lastMonths(12)->get()->avg() ?? 0)
+                    ->state(fn (Herb $record) => HerbStats::for($record)->averageMonthlyUsage())
                     ->sortable(),
 
                 TextColumn::make('totalUsage')
@@ -96,7 +97,7 @@ class Reorder extends TableWidget
                     ->numeric(1, '.', ',')
                     ->suffix(' g')
                     ->toggleable()
-                    ->state(fn(Herb $record) => HerbStats::for($record)->totalUsage())
+                    ->state(fn (Herb $record) => HerbStats::for($record)->totalUsage())
                     ->sortable(),
             ]);
     }
@@ -117,9 +118,9 @@ class Reorder extends TableWidget
             return match ($sortColumn) {
                 'estimatedDepletionDate' => $stats->estimatedDepletionDate()?->timestamp ?? ($sortDirection === 'asc' ? 9999999999 : 0),
                 'currentStock' => $stats->currentStock(),
-                'averageDailyUsage' => $stats->usage()->get()->avg(),
-                'averageWeeklyUsage' => $stats->usage()->lastWeeks(52)->get()->avg(),
-                'averageMonthlyUsage' => $stats->usage()->lastMonths(12)->get()->avg(),
+                'averageDailyUsage' => $stats->averageDailyUsage(),
+                'averageWeeklyUsage' => $stats->averageWeeklyUsage(),
+                'averageMonthlyUsage' => $stats->averageMonthlyUsage(),
                 'totalUsage' => $stats->totalUsage(),
                 'name' => $herb->name,
                 default => $stats->estimatedDepletionDate()?->timestamp // Default sort
@@ -146,10 +147,12 @@ class Reorder extends TableWidget
         $currentStock = HerbStats::for($herb)->currentStock();
 
         // Calculate Average Daily Usage (using the same logic as your threshold)
-        $avgDaily = HerbStats::for($herb)->usage()->get()->avg() ?? 0;
+        $avgDaily = HerbStats::for($herb)->averageDailyUsage();
 
         // Handle edge case: If we never use it, it technically lasts forever (Green)
-        if ($avgDaily <= 0) return 'success';
+        if ($avgDaily <= 0) {
+            return 'success';
+        }
 
         // Calculate how many days of stock we have left
         $daysRemaining = $currentStock / $avgDaily;
@@ -159,8 +162,12 @@ class Reorder extends TableWidget
         // 7 - 30 Days  -> Orange (Below Threshold)
         // > 30 Days    -> Green (Safe)
 
-        if ($daysRemaining <= 7) return 'danger';
-        if ($daysRemaining <= 30) return 'warning';
+        if ($daysRemaining <= 7) {
+            return 'danger';
+        }
+        if ($daysRemaining <= 30) {
+            return 'warning';
+        }
 
         return 'success';
     }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Facades\Billbee;
+use App\Support\Stats\VariantStats;
 use BillbeeDe\BillbeeAPI\Exception\QuotaExceededException;
 use BillbeeDe\BillbeeAPI\Model\Product as BillbeeProduct;
 use BillbeeDe\BillbeeAPI\Type\ProductLookupBy;
@@ -25,6 +26,13 @@ class Variant extends Model
      * @var string[]
      */
     protected $with = ['product'];
+
+    protected function casts(): array
+    {
+        return [
+            'stats' => VariantStats::class,
+        ];
+    }
 
     /**
      * Initializes the variant with billbee data

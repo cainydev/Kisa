@@ -11,19 +11,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-// AbstractStatistics is used via the trait
-
-// Still needed for estimatedDepletionDate
-
 class Herb extends Model
 {
-    use HasFactory, CachedAttributes;
+    use CachedAttributes, HasFactory;
 
     protected $guarded = [];
+
+    protected function casts(): array
+    {
+        return [
+            'stats' => HerbStats::class,
+        ];
+    }
 
     public function toSearchableArray(): array
     {
         $prods = $this->products->pluck('name')->implode(', ');
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -49,6 +53,6 @@ class Herb extends Model
 
     protected function currentStock(): Attribute
     {
-        return Attribute::make(get: fn() => HerbStats::for($this)->currentStock());
+        return Attribute::make(get: fn () => HerbStats::for($this)->currentStock());
     }
 }

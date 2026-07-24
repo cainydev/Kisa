@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Herb;
-use App\Services\HerbStatisticsService;
 use App\Settings\StatsSettings;
 use App\Support\Stats\HerbStats;
 use Illuminate\Console\Command;
@@ -12,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 class DebugStats extends Command
 {
     protected $signature = 'stats:debug {herb_id}';
+
     protected $description = 'Deep dive debug into stats generation for a specific herb';
 
     public function handle(): void
@@ -19,8 +19,9 @@ class DebugStats extends Command
         $id = $this->argument('herb_id');
         $herb = Herb::find($id);
 
-        if (!$herb) {
+        if (! $herb) {
             $this->error("Herb #{$id} not found.");
+
             return;
         }
 
@@ -31,7 +32,7 @@ class DebugStats extends Command
         $settings = app(StatsSettings::class);
         $startDate = $settings->startDate;
         $daysDiff = $startDate->diffInDays(now());
-        $this->comment("📅 Configured Start Date: " . $startDate->toDateString() . " ({$daysDiff} days ago)");
+        $this->comment('📅 Configured Start Date: '.$startDate->toDateString()." ({$daysDiff} days ago)");
 
         // 2. CHECK SOURCE DATA (SQL)
         $this->line("\n📊 SQL SOURCE CHECK (Last 10 entries):");
@@ -50,18 +51,20 @@ class DebugStats extends Command
         $this->info("   - Total Bags (Restocks) found: {$restockCount}");
 
         if ($usageCount == 0 && $restockCount == 0) {
-            $this->error("   ❌ SOURCE DATA EMPTY! The generator has nothing to work with.");
+            $this->error('   ❌ SOURCE DATA EMPTY! The generator has nothing to work with.');
+
             return;
         }
 
-        // 3. CHECK REDIS DATA
-        $this->line("\n💾 REDIS DATA CHECK:");
+        // 3. CHECK STORED STATS
+        $this->line("\n💾 STORED STATS CHECK:");
         $stats = HerbStats::for($herb);
-        $stockHistory = $stats->stock()->get(); // Gets the full collection from Redis
+        $stockHistory = $stats->stock()->get(); // Dense daily series from the stats column
 
         if ($stockHistory->isEmpty()) {
-            $this->error("   ❌ Redis Key 'stock:daily' is EMPTY or Missing.");
-            $this->comment("   - Key looked for: " . HerbStatisticsService::CACHE_PREFIX . ":{$id}:stock:daily");
+            $this->error('   ❌ Stored stats have no stock history.');
+            $this->comment('   - Column checked: herbs.stats (regenerate with stats:generate herbs)');
+
             return;
         }
 
@@ -78,7 +81,7 @@ class DebugStats extends Command
 
         $uniqueValues = $stockHistory->unique()->values();
         if ($uniqueValues->count() <= 1) {
-            $this->warn("   ⚠️ FLATLINE DETECTED: All {$count} days have the exact same value: " . $uniqueValues->first());
+            $this->warn("   ⚠️ FLATLINE DETECTED: All {$count} days have the exact same value: ".$uniqueValues->first());
         } else {
             $this->info("   ✅ Data varies. Found {$uniqueValues->count()} unique stock levels.");
         }
@@ -88,9 +91,9 @@ class DebugStats extends Command
 
         $this->table(
             ['Date', 'Stock Value'],
-            $stockHistory->take(5)->map(fn($v, $k) => [$k, $v])
+            $stockHistory->take(5)->map(fn ($v, $k) => [$k, $v])
                 ->merge([['...', '...']])
-                ->merge($stockHistory->take(-5)->map(fn($v, $k) => [$k, $v]))
+                ->merge($stockHistory->take(-5)->map(fn ($v, $k) => [$k, $v]))
                 ->toArray()
         );
 
@@ -111,16 +114,18 @@ class DebugStats extends Command
 
             $u = $stats->usage()->get()[$changeDate] ?? 0;
             // We have to query DB for restock manually here as we don't expose it via Reader yet
-            $r = $herb->bags()
-                ->whereDate('created_at', $changeDate)
-                ->sum('size'); // Check if this matches your column name!
+            $r = DB::table('bags', 'b')
+                ->leftJoin('deliveries as d', 'b.delivery_id', '=', 'd.id')
+                ->where('b.herb_id', $herb->id)
+                ->whereRaw('COALESCE(d.delivered_date, DATE(b.created_at)) = ?', [$changeDate])
+                ->sum('b.size');
 
             $this->info("   - Stock on {$changeDate}: {$stockHistory[$changeDate]}");
             $this->info("   - Usage that day: {$u}");
             $this->info("   - Restock that day: {$r}");
 
-            $calcCheck = ($stockHistory[$changeDate] == ($lastVal - $u + $r)) ? "✅ Matches" : "❌ Mismatch";
-            $this->comment("   - Math Check: Previous($lastVal) - Usage($u) + Restock($r) = " . ($lastVal - $u + $r) . " -> $calcCheck");
+            $calcCheck = ($stockHistory[$changeDate] == ($lastVal - $u + $r)) ? '✅ Matches' : '❌ Mismatch';
+            $this->comment("   - Math Check: Previous($lastVal) - Usage($u) + Restock($r) = ".($lastVal - $u + $r)." -> $calcCheck");
         }
     }
 }
