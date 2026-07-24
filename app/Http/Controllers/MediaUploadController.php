@@ -6,6 +6,7 @@ use App\Support\Media\UploadTarget;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class MediaUploadController extends Controller
 {
@@ -79,6 +80,7 @@ class MediaUploadController extends Controller
     private function safeFileName(string $original): string
     {
         $base = pathinfo($original, PATHINFO_FILENAME);
+        $base = Str::ascii($base);
         $base = preg_replace('/[^A-Za-z0-9._-]+/', '-', $base) ?? '';
         $base = trim($base, '-.');
 

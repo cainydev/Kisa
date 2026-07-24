@@ -140,6 +140,24 @@ class MediaUploadTest extends TestCase
         $this->assertStringNotContainsString(';', $media->file_name);
     }
 
+    /**
+     * Öko-codes are full of umlauts, so they must transliterate rather than be
+     * stripped: "DE-ÖKO-001…" should not land as "DE--KO-001…".
+     */
+    public function test_umlauts_in_file_name_are_transliterated(): void
+    {
+        $delivery = Delivery::factory()->create();
+
+        $this->post($this->signedUrl('delivery', $delivery->id, 'certificate'), [
+            'file' => $this->pdf('DE-ÖKO-001.276-0059778.2025.002.pdf'),
+        ])->assertOk();
+
+        $this->assertSame(
+            'DE-OKO-001.276-0059778.2025.002.pdf',
+            $delivery->fresh()->getFirstMedia('certificate')->file_name
+        );
+    }
+
     public function test_unregistered_collection_is_rejected(): void
     {
         $delivery = Delivery::factory()->create();
