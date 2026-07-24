@@ -1,16 +1,16 @@
 <?php
 
-use App\Providers\BillbeeServiceProvider;
-use App\Providers\BillbeeCustomShopKeyAuthenticatorProvider;
+use App\Facades\Billbee;
 use App\Providers\AppServiceProvider;
 use App\Providers\AuthServiceProvider;
+use App\Providers\BillbeeCustomShopKeyAuthenticatorProvider;
+use App\Providers\BillbeeServiceProvider;
 use App\Providers\EventServiceProvider;
 use App\Providers\Filament\AdminPanelProvider;
 use App\Providers\RouteServiceProvider;
-use App\Providers\TelescopeServiceProvider;
-use App\Facades\Billbee;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\ServiceProvider;
+use Spatie\DiscordAlerts\DiscordAlertsServiceProvider;
 
 return [
 
@@ -51,7 +51,7 @@ return [
     |
     */
 
-    'debug' => (bool)env('APP_DEBUG', false),
+    'debug' => (bool) env('APP_DEBUG', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -177,7 +177,7 @@ return [
         // bare class name). That breaks `composer install` via package:discover,
         // so we opt the package out of auto-discovery (composer.json
         // extra.laravel.dont-discover) and register the provider by hand here.
-        Spatie\DiscordAlerts\DiscordAlertsServiceProvider::class,
+        DiscordAlertsServiceProvider::class,
 
         /*
          * Application Service Providers...
@@ -188,13 +188,6 @@ return [
         EventServiceProvider::class,
         AdminPanelProvider::class,
         RouteServiceProvider::class,
-        // Telescope is a dev-only dependency; on production deploys (composer
-        // install --no-dev) the Telescope package isn't installed, so the
-        // local TelescopeServiceProvider can't extend its base class.
-        // Register it only when the base class is available.
-        class_exists(\Laravel\Telescope\TelescopeApplicationServiceProvider::class)
-            ? TelescopeServiceProvider::class
-            : null,
     ]))->toArray(),
 
     /*
@@ -209,7 +202,7 @@ return [
     */
 
     'aliases' => Facade::defaultAliases()->merge([
-        'Billbee' => Billbee::class
+        'Billbee' => Billbee::class,
     ])->toArray(),
 
 ];
