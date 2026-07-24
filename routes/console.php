@@ -23,6 +23,6 @@ Schedule::timezone('Europe/Berlin')->group(function () {
 
     Schedule::command(FetchBillbeeOrders::class)->dailyAt('2:15');
     Schedule::command(FetchBillbeeOrders::class, [
-        '--after' => now()->subMinutes(15)->toIso8601String(),
+        '--since-minutes' => 15,
     ])->everyFifteenMinutes();
 });

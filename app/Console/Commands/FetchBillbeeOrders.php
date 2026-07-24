@@ -29,7 +29,8 @@ class FetchBillbeeOrders extends Command implements Isolatable
      */
     protected $signature = 'billbee:orders
                             {--perpage=100 : Page size when fetching}
-                            {--after= : Only orders after this date (Y-m-d)}';
+                            {--after= : Only orders after this date (Y-m-d)}
+                            {--since-minutes= : Only orders from the last N minutes, resolved at runtime}';
 
     /**
      * The console command description.
@@ -60,9 +61,11 @@ class FetchBillbeeOrders extends Command implements Isolatable
         $page = 1;
         $pageSize = (int) $this->option('perpage');
 
-        $minOrderDate = $this->option('after')
-            ? Carbon::parse($this->option('after'))
-            : null;
+        $minOrderDate = match (true) {
+            (bool) $this->option('after') => Carbon::parse($this->option('after')),
+            $this->option('since-minutes') !== null => now()->subMinutes((int) $this->option('since-minutes')),
+            default => null,
+        };
 
         $this->components->info($minOrderDate
             ? "Fetching orders since {$minOrderDate->toDateTimeString()}"
