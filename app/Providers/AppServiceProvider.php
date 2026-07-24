@@ -36,13 +36,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Load the Vite-built Warenweg graph component on every panel page, as a
-        // module (its imports resolve). Loading it eagerly here — rather than a
-        // deferred @vite tag in the page — guarantees the Alpine component is
-        // registered before any page evaluates its x-data.
-        FilamentAsset::register([
-            Js::make('warenweg-graph', Vite::asset('resources/js/warenweg-graph.js'))->module(),
-        ]);
+        // Load the Vite-built Warenweg graph component on every panel page as a
+        // module, so its Alpine component is registered before any page's x-data
+        // is evaluated. This is Filament's documented pattern for Vite assets.
+        //
+        // Guarded to HTTP context: Vite::asset() reads the build manifest the
+        // moment it's called, and boot() also runs for console commands such as
+        // package:discover during `composer install` — before assets are built,
+        // where no page is ever served. Nothing in console-land renders this
+        // asset, so skipping registration there is safe.
+        if (! $this->app->runningInConsole()) {
+            FilamentAsset::register([
+                Js::make('warenweg-graph', Vite::asset('resources/js/warenweg-graph.js'))->module(),
+            ]);
+        }
 
         FilamentView::registerRenderHook(
             PanelsRenderHook::SIDEBAR_FOOTER,
