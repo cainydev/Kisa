@@ -21,3 +21,5 @@ Mcp::oauthRoutes();
 
 Mcp::web('/mcp', KisServer::class)
     ->middleware('auth:api');
+
+Mcp::local('kisa', KisServer::class);

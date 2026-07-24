@@ -6,6 +6,14 @@
                 "artisan",
                 "boost:mcp"
             ]
+        },
+        "kisa": {
+            "command": "php",
+            "args": [
+                "artisan",
+                "mcp:start",
+                "kisa"
+            ]
         }
     }
 }
