@@ -35,8 +35,9 @@ class FindBagByChargeTool extends Tool
             $supplier = $b->delivery?->supplier?->shortname ?? '—';
             $oeko = $b->delivery?->frozenOekoCode() ?? 'kein Zertifikat';
             $date = $b->delivery?->delivered_date?->format('d.m.Y') ?? '—';
+            $status = $b->trashed() ? ' — ENTSORGT' : '';
 
-            return "• Bag #{$b->id} Charge {$b->charge}: {$b->herb?->name} — {$remaining}/{$size} kg übrig\n"
+            return "• Bag #{$b->id} Charge {$b->charge}: {$b->herb?->name} — {$remaining}/{$size} kg übrig{$status}\n"
                 ."    Lieferung #{$b->delivery?->id} von {$supplier} am {$date}, Kontrollstelle: {$oeko}";
         })->implode("\n");
 

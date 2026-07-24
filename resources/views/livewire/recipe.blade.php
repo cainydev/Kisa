@@ -16,7 +16,7 @@
 
             <x-table wire:loading.class="blur-md animate-pulse" wire:target="herb" x-ref="table">
                 <x-table.body>
-                    @foreach(Bag::whereHerbId($herb)->get()->sortByDesc->redisCurrent as $bag)
+                    @foreach(Bag::whereHerbId($herb)->get()->sortByDesc(fn (Bag $b) => $b->getCurrentWithTrashed()) as $bag)
                         <x-table.tr
                             wire:key="table-row-{{ $bag->id }}"
                             wire:click="select({{ $herb }}, {{ $bag->id }})"

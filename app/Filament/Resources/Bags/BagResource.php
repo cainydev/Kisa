@@ -2,10 +2,8 @@
 
 namespace App\Filament\Resources\Bags;
 
-use App\Filament\Resources\BagResource\Pages;
 use App\Filament\Resources\Bags\Pages\EditBag;
 use App\Filament\Resources\Bags\Pages\ListBags;
-use App\Filament\Resources\Bags\Pages\ViewBag;
 use App\Livewire\BagAmountBar;
 use App\Models\Bag;
 use Exception;
@@ -39,6 +37,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Number;
+
 use function now;
 
 class BagResource extends Resource
@@ -46,12 +45,15 @@ class BagResource extends Resource
     protected static ?string $model = Bag::class;
 
     protected static ?string $modelLabel = 'Sack';
+
     protected static ?string $pluralModelLabel = 'Säcke';
 
     protected static ?string $recordTitleAttribute = 'herb.name';
 
     protected static ?int $navigationSort = 20;
+
     protected static string|\UnitEnum|null $navigationGroup = 'Bestand';
+
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingBag;
 
     public static function getGlobalSearchResultDetails(Model $record): array
@@ -95,10 +97,11 @@ class BagResource extends Resource
                     ->size(TextSize::Large)
                     ->searchable(),
                 TextColumn::make('herb.name')
-                    ->label("Inhalt")
+                    ->label('Inhalt')
                     ->html()
                     ->formatStateUsing(function (Bag $record) {
                         $herb = str($record->herb->name)->limit(20);
+
                         return "<p class='font-semibold'>$herb</p><p class='text-gray-700 dark:text-gray-300'>$record->specification</p>";
                     })
                     ->sortable()
@@ -113,19 +116,17 @@ class BagResource extends Resource
                         return $record->getSizeInKilo();
                     })
                     ->sortable(),
-                TextColumn::make('redisCurrent')
-                    ->label("Gewicht aktuell")
-                    ->formatStateUsing(function ($state) {
-                        return $state . 'g';
-                    }),
+                TextColumn::make('current')
+                    ->label('Gewicht aktuell')
+                    ->state(fn (Bag $record): string => round($record->getCurrentWithTrashed()).'g'),
                 TextColumn::make('delivery.supplier.shortname')
-                    ->placeholder("Nicht zugeordnet")
+                    ->placeholder('Nicht zugeordnet')
                     ->toggleable(isToggledHiddenByDefault: true)
-                    ->label("Lieferant"),
+                    ->label('Lieferant'),
                 TextColumn::make('bestbefore')
                     ->toggleable()
-                    ->label("MHD")
-                    ->date("d.m.Y")
+                    ->label('MHD')
+                    ->date('d.m.Y')
                     ->sortable(),
             ])
             ->filters([
@@ -149,7 +150,10 @@ class BagResource extends Resource
                     ->trueLabel('Abgelaufen')
                     ->falseLabel('Nicht abgelaufen')
                     ->query(function ($query, $state) {
-                        if ($state === null || $state['value'] === null) return $query;
+                        if ($state === null || $state['value'] === null) {
+                            return $query;
+                        }
+
                         return $query->whereDate('bestbefore', $state['value'] ? '<' : '>=', now());
                     }),
             ], layout: FiltersLayout::AboveContent)
@@ -170,7 +174,7 @@ class BagResource extends Resource
                 RestoreAction::make()
                     ->button()
                     ->label('Wiederherstellen')
-                    ->successNotificationTitle('Sack wiederhergestellt')
+                    ->successNotificationTitle('Sack wiederhergestellt'),
             ])
             ->toolbarActions([
                 DeleteBulkAction::make()
@@ -190,10 +194,10 @@ class BagResource extends Resource
     {
         return $schema
             ->components([
-                Livewire::make(BagAmountBar::class, fn($record) => ['bag' => $record])
+                Livewire::make(BagAmountBar::class, fn ($record) => ['bag' => $record])
                     ->columnSpan(2)
                     ->hiddenOn(['create'])
-                    ->hidden(fn(?Bag $record) => $record === null),
+                    ->hidden(fn (?Bag $record) => $record === null),
                 Select::make('herb_id')
                     ->label('Rohstoff')
                     ->required()
@@ -228,12 +232,12 @@ class BagResource extends Resource
                         Action::make('all')
                             ->label('Alles')
                             ->color('gray')
-                            ->action(fn(Set $set, Bag $record) => $set('trashed', $record->getCurrent())),
+                            ->action(fn (Set $set, Bag $record) => $set('trashed', $record->getCurrent())),
                         Action::make('nothing')
                             ->label('Nichts')
                             ->color('gray')
-                            ->action(fn(Set $set, Bag $record) => $set('trashed', 0))
-                    ])->grow(false)
+                            ->action(fn (Set $set, Bag $record) => $set('trashed', 0)),
+                    ])->grow(false),
                 ])->verticallyAlignEnd(),
                 DatePicker::make('bestbefore')
                     ->label('MHD')
