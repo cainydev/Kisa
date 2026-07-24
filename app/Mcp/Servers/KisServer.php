@@ -4,6 +4,7 @@ namespace App\Mcp\Servers;
 
 use App\Mcp\Tools\AddBagsToDeliveryTool;
 use App\Mcp\Tools\CreateCertificateTool;
+use App\Mcp\Tools\CreateControlBodyTool;
 use App\Mcp\Tools\CreateDeliveryTool;
 use App\Mcp\Tools\CreateHerbTool;
 use App\Mcp\Tools\CreateProductTool;
@@ -18,10 +19,12 @@ use App\Mcp\Tools\GetProductTool;
 use App\Mcp\Tools\GetSupplierTool;
 use App\Mcp\Tools\GetVariantTool;
 use App\Mcp\Tools\HerbsToReorderTool;
+use App\Mcp\Tools\ListControlBodiesTool;
 use App\Mcp\Tools\ListDeliveriesTool;
 use App\Mcp\Tools\ListHerbsTool;
 use App\Mcp\Tools\ListProductsTool;
 use App\Mcp\Tools\ListSuppliersTool;
+use App\Mcp\Tools\RequestUploadUrlTool;
 use App\Mcp\Tools\SetProductRecipeTool;
 use App\Mcp\Tools\StockOverviewTool;
 use App\Mcp\Tools\TraceChargeTool;
@@ -61,6 +64,9 @@ class KisServer extends Server
         GetSupplierTool::class,
         CreateSupplierTool::class,
         CreateCertificateTool::class,
+        // Control bodies
+        ListControlBodiesTool::class,
+        CreateControlBodyTool::class,
         // Deliveries
         ListDeliveriesTool::class,
         GetDeliveryTool::class,
@@ -79,6 +85,8 @@ class KisServer extends Server
         FindBagsByHerbTool::class,
         DiscardBagsTool::class,
         TraceChargeTool::class,
+        // Documents
+        RequestUploadUrlTool::class,
         // Cross-entity analysis
         StockOverviewTool::class,
     ];

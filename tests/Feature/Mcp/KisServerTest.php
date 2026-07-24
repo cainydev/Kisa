@@ -4,6 +4,7 @@ namespace Tests\Feature\Mcp;
 
 use App\Mcp\Servers\KisServer;
 use App\Mcp\Tools\CreateCertificateTool;
+use App\Mcp\Tools\CreateControlBodyTool;
 use App\Mcp\Tools\CreateDeliveryTool;
 use App\Mcp\Tools\CreateHerbTool;
 use App\Mcp\Tools\CreateProductTool;
@@ -12,8 +13,10 @@ use App\Mcp\Tools\DiscardBagsTool;
 use App\Mcp\Tools\FindBagsByHerbTool;
 use App\Mcp\Tools\GetDeliveryTool;
 use App\Mcp\Tools\GetHerbTool;
+use App\Mcp\Tools\ListControlBodiesTool;
 use App\Mcp\Tools\ListHerbsTool;
 use App\Mcp\Tools\ListSuppliersTool;
+use App\Mcp\Tools\RequestUploadUrlTool;
 use App\Models\Bag;
 use App\Models\BioInspector;
 use App\Models\Certificate;
@@ -125,6 +128,113 @@ class KisServerTest extends TestCase
         ])->assertOk();
 
         $this->assertDatabaseHas('suppliers', ['shortname' => 'Testkr']);
+    }
+
+    // ---- Control bodies ----------------------------------------------------
+
+    public function test_list_control_bodies_shows_code_company_and_country(): void
+    {
+        BioInspector::factory()->create([
+            'label' => 'DE-ÖKO-021',
+            'company' => 'Grünstempel Ökoprüfstelle e.V.',
+            'country' => 'DE',
+        ]);
+
+        KisServer::tool(ListControlBodiesTool::class, [])
+            ->assertOk()
+            ->assertSee('DE-ÖKO-021')
+            ->assertSee('Grünstempel Ökoprüfstelle e.V.')
+            ->assertSee('Deutschland');
+    }
+
+    public function test_create_control_body_persists(): void
+    {
+        KisServer::tool(CreateControlBodyTool::class, [
+            'oeko_code' => 'DE-ÖKO-013',
+            'company' => 'QC&I GmbH',
+            'country' => 'DE',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('bio_inspectors', [
+            'label' => 'DE-ÖKO-013',
+            'company' => 'QC&I GmbH',
+            'country' => 'DE',
+        ]);
+    }
+
+    public function test_create_control_body_rejects_duplicate_oeko_code(): void
+    {
+        BioInspector::factory()->create(['label' => 'DE-ÖKO-013']);
+
+        KisServer::tool(CreateControlBodyTool::class, [
+            'oeko_code' => 'de-öko-013',
+            'company' => 'QC&I GmbH',
+            'country' => 'DE',
+        ])->assertSee('already exists');
+
+        $this->assertSame(1, BioInspector::where('label', 'DE-ÖKO-013')->count());
+    }
+
+    public function test_create_control_body_rejects_unknown_country(): void
+    {
+        KisServer::tool(CreateControlBodyTool::class, [
+            'oeko_code' => 'XX-ÖKO-999',
+            'company' => 'Nowhere GmbH',
+            'country' => 'ZZ',
+        ])->assertHasErrors();
+
+        $this->assertDatabaseMissing('bio_inspectors', ['label' => 'XX-ÖKO-999']);
+    }
+
+    // ---- Document uploads --------------------------------------------------
+
+    public function test_request_upload_url_returns_signed_url_for_delivery_invoice(): void
+    {
+        $delivery = Delivery::factory()->for(Supplier::factory())->create();
+
+        KisServer::tool(RequestUploadUrlTool::class, [
+            'target_type' => 'delivery',
+            'target' => (string) $delivery->id,
+            'collection' => 'invoice',
+        ])
+            ->assertOk()
+            ->assertSee('/api/uploads/delivery/'.$delivery->id.'/invoice')
+            ->assertSee('signature=');
+    }
+
+    public function test_request_upload_url_resolves_certificate_by_number(): void
+    {
+        $certificate = Certificate::factory()->for(Supplier::factory())->create([
+            'certificate_number' => 'DE-ÖKO-001.276-0059778.2025.002',
+        ]);
+
+        KisServer::tool(RequestUploadUrlTool::class, [
+            'target_type' => 'certificate',
+            'target' => 'de-öko-001.276-0059778.2025.002',
+            'collection' => 'document',
+        ])
+            ->assertOk()
+            ->assertSee('/api/uploads/certificate/'.$certificate->id.'/document');
+    }
+
+    public function test_request_upload_url_rejects_collection_not_on_target(): void
+    {
+        $certificate = Certificate::factory()->for(Supplier::factory())->create();
+
+        KisServer::tool(RequestUploadUrlTool::class, [
+            'target_type' => 'certificate',
+            'target' => (string) $certificate->id,
+            'collection' => 'invoice',
+        ])->assertSee('not available');
+    }
+
+    public function test_request_upload_url_errors_on_unknown_record(): void
+    {
+        KisServer::tool(RequestUploadUrlTool::class, [
+            'target_type' => 'delivery',
+            'target' => '999999',
+            'collection' => 'invoice',
+        ])->assertSee('No delivery matching');
     }
 
     // ---- Certificates ------------------------------------------------------

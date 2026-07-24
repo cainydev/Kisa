@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BillbeeController;
+use App\Http\Controllers\MediaUploadController;
 use App\Http\Middleware\AuthenticateBillbeeRequest;
 use App\Http\Middleware\ValidateBackupToken;
 use Illuminate\Http\Request;
@@ -36,3 +37,15 @@ Route::middleware(AuthenticateBillbeeRequest::class)
         Route::get('/billbee', 'get');
         Route::post('/billbee', 'post');
     });
+
+/*
+ * Document upload for deliveries (invoice, delivery note, certificate) and
+ * certificates. The signature is the credential: it is minted by the
+ * request-upload-url MCP tool, scoped to one record and collection, and
+ * expires. There is no session here, so scanners and scripts can PUT straight
+ * to the URL.
+ */
+Route::middleware('signed')
+    ->post('/uploads/{type}/{id}/{collection}', [MediaUploadController::class, 'store'])
+    ->whereNumber('id')
+    ->name('media.upload');
