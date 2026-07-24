@@ -9,6 +9,9 @@
 /storage/debugbar
 /vendor
 *.sql
+
+# Server-side scripts (deploy.sh and friends) live on the host, not in the repo.
+*.sh
 .env
 .env.backup
 .env.production
