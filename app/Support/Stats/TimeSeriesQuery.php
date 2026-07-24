@@ -153,10 +153,8 @@ class TimeSeriesQuery
     }
 
     /**
-     * Calendar dates are handled as plain Y-m-d strings throughout: the
-     * configured 'CET' timezone renders DST instants with shifted offsets,
-     * which silently moves midnight onto the previous day when converting
-     * between Carbon flavors.
+     * Calendar dates are handled as plain Y-m-d strings throughout so no
+     * timezone conversion can move midnight onto the previous calendar day.
      */
     protected static function toDayString(CarbonInterface|string|null $day): ?string
     {

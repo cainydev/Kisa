@@ -48,12 +48,11 @@ abstract class StatsData implements Arrayable, Castable
     }
 
     /**
-     * Calendar days (start/end of the stats window) must never be converted
-     * between timezone representations: the app timezone 'CET' is DST-aware
-     * when applied implicitly but a fixed +01:00 offset when Carbon receives
-     * it explicitly, and converting midnight between the two shifts the date
-     * by a day. Parsing the Y-m-d string with the same explicit timezone on
-     * both the write and read side keeps the round trip stable.
+     * Calendar days (start/end of the stats window) round-trip as Y-m-d
+     * strings parsed with the same explicit timezone on the write and read
+     * side. Converting midnight between timezone representations can shift
+     * the date by a day (abbreviations like 'CET' resolve to a fixed offset
+     * in Carbon but are DST-aware as the default timezone).
      */
     public static function dayFrom(CarbonInterface|string|null $day): ?CarbonImmutable
     {
