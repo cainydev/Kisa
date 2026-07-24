@@ -12,7 +12,7 @@ class ValidateBackupToken
     /**
      * Handle an incoming request.
      *
-     * @param Closure(Request): (Response) $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -20,8 +20,11 @@ class ValidateBackupToken
 
         $validKey = config('backup.token');
 
-        if (!$validKey || !hash_equals($validKey, $providedKey ?? '')) {
-            DiscordAlert::message("Someone tried to download a backup but failed. ProvidedKey: $providedKey, validKey: $validKey");
+        if (! $validKey || ! hash_equals($validKey, $providedKey ?? '')) {
+            if (filled(config('discord-alerts.webhook_urls.default'))) {
+                DiscordAlert::message("Someone tried to download a backup but failed. ProvidedKey: $providedKey, validKey: $validKey");
+            }
+
             abort(401, 'Unauthorized: Invalid backup access key');
         }
 
