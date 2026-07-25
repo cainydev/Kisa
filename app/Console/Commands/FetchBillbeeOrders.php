@@ -83,6 +83,12 @@ class FetchBillbeeOrders extends Command implements Isolatable
             $this->components->twoColumnDetail('Page size', (string) $pageSize);
             $this->newLine();
 
+            if ($totalRows < 1) {
+                $this->components->info('No orders to sync.');
+
+                return self::SUCCESS;
+            }
+
             $bar = $this->output->createProgressBar($totalRows);
             $bar->setFormat(' %current%/%max% [%bar%] %percent:3s%%  %elapsed:6s%/%estimated:-6s%  %message%');
             $bar->setMessage('starting…');
