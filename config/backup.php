@@ -130,9 +130,16 @@ return [
             'compression_level' => 9,
 
             /*
-             * The filename prefix used for the backup zip file.
+             * Deliberately empty. Spatie writes the filename with this prefix
+             * but parses it back with BackupJob::FILENAME_FORMAT, which has no
+             * prefix — so any value here makes the date parse fail and the
+             * backup falls back to the file's last-modified time. That is
+             * harmless on a local disk (mtime is the backup time) but wrong on
+             * object storage, where it becomes the *upload* time: re-uploaded
+             * history all looks like it was taken today, and retention keeps
+             * or deletes the wrong archives.
              */
-            'filename_prefix' => 'backup-',
+            'filename_prefix' => '',
 
             /*
              * The disk names on which the backups will be stored.

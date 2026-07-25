@@ -38,7 +38,11 @@ return [
         'destination' => [
             'compression_method' => ZipArchive::CM_DEFAULT,
             'compression_level' => 9,
-            'filename_prefix' => 'backup-',
+
+            // Empty for the same reason as config/backup.php — a prefix breaks
+            // the filename date parse, and on object storage the fallback dates
+            // every archive by its upload time.
+            'filename_prefix' => '',
 
             'disks' => [
                 'backups',
