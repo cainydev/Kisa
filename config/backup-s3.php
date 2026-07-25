@@ -28,6 +28,11 @@ return [
     'backup' => [
         'name' => '',
 
+        // Repeated from config/backup.php: Config::fromArray merges only at the
+        // top level of `backup`, so anything not restated here falls back to the
+        // package default (false).
+        'verify_backup' => true,
+
         /*
          * `destination` must be spelled out in full. Config::fromArray merges
          * only at the top level of `backup`, so a partial array here replaces

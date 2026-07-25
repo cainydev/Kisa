@@ -15,6 +15,13 @@ use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
 return [
     'token' => env('BACKUP_TOKEN', ''),
 
+    /*
+     * Send the package's own progress and error output to the application log
+     * rather than only to the console, so a scheduled run leaves a trace. The
+     * default stack fans out to the daily file and Discord.
+     */
+    'log_channel' => 'stack',
+
     'backup' => [
         /*
          * Doubles as the folder the archives are written to, so this is
@@ -153,6 +160,13 @@ return [
          * The directory where the temporary files will be stored.
          */
         'temporary_directory' => storage_path('app/backup-tmp'),
+
+        /*
+         * Open the finished zip and check it is readable and non-empty before
+         * reporting success. Without this a backup can "succeed" having written
+         * nothing — which is how a broken nightly run went unnoticed for months.
+         */
+        'verify_backup' => true,
 
         /*
          * The password to be used for archive encryption.
