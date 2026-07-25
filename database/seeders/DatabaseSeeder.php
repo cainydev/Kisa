@@ -8,14 +8,11 @@ class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
-     *
-     * @return void
      */
     public function run(): void
     {
         if (app()->environment('local')) {
             // General
-            $this->call(TableSettingSeeder::class);
             $this->call(UserSeeder::class);
             $this->call(ProductTypeSeeder::class);
 
