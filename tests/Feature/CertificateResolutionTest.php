@@ -1,122 +1,70 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\Certificate;
 use App\Models\Supplier;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
-use Tests\TestCase;
 
-class CertificateResolutionTest extends TestCase
+beforeEach(function () {
+    $this->supplier = Supplier::factory()->create();
+});
+
+/**
+ * Issue a certificate for the supplier under test. Dates are passed as plain
+ * strings to keep the validity windows readable at a glance.
+ */
+function certificate(string $number, string $validFrom, string $validUntil, ?string $issuedAt = null): Certificate
 {
-    use RefreshDatabase;
+    return Certificate::factory()->for(test()->supplier)->create([
+        'certificate_number' => $number,
+        'valid_from' => $validFrom,
+        'valid_until' => $validUntil,
+        'issued_at' => $issuedAt,
+    ]);
+}
 
-    public function test_it_returns_null_when_no_certificate_covers_the_date(): void
-    {
-        $supplier = Supplier::factory()->create();
-        Certificate::factory()->for($supplier)->create([
-            'valid_from' => '2024-01-01',
-            'valid_until' => '2024-12-31',
-        ]);
+/**
+ * Resolve the certificate the supplier held on the given date.
+ */
+function certificateOn(string $date): ?Certificate
+{
+    return test()->supplier->load('certificates')->certificateForDate(Carbon::parse($date));
+}
 
-        $supplier->load('certificates');
+describe('certificate resolution', function () {
+    it('returns null when no certificate covers the date', function () {
+        certificate('EXPIRED', '2024-01-01', '2024-12-31');
 
-        $this->assertNull($supplier->certificateForDate(Carbon::parse('2025-06-15')));
-    }
+        expect(certificateOn('2025-06-15'))->toBeNull();
+    });
 
-    public function test_it_resolves_the_certificate_covering_the_date(): void
-    {
-        $supplier = Supplier::factory()->create();
-        $covering = Certificate::factory()->for($supplier)->create([
-            'certificate_number' => 'COVERING',
-            'valid_from' => '2025-01-01',
-            'valid_until' => '2025-12-31',
-            'issued_at' => '2025-01-01',
-        ]);
-        Certificate::factory()->for($supplier)->create([
-            'certificate_number' => 'OTHER-YEAR',
-            'valid_from' => '2024-01-01',
-            'valid_until' => '2024-12-31',
-            'issued_at' => '2024-01-01',
-        ]);
+    it('resolves the certificate covering the date', function () {
+        $covering = certificate('COVERING', '2025-01-01', '2025-12-31', '2025-01-01');
+        certificate('OTHER-YEAR', '2024-01-01', '2024-12-31', '2024-01-01');
 
-        $supplier->load('certificates');
+        expect(certificateOn('2025-06-15'))->toBeCertificate($covering);
+    });
 
-        $this->assertTrue(
-            $covering->is($supplier->certificateForDate(Carbon::parse('2025-06-15')))
-        );
-    }
+    it('lets a reissued certificate supersede an earlier one covering the same date', function () {
+        certificate('ORIGINAL', '2025-01-01', '2025-12-31', '2025-01-01');
+        $reissued = certificate('REISSUED', '2025-01-01', '2025-12-31', '2025-05-20');
 
-    public function test_a_reissued_certificate_supersedes_an_earlier_one_covering_the_same_date(): void
-    {
-        $supplier = Supplier::factory()->create();
-        Certificate::factory()->for($supplier)->create([
-            'certificate_number' => 'ORIGINAL',
-            'valid_from' => '2025-01-01',
-            'valid_until' => '2025-12-31',
-            'issued_at' => '2025-01-01',
-        ]);
-        $reissued = Certificate::factory()->for($supplier)->create([
-            'certificate_number' => 'REISSUED',
-            'valid_from' => '2025-01-01',
-            'valid_until' => '2025-12-31',
-            'issued_at' => '2025-05-20',
-        ]);
+        // The most recently issued certificate must win when both cover the date.
+        expect(certificateOn('2025-06-15'))->toBeCertificate($reissued);
+    });
 
-        $supplier->load('certificates');
-
-        $this->assertTrue(
-            $reissued->is($supplier->certificateForDate(Carbon::parse('2025-06-15'))),
-            'The most recently issued certificate must win when both cover the date.'
-        );
-    }
-
-    public function test_it_handles_a_renewal_issued_during_the_previous_certificates_validity(): void
-    {
-        $supplier = Supplier::factory()->create();
-        Certificate::factory()->for($supplier)->create([
-            'certificate_number' => 'CURRENT',
-            'valid_from' => '2025-01-01',
-            'valid_until' => '2025-12-31',
-            'issued_at' => '2025-01-01',
-        ]);
-        $renewal = Certificate::factory()->for($supplier)->create([
-            'certificate_number' => 'RENEWAL',
-            'valid_from' => '2026-01-01',
-            'valid_until' => '2026-12-31',
-            'issued_at' => '2025-11-15',
-        ]);
-
-        $supplier->load('certificates');
+    it('handles a renewal issued during the previous certificates validity', function () {
+        certificate('CURRENT', '2025-01-01', '2025-12-31', '2025-01-01');
+        $renewal = certificate('RENEWAL', '2026-01-01', '2026-12-31', '2025-11-15');
 
         // A date only the renewal covers resolves to the renewal, even though
         // the renewal was issued while the current certificate was still valid.
-        $this->assertTrue(
-            $renewal->is($supplier->certificateForDate(Carbon::parse('2026-03-01')))
-        );
-    }
+        expect(certificateOn('2026-03-01'))->toBeCertificate($renewal);
+    });
 
-    public function test_it_falls_back_to_validity_start_when_issue_date_is_missing(): void
-    {
-        $supplier = Supplier::factory()->create();
-        Certificate::factory()->for($supplier)->create([
-            'certificate_number' => 'EARLIER-START',
-            'valid_from' => '2025-01-01',
-            'valid_until' => '2025-12-31',
-            'issued_at' => null,
-        ]);
-        $laterStart = Certificate::factory()->for($supplier)->create([
-            'certificate_number' => 'LATER-START',
-            'valid_from' => '2025-03-01',
-            'valid_until' => '2025-12-31',
-            'issued_at' => null,
-        ]);
+    it('falls back to validity start when the issue date is missing', function () {
+        certificate('EARLIER-START', '2025-01-01', '2025-12-31');
+        $laterStart = certificate('LATER-START', '2025-03-01', '2025-12-31');
 
-        $supplier->load('certificates');
-
-        $this->assertTrue(
-            $laterStart->is($supplier->certificateForDate(Carbon::parse('2025-06-15')))
-        );
-    }
-}
+        expect(certificateOn('2025-06-15'))->toBeCertificate($laterStart);
+    });
+});

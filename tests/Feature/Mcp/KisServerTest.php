@@ -1,7 +1,5 @@
 <?php
 
-namespace Tests\Feature\Mcp;
-
 use App\Mcp\Servers\KisServer;
 use App\Mcp\Tools\CreateCertificateTool;
 use App\Mcp\Tools\CreateControlBodyTool;
@@ -27,27 +25,32 @@ use App\Models\ProductType;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\Traceability\CertificateSnapshotter;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
-class KisServerTest extends TestCase
+beforeEach(function () {
+    User::create([
+        'name' => 'Marcus Wagner',
+        'email' => 'marcus@example.test',
+        'password' => bcrypt('secret'),
+    ]);
+});
+
+/**
+ * Create an active (non-discarded) bag for a herb, defeating the factory's
+ * random afterCreating discard so tests are deterministic.
+ */
+function activeBag(Herb $herb, array $attributes = []): Bag
 {
-    use RefreshDatabase;
+    $bag = Bag::factory()->create(['herb_id' => $herb->id, ...$attributes]);
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        User::create([
-            'name' => 'Marcus Wagner',
-            'email' => 'marcus@example.test',
-            'password' => bcrypt('secret'),
-        ]);
+    if ($bag->trashed()) {
+        $bag->restore();
     }
 
-    // ---- Herbs -------------------------------------------------------------
+    return $bag;
+}
 
-    public function test_list_herbs_returns_herbs_with_stock(): void
-    {
+describe('herbs', function () {
+    it('lists herbs with their stock', function () {
         $supplier = Supplier::factory()->create(['shortname' => 'Galke']);
         Herb::factory()->create(['name' => 'Kamille', 'supplier_id' => $supplier->id]);
 
@@ -55,25 +58,22 @@ class KisServerTest extends TestCase
             ->assertOk()
             ->assertSee('Kamille')
             ->assertSee('Galke');
-    }
+    });
 
-    public function test_get_herb_resolves_by_name(): void
-    {
+    it('resolves a herb by name', function () {
         Herb::factory()->create(['name' => 'Pfefferminze', 'fullname' => 'Pfefferminzblätter']);
 
         KisServer::tool(GetHerbTool::class, ['herb' => 'Pfefferminze'])
             ->assertOk()
             ->assertSee('Pfefferminzblätter');
-    }
+    });
 
-    public function test_get_herb_errors_clearly_when_not_found(): void
-    {
+    it('errors clearly when the herb is not found', function () {
         KisServer::tool(GetHerbTool::class, ['herb' => 'Nichtvorhanden'])
             ->assertHasErrors();
-    }
+    });
 
-    public function test_create_herb_creates_and_links_supplier(): void
-    {
+    it('creates a herb and links its supplier', function () {
         $supplier = Supplier::factory()->create(['shortname' => 'Dragonspice']);
 
         KisServer::tool(CreateHerbTool::class, [
@@ -83,28 +83,25 @@ class KisServerTest extends TestCase
         ])->assertOk()->assertSee('Salbei');
 
         $this->assertDatabaseHas('herbs', ['name' => 'Salbei', 'supplier_id' => $supplier->id]);
-    }
+    });
 
-    public function test_create_herb_rejects_duplicates(): void
-    {
+    it('rejects a duplicate herb', function () {
         Herb::factory()->create(['name' => 'Thymian']);
 
         KisServer::tool(CreateHerbTool::class, ['name' => 'Thymian'])
             ->assertHasErrors();
-    }
+    });
 
-    public function test_create_herb_errors_on_unknown_supplier(): void
-    {
+    it('errors on an unknown supplier without writing the herb', function () {
         KisServer::tool(CreateHerbTool::class, ['name' => 'Rosmarin', 'supplier' => 'DoesNotExist'])
             ->assertHasErrors();
 
         $this->assertDatabaseMissing('herbs', ['name' => 'Rosmarin']);
-    }
+    });
+});
 
-    // ---- Suppliers ---------------------------------------------------------
-
-    public function test_list_suppliers_shows_current_control_body(): void
-    {
+describe('suppliers', function () {
+    it('shows the current control body for each supplier', function () {
         $inspector = BioInspector::factory()->create(['label' => 'DE-ÖKO-001']);
         $supplier = Supplier::factory()->create(['shortname' => 'Galke']);
         Certificate::factory()->for($supplier)->create([
@@ -118,22 +115,20 @@ class KisServerTest extends TestCase
             ->assertOk()
             ->assertSee('Galke')
             ->assertSee('DE-ÖKO-001');
-    }
+    });
 
-    public function test_create_supplier_persists(): void
-    {
+    it('persists a new supplier', function () {
         KisServer::tool(CreateSupplierTool::class, [
             'company' => 'Test Kräuter GmbH',
             'shortname' => 'Testkr',
         ])->assertOk();
 
         $this->assertDatabaseHas('suppliers', ['shortname' => 'Testkr']);
-    }
+    });
+});
 
-    // ---- Control bodies ----------------------------------------------------
-
-    public function test_list_control_bodies_shows_code_company_and_country(): void
-    {
+describe('control bodies', function () {
+    it('shows the code, company and country', function () {
         BioInspector::factory()->create([
             'label' => 'DE-ÖKO-021',
             'company' => 'Grünstempel Ökoprüfstelle e.V.',
@@ -145,10 +140,9 @@ class KisServerTest extends TestCase
             ->assertSee('DE-ÖKO-021')
             ->assertSee('Grünstempel Ökoprüfstelle e.V.')
             ->assertSee('Deutschland');
-    }
+    });
 
-    public function test_create_control_body_persists(): void
-    {
+    it('persists a new control body', function () {
         KisServer::tool(CreateControlBodyTool::class, [
             'oeko_code' => 'DE-ÖKO-013',
             'company' => 'QC&I GmbH',
@@ -160,10 +154,9 @@ class KisServerTest extends TestCase
             'company' => 'QC&I GmbH',
             'country' => 'DE',
         ]);
-    }
+    });
 
-    public function test_create_control_body_rejects_duplicate_oeko_code(): void
-    {
+    it('rejects a duplicate öko-code regardless of casing', function () {
         BioInspector::factory()->create(['label' => 'DE-ÖKO-013']);
 
         KisServer::tool(CreateControlBodyTool::class, [
@@ -172,11 +165,10 @@ class KisServerTest extends TestCase
             'country' => 'DE',
         ])->assertSee('already exists');
 
-        $this->assertSame(1, BioInspector::where('label', 'DE-ÖKO-013')->count());
-    }
+        expect(BioInspector::where('label', 'DE-ÖKO-013')->count())->toBe(1);
+    });
 
-    public function test_create_control_body_rejects_unknown_country(): void
-    {
+    it('rejects an unknown country', function () {
         KisServer::tool(CreateControlBodyTool::class, [
             'oeko_code' => 'XX-ÖKO-999',
             'company' => 'Nowhere GmbH',
@@ -184,12 +176,11 @@ class KisServerTest extends TestCase
         ])->assertHasErrors();
 
         $this->assertDatabaseMissing('bio_inspectors', ['label' => 'XX-ÖKO-999']);
-    }
+    });
+});
 
-    // ---- Document uploads --------------------------------------------------
-
-    public function test_request_upload_url_returns_signed_url_for_delivery_invoice(): void
-    {
+describe('document uploads', function () {
+    it('returns a signed url for a delivery invoice', function () {
         $delivery = Delivery::factory()->for(Supplier::factory())->create();
 
         KisServer::tool(RequestUploadUrlTool::class, [
@@ -200,10 +191,9 @@ class KisServerTest extends TestCase
             ->assertOk()
             ->assertSee('/api/uploads/delivery/'.$delivery->id.'/invoice')
             ->assertSee('signature=');
-    }
+    });
 
-    public function test_request_upload_url_resolves_certificate_by_number(): void
-    {
+    it('resolves a certificate by its number', function () {
         $certificate = Certificate::factory()->for(Supplier::factory())->create([
             'certificate_number' => 'DE-ÖKO-001.276-0059778.2025.002',
         ]);
@@ -215,10 +205,9 @@ class KisServerTest extends TestCase
         ])
             ->assertOk()
             ->assertSee('/api/uploads/certificate/'.$certificate->id.'/document');
-    }
+    });
 
-    public function test_request_upload_url_rejects_collection_not_on_target(): void
-    {
+    it('rejects a collection that does not exist on the target', function () {
         $certificate = Certificate::factory()->for(Supplier::factory())->create();
 
         KisServer::tool(RequestUploadUrlTool::class, [
@@ -226,21 +215,19 @@ class KisServerTest extends TestCase
             'target' => (string) $certificate->id,
             'collection' => 'invoice',
         ])->assertSee('not available');
-    }
+    });
 
-    public function test_request_upload_url_errors_on_unknown_record(): void
-    {
+    it('errors on an unknown record', function () {
         KisServer::tool(RequestUploadUrlTool::class, [
             'target_type' => 'delivery',
             'target' => '999999',
             'collection' => 'invoice',
         ])->assertSee('No delivery matching');
-    }
+    });
+});
 
-    // ---- Certificates ------------------------------------------------------
-
-    public function test_create_certificate_links_control_body_by_oeko_code(): void
-    {
+describe('certificates', function () {
+    it('links the control body by öko-code', function () {
         BioInspector::factory()->create(['label' => 'DE-ÖKO-006', 'company' => 'ABCERT AG']);
         $supplier = Supplier::factory()->create(['shortname' => 'Edelkraut']);
 
@@ -258,11 +245,10 @@ class KisServerTest extends TestCase
             'supplier_id' => $supplier->id,
             'certificate_number' => 'ABC-123',
         ]);
-    }
+    });
 
-    public function test_create_certificate_errors_on_unknown_oeko_code(): void
-    {
-        $supplier = Supplier::factory()->create(['shortname' => 'Edelkraut']);
+    it('errors on an unknown öko-code', function () {
+        Supplier::factory()->create(['shortname' => 'Edelkraut']);
 
         KisServer::tool(CreateCertificateTool::class, [
             'supplier' => 'Edelkraut',
@@ -271,10 +257,9 @@ class KisServerTest extends TestCase
             'valid_from' => '2025-01-01',
             'valid_until' => '2026-01-01',
         ])->assertHasErrors();
-    }
+    });
 
-    public function test_create_certificate_rejects_invalid_activity(): void
-    {
+    it('rejects an invalid activity', function () {
         BioInspector::factory()->create(['label' => 'DE-ÖKO-006']);
         Supplier::factory()->create(['shortname' => 'Edelkraut']);
 
@@ -286,12 +271,11 @@ class KisServerTest extends TestCase
             'valid_until' => '2026-01-01',
             'activities' => ['Frobnicating'],
         ])->assertHasErrors();
-    }
+    });
+});
 
-    // ---- Deliveries (the compound write) -----------------------------------
-
-    public function test_create_delivery_creates_bags_and_freezes_certificate(): void
-    {
+describe('deliveries', function () {
+    it('creates bags and freezes the covering certificate', function () {
         $inspector = BioInspector::factory()->create(['label' => 'DE-ÖKO-001', 'company' => 'Kiwa']);
         $supplier = Supplier::factory()->create(['shortname' => 'Galke']);
         Certificate::factory()->for($supplier)->create([
@@ -303,44 +287,42 @@ class KisServerTest extends TestCase
         ]);
         Herb::factory()->create(['name' => 'Kamille', 'supplier_id' => $supplier->id]);
 
-        $response = KisServer::tool(CreateDeliveryTool::class, [
+        KisServer::tool(CreateDeliveryTool::class, [
             'supplier' => 'Galke',
             'delivered_date' => '2026-05-01',
             'bags' => [
                 ['herb' => 'Kamille', 'charge' => 'CH-100', 'size_grams' => 5000, 'bio' => true],
             ],
-        ]);
-
-        $response->assertOk()->assertSee('CERT-2025')->assertSee('CH-100');
+        ])->assertOk()->assertSee('CERT-2025')->assertSee('CH-100');
 
         $delivery = Delivery::latest('id')->first();
-        $this->assertNotNull($delivery);
-        $this->assertSame('DE-ÖKO-001', $delivery->frozenOekoCode());
-        $this->assertDatabaseHas('bags', ['delivery_id' => $delivery->id, 'charge' => 'CH-100']);
-    }
 
-    public function test_create_delivery_warns_when_no_certificate_covers_the_date(): void
-    {
+        expect($delivery)->not->toBeNull()
+            ->and($delivery->frozenOekoCode())->toBe('DE-ÖKO-001');
+
+        $this->assertDatabaseHas('bags', ['delivery_id' => $delivery->id, 'charge' => 'CH-100']);
+    });
+
+    it('warns when no certificate covers the delivery date', function () {
         $supplier = Supplier::factory()->create(['shortname' => 'Galke']);
         Herb::factory()->create(['name' => 'Kamille', 'supplier_id' => $supplier->id]);
 
-        $response = KisServer::tool(CreateDeliveryTool::class, [
+        KisServer::tool(CreateDeliveryTool::class, [
             'supplier' => 'Galke',
             'delivered_date' => '2026-05-01',
             'bags' => [
                 ['herb' => 'Kamille', 'charge' => 'CH-200', 'size_grams' => 3000],
             ],
-        ]);
-
-        $response->assertOk()->assertSee('Kein gültiges Zertifikat');
+        ])->assertOk()->assertSee('Kein gültiges Zertifikat');
 
         $delivery = Delivery::latest('id')->first();
-        $this->assertNull($delivery->frozenOekoCode());
-        $this->assertDatabaseHas('bags', ['delivery_id' => $delivery->id, 'charge' => 'CH-200']);
-    }
 
-    public function test_create_delivery_fails_before_writing_when_a_herb_is_unknown(): void
-    {
+        expect($delivery->frozenOekoCode())->toBeNull();
+
+        $this->assertDatabaseHas('bags', ['delivery_id' => $delivery->id, 'charge' => 'CH-200']);
+    });
+
+    it('fails before writing anything when a herb is unknown', function () {
         Supplier::factory()->create(['shortname' => 'Galke']);
 
         KisServer::tool(CreateDeliveryTool::class, [
@@ -353,10 +335,9 @@ class KisServerTest extends TestCase
 
         $this->assertDatabaseCount('deliveries', 0);
         $this->assertDatabaseMissing('bags', ['charge' => 'CH-300']);
-    }
+    });
 
-    public function test_get_delivery_shows_bags_and_certificate(): void
-    {
+    it('shows the bags and the frozen certificate', function () {
         $inspector = BioInspector::factory()->create(['label' => 'DE-ÖKO-001']);
         $supplier = Supplier::factory()->create(['shortname' => 'Galke']);
         Certificate::factory()->for($supplier)->create([
@@ -383,12 +364,11 @@ class KisServerTest extends TestCase
             ->assertOk()
             ->assertSee('CH-999')
             ->assertSee('CERT-XYZ');
-    }
+    });
+});
 
-    // ---- Products ----------------------------------------------------------
-
-    public function test_create_product_with_recipe(): void
-    {
+describe('products', function () {
+    it('creates a product with a recipe', function () {
         $type = ProductType::create(['name' => 'Einzelkraut', 'compound' => false]);
         Herb::factory()->create(['name' => 'Kamille']);
 
@@ -401,13 +381,13 @@ class KisServerTest extends TestCase
         ])->assertOk()->assertSee('Kamillentee');
 
         $product = Product::where('name', 'Kamillentee')->first();
-        $this->assertNotNull($product);
-        $this->assertSame($type->id, $product->product_type_id);
-        $this->assertEquals(1, $product->herbs()->count());
-    }
 
-    public function test_create_product_warns_when_recipe_does_not_sum_to_100(): void
-    {
+        expect($product)->not->toBeNull()
+            ->and($product->product_type_id)->toBe($type->id)
+            ->and($product->herbs()->count())->toBe(1);
+    });
+
+    it('warns when the recipe does not sum to 100', function () {
         ProductType::create(['name' => 'Mischung', 'compound' => true]);
         Herb::factory()->create(['name' => 'Kamille']);
         Herb::factory()->create(['name' => 'Minze']);
@@ -420,44 +400,25 @@ class KisServerTest extends TestCase
                 ['herb' => 'Minze', 'percentage' => 40],
             ],
         ])->assertOk()->assertSee('nicht 100');
-    }
+    });
+});
 
-    // ---- Bags: find by herb & discard --------------------------------------
-
-    /**
-     * Create an active (non-discarded) bag for a herb, defeating the factory's
-     * random afterCreating discard so tests are deterministic.
-     */
-    private function activeBag(Herb $herb, array $attributes = []): Bag
-    {
-        $bag = Bag::factory()->create(['herb_id' => $herb->id, ...$attributes]);
-
-        if ($bag->trashed()) {
-            $bag->restore();
-        }
-
-        return $bag;
-    }
-
-    public function test_find_bags_by_herb_lists_active_bags_only_by_default(): void
-    {
+describe('bags', function () {
+    it('lists active bags only by default', function () {
         $herb = Herb::factory()->create(['name' => 'Salbei']);
-        $active = $this->activeBag($herb, ['charge' => 'AKTIV1']);
-        $gone = $this->activeBag($herb, ['charge' => 'WEG1']);
-        $gone->discard();
+        activeBag($herb, ['charge' => 'AKTIV1']);
+        activeBag($herb, ['charge' => 'WEG1'])->discard();
 
         KisServer::tool(FindBagsByHerbTool::class, ['herb' => 'Salbei'])
             ->assertOk()
             ->assertSee('AKTIV1')
             ->assertDontSee('WEG1');
-    }
+    });
 
-    public function test_find_bags_by_herb_includes_discarded_when_requested(): void
-    {
+    it('includes discarded bags when asked', function () {
         $herb = Herb::factory()->create(['name' => 'Thymian']);
-        $this->activeBag($herb, ['charge' => 'AKTIV2']);
-        $gone = $this->activeBag($herb, ['charge' => 'WEG2']);
-        $gone->discard();
+        activeBag($herb, ['charge' => 'AKTIV2']);
+        activeBag($herb, ['charge' => 'WEG2'])->discard();
 
         KisServer::tool(FindBagsByHerbTool::class, [
             'herb' => 'Thymian',
@@ -467,33 +428,30 @@ class KisServerTest extends TestCase
             ->assertSee('AKTIV2')
             ->assertSee('WEG2')
             ->assertSee('ENTSORGT');
-    }
+    });
 
-    public function test_find_bags_by_herb_errors_when_herb_unknown(): void
-    {
+    it('errors when the herb is unknown', function () {
         KisServer::tool(FindBagsByHerbTool::class, ['herb' => 'Gibtsnicht'])
             ->assertHasErrors();
-    }
+    });
 
-    public function test_discard_bags_discards_multiple_by_id(): void
-    {
+    it('discards multiple bags by id', function () {
         $herb = Herb::factory()->create(['name' => 'Lavendel']);
-        $a = $this->activeBag($herb);
-        $b = $this->activeBag($herb);
+        $a = activeBag($herb);
+        $b = activeBag($herb);
 
         KisServer::tool(DiscardBagsTool::class, ['bag_ids' => [$a->id, $b->id]])
             ->assertOk()
             ->assertSee('Entsorgt (2)');
 
-        $this->assertTrue($a->fresh()->trashed());
-        $this->assertTrue($b->fresh()->trashed());
-    }
+        expect($a->fresh()->trashed())->toBeTrue()
+            ->and($b->fresh()->trashed())->toBeTrue();
+    });
 
-    public function test_discard_bags_skips_unknown_and_already_discarded(): void
-    {
+    it('skips bags that are unknown or already discarded', function () {
         $herb = Herb::factory()->create(['name' => 'Ringelblume']);
-        $active = $this->activeBag($herb);
-        $already = $this->activeBag($herb);
+        $active = activeBag($herb);
+        $already = activeBag($herb);
         $already->discard();
 
         KisServer::tool(DiscardBagsTool::class, [
@@ -505,12 +463,11 @@ class KisServerTest extends TestCase
             ->assertSee('bereits entsorgt')
             ->assertSee('nicht gefunden');
 
-        $this->assertTrue($active->fresh()->trashed());
-    }
+        expect($active->fresh()->trashed())->toBeTrue();
+    });
 
-    public function test_discard_bags_errors_when_nothing_discarded(): void
-    {
+    it('errors when nothing could be discarded', function () {
         KisServer::tool(DiscardBagsTool::class, ['bag_ids' => [999999]])
             ->assertHasErrors();
-    }
-}
+    });
+});

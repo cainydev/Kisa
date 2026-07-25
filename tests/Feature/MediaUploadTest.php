@@ -1,200 +1,164 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\Certificate;
 use App\Models\Delivery;
 use App\Models\Supplier;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
-use Tests\TestCase;
 
-class MediaUploadTest extends TestCase
+beforeEach(function () {
+    Storage::fake('public');
+
+    User::create([
+        'name' => 'Marcus Wagner',
+        'email' => 'marcus@example.test',
+        'password' => bcrypt('secret'),
+    ]);
+    Supplier::factory()->create();
+
+    $this->delivery = Delivery::factory()->create();
+});
+
+/**
+ * A signed upload URL that is valid for the next 30 minutes.
+ */
+function signedUrl(string $type, int $id, string $collection): string
 {
-    use RefreshDatabase;
+    return URL::temporarySignedRoute('media.upload', now()->addMinutes(30), [
+        'type' => $type,
+        'id' => $id,
+        'collection' => $collection,
+    ]);
+}
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        Storage::fake('public');
+function pdf(string $name = 'rechnung.pdf'): UploadedFile
+{
+    return UploadedFile::fake()->createWithContent($name, '%PDF-1.4 fake');
+}
 
-        User::create([
-            'name' => 'Marcus Wagner',
-            'email' => 'marcus@example.test',
-            'password' => bcrypt('secret'),
-        ]);
-        Supplier::factory()->create();
-    }
+/**
+ * Upload a file to the delivery under test through a freshly signed URL.
+ */
+function uploadToDelivery(UploadedFile $file, string $collection = 'invoice')
+{
+    return test()->post(
+        signedUrl('delivery', test()->delivery->id, $collection),
+        ['file' => $file]
+    );
+}
 
-    private function signedUrl(string $type, int $id, string $collection): string
-    {
-        return URL::temporarySignedRoute('media.upload', now()->addMinutes(30), [
-            'type' => $type,
-            'id' => $id,
-            'collection' => $collection,
-        ]);
-    }
+describe('accepted uploads', function () {
+    it('stores an invoice on a delivery', function () {
+        uploadToDelivery(pdf())->assertOk();
 
-    private function pdf(string $name = 'rechnung.pdf'): UploadedFile
-    {
-        return UploadedFile::fake()->createWithContent($name, '%PDF-1.4 fake');
-    }
+        expect($this->delivery->fresh()->getMedia('invoice'))->toHaveCount(1);
+    });
 
-    public function test_signed_url_stores_invoice_on_delivery(): void
-    {
-        $delivery = Delivery::factory()->create();
+    it('stores a document on a certificate', function () {
+        $certificate = Certificate::factory()->for(Supplier::factory())->create();
 
-        $this->post($this->signedUrl('delivery', $delivery->id, 'invoice'), [
-            'file' => $this->pdf(),
+        $this->post(signedUrl('certificate', $certificate->id, 'document'), [
+            'file' => pdf('zertifikat.pdf'),
         ])->assertOk();
 
-        $this->assertCount(1, $delivery->fresh()->getMedia('invoice'));
-    }
+        expect($certificate->fresh()->getMedia('document'))->toHaveCount(1);
+    });
 
-    public function test_upload_without_signature_is_rejected(): void
-    {
-        $delivery = Delivery::factory()->create();
+    it('replaces the previous file in a single-file collection', function () {
+        uploadToDelivery(pdf('alt.pdf'))->assertOk();
+        uploadToDelivery(pdf('neu.pdf'))->assertOk();
 
-        $this->post("/api/uploads/delivery/{$delivery->id}/invoice", [
-            'file' => $this->pdf(),
+        $media = $this->delivery->fresh()->getMedia('invoice');
+
+        expect($media)->toHaveCount(1)
+            ->and($media->first()->file_name)->toBe('neu.pdf');
+    });
+});
+
+describe('rejected uploads', function () {
+    it('rejects an upload with no signature', function () {
+        $this->post("/api/uploads/delivery/{$this->delivery->id}/invoice", [
+            'file' => pdf(),
         ])->assertForbidden();
 
-        $this->assertCount(0, $delivery->fresh()->getMedia('invoice'));
-    }
+        expect($this->delivery->fresh()->getMedia('invoice'))->toBeEmpty();
+    });
 
-    public function test_expired_signature_is_rejected(): void
-    {
-        $delivery = Delivery::factory()->create();
+    it('rejects an expired signature', function () {
         $url = URL::temporarySignedRoute('media.upload', now()->subMinute(), [
             'type' => 'delivery',
-            'id' => $delivery->id,
+            'id' => $this->delivery->id,
             'collection' => 'invoice',
         ]);
 
-        $this->post($url, ['file' => $this->pdf()])->assertForbidden();
+        $this->post($url, ['file' => pdf()])->assertForbidden();
 
-        $this->assertCount(0, $delivery->fresh()->getMedia('invoice'));
-    }
+        expect($this->delivery->fresh()->getMedia('invoice'))->toBeEmpty();
+    });
 
-    public function test_signature_cannot_be_retargeted_to_another_delivery(): void
-    {
-        $signed = Delivery::factory()->create();
+    it('rejects a signature retargeted to another delivery', function () {
         $other = Delivery::factory()->create();
 
-        $url = $this->signedUrl('delivery', $signed->id, 'invoice');
         $tampered = str_replace(
-            "/uploads/delivery/{$signed->id}/invoice",
+            "/uploads/delivery/{$this->delivery->id}/invoice",
             "/uploads/delivery/{$other->id}/invoice",
-            $url
+            signedUrl('delivery', $this->delivery->id, 'invoice')
         );
 
-        $this->post($tampered, ['file' => $this->pdf()])->assertForbidden();
+        $this->post($tampered, ['file' => pdf()])->assertForbidden();
 
-        $this->assertCount(0, $other->fresh()->getMedia('invoice'));
-    }
+        expect($other->fresh()->getMedia('invoice'))->toBeEmpty();
+    });
 
-    public function test_non_pdf_is_rejected(): void
-    {
-        $delivery = Delivery::factory()->create();
+    it('rejects $name', function (string $filename, string $contents) {
+        uploadToDelivery(UploadedFile::fake()->createWithContent($filename, $contents))
+            ->assertStatus(422);
 
-        $this->post($this->signedUrl('delivery', $delivery->id, 'invoice'), [
-            'file' => UploadedFile::fake()->createWithContent('shell.php', '<?php echo 1;'),
-        ])->assertStatus(422);
+        expect($this->delivery->fresh()->getMedia('invoice'))->toBeEmpty();
+    })->with([
+        'a non-pdf file' => ['shell.php', '<?php echo 1;'],
+        'a .php extension carrying pdf content' => ['evil.php', '%PDF-1.4 fake'],
+    ]);
 
-        $this->assertCount(0, $delivery->fresh()->getMedia('invoice'));
-    }
+    it('rejects a collection that is not registered on the target', function () {
+        uploadToDelivery(pdf(), collection: 'geheim')->assertNotFound();
+    });
 
-    public function test_php_extension_is_rejected_even_with_pdf_content(): void
-    {
-        $delivery = Delivery::factory()->create();
+    it('rejects an upload for a record that does not exist', function () {
+        $this->post(signedUrl('delivery', 999999, 'invoice'), ['file' => pdf()])
+            ->assertNotFound();
+    });
+});
 
-        $this->post($this->signedUrl('delivery', $delivery->id, 'invoice'), [
-            'file' => UploadedFile::fake()->createWithContent('evil.php', '%PDF-1.4 fake'),
-        ])->assertStatus(422);
-
-        $this->assertCount(0, $delivery->fresh()->getMedia('invoice'));
-    }
-
+describe('stored file names', function () {
     /**
-     * Second layer behind the mimetypes rule: whatever name survives
-     * validation is still slugged and forced to .pdf before it hits the local
-     * disk, so nothing lands under a name the web server would execute.
+     * Second layer behind the mimetypes rule: whatever name survives validation
+     * is still slugged and forced to .pdf before it hits the local disk, so
+     * nothing lands under a name the web server would execute.
      */
-    public function test_stored_file_name_is_slugged_and_forced_to_pdf(): void
-    {
-        $delivery = Delivery::factory()->create();
+    it('slugs the name and forces a pdf extension', function () {
+        uploadToDelivery(pdf('../../etc/pa ss wd;rm -rf.pdf'))->assertOk();
 
-        $this->post($this->signedUrl('delivery', $delivery->id, 'invoice'), [
-            'file' => $this->pdf('../../etc/pa ss wd;rm -rf.pdf'),
-        ])->assertOk();
+        $media = $this->delivery->fresh()->getFirstMedia('invoice');
 
-        $media = $delivery->fresh()->getFirstMedia('invoice');
-
-        $this->assertNotNull($media);
-        $this->assertStringEndsWith('.pdf', $media->file_name);
-        $this->assertStringNotContainsString('/', $media->file_name);
-        $this->assertStringNotContainsString('..', $media->file_name);
-        $this->assertStringNotContainsString(';', $media->file_name);
-    }
+        expect($media)->not->toBeNull()
+            ->and($media->file_name)->toEndWith('.pdf')
+            ->and($media->file_name)->not->toContain('/')
+            ->and($media->file_name)->not->toContain('..')
+            ->and($media->file_name)->not->toContain(';');
+    });
 
     /**
      * Öko-codes are full of umlauts, so they must transliterate rather than be
      * stripped: "DE-ÖKO-001…" should not land as "DE--KO-001…".
      */
-    public function test_umlauts_in_file_name_are_transliterated(): void
-    {
-        $delivery = Delivery::factory()->create();
+    it('transliterates umlauts rather than stripping them', function () {
+        uploadToDelivery(pdf('DE-ÖKO-001.276-0059778.2025.002.pdf'), collection: 'certificate')
+            ->assertOk();
 
-        $this->post($this->signedUrl('delivery', $delivery->id, 'certificate'), [
-            'file' => $this->pdf('DE-ÖKO-001.276-0059778.2025.002.pdf'),
-        ])->assertOk();
-
-        $this->assertSame(
-            'DE-OKO-001.276-0059778.2025.002.pdf',
-            $delivery->fresh()->getFirstMedia('certificate')->file_name
-        );
-    }
-
-    public function test_unregistered_collection_is_rejected(): void
-    {
-        $delivery = Delivery::factory()->create();
-
-        $this->post($this->signedUrl('delivery', $delivery->id, 'geheim'), [
-            'file' => $this->pdf(),
-        ])->assertNotFound();
-    }
-
-    public function test_missing_record_is_rejected(): void
-    {
-        $this->post($this->signedUrl('delivery', 999999, 'invoice'), [
-            'file' => $this->pdf(),
-        ])->assertNotFound();
-    }
-
-    public function test_certificate_document_can_be_uploaded(): void
-    {
-        $certificate = Certificate::factory()->for(Supplier::factory())->create();
-
-        $this->post($this->signedUrl('certificate', $certificate->id, 'document'), [
-            'file' => $this->pdf('zertifikat.pdf'),
-        ])->assertOk();
-
-        $this->assertCount(1, $certificate->fresh()->getMedia('document'));
-    }
-
-    public function test_upload_replaces_previous_single_file_document(): void
-    {
-        $delivery = Delivery::factory()->create();
-
-        $this->post($this->signedUrl('delivery', $delivery->id, 'invoice'), ['file' => $this->pdf('alt.pdf')])->assertOk();
-        $this->post($this->signedUrl('delivery', $delivery->id, 'invoice'), ['file' => $this->pdf('neu.pdf')])->assertOk();
-
-        $media = $delivery->fresh()->getMedia('invoice');
-
-        $this->assertCount(1, $media);
-        $this->assertSame('neu.pdf', $media->first()->file_name);
-    }
-}
+        expect($this->delivery->fresh()->getFirstMedia('certificate')->file_name)
+            ->toBe('DE-OKO-001.276-0059778.2025.002.pdf');
+    });
+});
