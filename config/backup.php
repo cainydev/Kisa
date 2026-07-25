@@ -137,6 +137,7 @@ return [
              */
             'disks' => [
                 'local',
+                'backups',
             ],
         ],
 
@@ -245,6 +246,10 @@ return [
      * UnHealthyBackupWasFound event will be fired.
      */
     'monitor_backups' => [
+        /*
+         * `backup:monitor` takes no --config, so every disk to be watched has to
+         * be listed here regardless of which config drives its cleanup.
+         */
         [
             'name' => env('APP_NAME', 'laravel-backup'),
             'disks' => ['local'],
@@ -253,10 +258,21 @@ return [
                 // backup older than 2 days means two runs were missed.
                 MaximumAgeInDays::class => 2,
 
-                // Headroom warning, not a retention rule (see
-                // delete_oldest_backups_when_using_more_megabytes_than). The
-                // tiers settle around 6 GB; alert well before the disk hurts.
-                MaximumStorageInMegabytes::class => 25000,
+                // Headroom warning, not a retention rule. Local keeps 7 days,
+                // so ~1 GB; alert long before the disk is in trouble.
+                MaximumStorageInMegabytes::class => 5000,
+            ],
+        ],
+
+        [
+            'name' => env('APP_NAME', 'laravel-backup').' (off-server)',
+            'disks' => ['backups'],
+            'health_checks' => [
+                MaximumAgeInDays::class => 2,
+
+                // Hetzner includes 1 TB across all buckets; the full retention
+                // curve is ~7 GB. Alert well below the included quota.
+                MaximumStorageInMegabytes::class => 250000,
             ],
         ],
 
@@ -288,6 +304,12 @@ return [
             /*
              * The number of days for which backups must be kept.
              */
+            /*
+             * This file drives the *local* disk: the last 7 days only, so the
+             * server keeps a handful of archives for a fast restore and nothing
+             * more. The long history lives off-server — see config/backup-s3.php,
+             * applied by `backup:clean --config=backup-s3`.
+             */
             'keep_all_backups_for_days' => 7,
 
             /*
@@ -295,26 +317,26 @@ return [
              * of that day will be kept. Older backups within the same day will be removed.
              * If you create backups only once a day, no backups will be removed yet.
              */
-            'keep_daily_backups_for_days' => 30,
+            'keep_daily_backups_for_days' => 0,
 
             /*
              * After the "keep_daily_backups_for_days" period is over, the most recent backup
              * of that week will be kept. Older backups within the same week will be removed.
              * If you create backups only once a week, no backups will be removed yet.
              */
-            'keep_weekly_backups_for_weeks' => 12,
+            'keep_weekly_backups_for_weeks' => 0,
 
             /*
              * After the "keep_weekly_backups_for_weeks" period is over, the most recent backup
              * of that month will be kept. Older backups within the same month will be removed.
              */
-            'keep_monthly_backups_for_months' => 12,
+            'keep_monthly_backups_for_months' => 0,
 
             /*
              * After the "keep_monthly_backups_for_months" period is over, the most recent backup
              * of that year will be kept. Older backups within the same year will be removed.
              */
-            'keep_yearly_backups_for_years' => 10,
+            'keep_yearly_backups_for_years' => 0,
 
             /*
              * After cleaning up the backups remove the oldest backup until

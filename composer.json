@@ -37,6 +37,7 @@
         "laravel/passport": "^13.7",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.8",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "nyholm/psr7": "^1.8",
         "outhebox/blade-flags": "^1.7",
         "spatie/browsershot": "^5.3",

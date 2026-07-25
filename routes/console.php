@@ -23,10 +23,14 @@ Schedule::timezone('Europe/Berlin')->group(function () {
     Schedule::command(GenerateStats::class)->dailyAt('2:30');
     Schedule::command(BackupCommand::class)->dailyAt('3:00');
 
-    // Applies the retention tiers in config/backup.php. Without this the
-    // backups accumulate forever — they did, for 13 months, until the disk
-    // filled and backup:run started failing silently.
+    // Applies the retention tiers. Without this the backups accumulate forever
+    // — they did, for 13 months, until the disk filled and backup:run started
+    // failing silently. Two runs because one cleanup applies one strategy:
+    // the local disk keeps 7 days, the off-server disk keeps years.
     Schedule::command(CleanupCommand::class)->dailyAt('4:00');
+    Schedule::command(CleanupCommand::class, [
+        '--config' => 'backup-s3',
+    ])->dailyAt('4:15');
 
     // Fails loudly when the newest backup is too old or storage is too big,
     // which is the only thing that catches a backup that stopped running.
