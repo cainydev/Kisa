@@ -1,13 +1,15 @@
 <?php
 
+use App\Notifications\Channels\LogChannel;
 use Spatie\Backup\Notifications\Notifiable;
-use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
-use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
-use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
 use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
 use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
 use Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification;
 use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
+use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
+use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
+use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
 
 return [
     'token' => env('BACKUP_TOKEN', ''),
@@ -179,10 +181,19 @@ return [
      */
     'notifications' => [
         'notifications' => [
-            BackupHasFailedNotification::class => ['discord'],
-            UnhealthyBackupWasFoundNotification::class => ['discord'],
-            CleanupHasFailedNotification::class => ['discord'],
-            BackupWasSuccessfulNotification::class => ['discord'],
+            // Routed to the log rather than straight to Discord. The default
+            // logging stack already fans out to the daily file *and* Discord,
+            // so this gives one webhook config and one code path instead of
+            // the package talking to Discord behind logging's back.
+            BackupHasFailedNotification::class => [LogChannel::class],
+            UnhealthyBackupWasFoundNotification::class => [LogChannel::class],
+            CleanupHasFailedNotification::class => [LogChannel::class],
+
+            // Success is silent on purpose. A daily "backup ok" ping is noise
+            // that trains you to ignore the channel; backup:monitor is what
+            // reports the absence of a backup.
+            BackupWasSuccessfulNotification::class => [],
+            CleanupWasSuccessfulNotification::class => [],
         ],
 
         /*
@@ -238,8 +249,14 @@ return [
             'name' => env('APP_NAME', 'laravel-backup'),
             'disks' => ['local'],
             'health_checks' => [
-                MaximumAgeInDays::class => 7,
-                MaximumStorageInMegabytes::class => 5000,
+                // Tighter than the 7-day default: backups run daily, so a
+                // backup older than 2 days means two runs were missed.
+                MaximumAgeInDays::class => 2,
+
+                // Headroom warning, not a retention rule (see
+                // delete_oldest_backups_when_using_more_megabytes_than). The
+                // tiers settle around 6 GB; alert well before the disk hurts.
+                MaximumStorageInMegabytes::class => 25000,
             ],
         ],
 
@@ -278,33 +295,38 @@ return [
              * of that day will be kept. Older backups within the same day will be removed.
              * If you create backups only once a day, no backups will be removed yet.
              */
-            'keep_daily_backups_for_days' => 16,
+            'keep_daily_backups_for_days' => 30,
 
             /*
              * After the "keep_daily_backups_for_days" period is over, the most recent backup
              * of that week will be kept. Older backups within the same week will be removed.
              * If you create backups only once a week, no backups will be removed yet.
              */
-            'keep_weekly_backups_for_weeks' => 8,
+            'keep_weekly_backups_for_weeks' => 12,
 
             /*
              * After the "keep_weekly_backups_for_weeks" period is over, the most recent backup
              * of that month will be kept. Older backups within the same month will be removed.
              */
-            'keep_monthly_backups_for_months' => 4,
+            'keep_monthly_backups_for_months' => 12,
 
             /*
              * After the "keep_monthly_backups_for_months" period is over, the most recent backup
              * of that year will be kept. Older backups within the same year will be removed.
              */
-            'keep_yearly_backups_for_years' => 2,
+            'keep_yearly_backups_for_years' => 10,
 
             /*
              * After cleaning up the backups remove the oldest backup until
              * this amount of megabytes has been reached.
              * Set null for unlimited size.
+             *
+             * Deliberately null: this cap deletes oldest-first *after* the tiers
+             * above have run, so any finite value silently eats the yearly and
+             * monthly snapshots we keep on purpose. Disk headroom is watched via
+             * the MaximumStorageInMegabytes health check instead.
              */
-            'delete_oldest_backups_when_using_more_megabytes_than' => 5000,
+            'delete_oldest_backups_when_using_more_megabytes_than' => null,
         ],
 
         /*
