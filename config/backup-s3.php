@@ -3,24 +3,43 @@
 use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
 
 /*
- * Retention for the off-server backup disk.
+ * The off-server backup destination.
  *
- * Spatie applies one cleanup strategy per run, so keeping "7 days locally, years
- * off-server" needs two configs and two scheduled cleanups:
+ * This needs its own config file rather than a second entry in
+ * config/backup.php's `disks`, because both the destination path
+ * (`backup.name`) and the retention strategy are per-config, not per-disk:
+ * BackupDestinationFactory applies one name to every disk, and CleanupJob
+ * applies one strategy to every destination.
  *
- *   backup:clean                        → config/backup.php    → local, 7 days
- *   backup:clean --config=backup-s3     → this file            → backups, full curve
+ * So each disk gets its own run:
  *
- * Only the keys that differ from config/backup.php are listed; Spatie merges
- * this over the package defaults, and everything unspecified (notifications,
- * source, encryption) is inherited from there.
+ *   backup:run                          → config/backup.php  → local, 7 days
+ *   backup:run   --config=backup-s3     → this file          → S3, full curve
+ *   backup:clean                        → config/backup.php
+ *   backup:clean --config=backup-s3     → this file
+ *
+ * The cost is that the database is dumped and the files zipped twice per night.
+ * Only keys that differ from config/backup.php are listed; Spatie merges this
+ * over the package defaults, so notifications, source paths and encryption are
+ * inherited.
  */
 
 return [
     'backup' => [
-        'name' => env('APP_NAME', 'laravel-backup'),
+        'name' => '',
 
+        /*
+         * `destination` must be spelled out in full. Config::fromArray merges
+         * only at the top level of `backup`, so a partial array here replaces
+         * the package's whole destination block — silently dropping
+         * `filename_prefix`, which cleanup and monitoring use to recognise a
+         * backup.
+         */
         'destination' => [
+            'compression_method' => ZipArchive::CM_DEFAULT,
+            'compression_level' => 9,
+            'filename_prefix' => 'backup-',
+
             'disks' => [
                 'backups',
             ],
@@ -41,7 +60,7 @@ return [
              * Unlimited on purpose: this cap deletes oldest-first regardless of
              * which tier protected a backup, so any finite value silently eats
              * the yearly snapshots this disk exists to hold. Hetzner includes
-             * 1 TB; the archive is ~18 GB.
+             * 1 TB across all buckets; the full curve is ~7 GB.
              */
             'delete_oldest_backups_when_using_more_megabytes_than' => null,
         ],

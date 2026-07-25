@@ -6,6 +6,7 @@ use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
 use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
 use Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification;
 use Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification;
+use Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification;
 use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
 use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
 use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
@@ -16,10 +17,11 @@ return [
 
     'backup' => [
         /*
-         * The name of this application. You can use this name to monitor
-         * the backups.
+         * Doubles as the folder the archives are written to, so this is
+         * `storage/app/spatie-backups`. The off-server disk writes to its
+         * bucket root instead — see config/backup-s3.php.
          */
-        'name' => env('APP_NAME', 'laravel-backup'),
+        'name' => 'spatie-backups',
 
         'source' => [
             'files' => [
@@ -137,7 +139,6 @@ return [
              */
             'disks' => [
                 'local',
-                'backups',
             ],
         ],
 
@@ -192,9 +193,11 @@ return [
 
             // Success is silent on purpose. A daily "backup ok" ping is noise
             // that trains you to ignore the channel; backup:monitor is what
-            // reports the absence of a backup.
+            // reports the absence of a backup. Every event still needs an entry
+            // — Spatie throws on an event it has no notification class for.
             BackupWasSuccessfulNotification::class => [],
             CleanupWasSuccessfulNotification::class => [],
+            HealthyBackupWasFoundNotification::class => [],
         ],
 
         /*
@@ -250,8 +253,12 @@ return [
          * `backup:monitor` takes no --config, so every disk to be watched has to
          * be listed here regardless of which config drives its cleanup.
          */
+        /*
+         * `name` here is the folder to look in, not a label, so each entry has
+         * to repeat the `backup.name` of the config that writes that disk.
+         */
         [
-            'name' => env('APP_NAME', 'laravel-backup'),
+            'name' => 'spatie-backups',
             'disks' => ['local'],
             'health_checks' => [
                 // Tighter than the 7-day default: backups run daily, so a
@@ -265,7 +272,8 @@ return [
         ],
 
         [
-            'name' => env('APP_NAME', 'laravel-backup').' (off-server)',
+            // Bucket root — config/backup-s3.php writes with an empty name.
+            'name' => '',
             'disks' => ['backups'],
             'health_checks' => [
                 MaximumAgeInDays::class => 2,
