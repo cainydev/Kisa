@@ -3,14 +3,24 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Tables\Columns\SparklineColumn;
+use App\Jobs\RegenerateHerbStatistics;
+use App\Livewire\HerbStatsProgress;
 use App\Models\Herb;
+use App\Services\Stats\OpenOrderReservations;
+use App\Support\Stats\HerbReservation;
 use App\Support\Stats\HerbStats;
+use App\Support\Stats\HerbStatsRegeneration;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Filament\Actions\Action;
 use Filament\Support\Enums\TextSize;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Livewire\Attributes\On;
 
 class Reorder extends TableWidget
 {
@@ -22,8 +32,11 @@ class Reorder extends TableWidget
     {
         return $table
             ->heading('Nachbestellung & Lagerprognose')
-            ->description('Diese Übersicht zeigt dir, welche Kräuter bald leer sind.')
+            ->description('Welche Kräuter bald leer sind, inkl. verkaufter, noch nicht abgefüllter Bestellungen.')
             ->records(fn ($sortColumn, $sortDirection, $search) => $this->records($sortColumn, $sortDirection, $search))
+            ->headerActions([
+                $this->regenerateStatsAction(),
+            ])
             ->columnManager(false)
             ->searchable(false)
             ->paginated([12, 20, 25, 50, 100, 'all'])
@@ -38,15 +51,25 @@ class Reorder extends TableWidget
                     ->label('Leer ab')
                     ->badge()
                     ->size(TextSize::Large)
-                    ->state(fn (Herb $record) => HerbStats::for($record)->estimatedDepletionDate()?->toIso8601String())
-                    ->formatStateUsing(function ($state) {
+                    ->state(fn (Herb $record) => $this->depletionDate($record)?->toIso8601String())
+                    ->formatStateUsing(function ($state, Herb $record) {
+                        if ($this->shortfall($record) > 0) {
+                            return 'Reicht nicht';
+                        }
                         if (! $state) {
                             return 'Unbekannt';
                         }
                         $date = Carbon::parse($state);
 
-                        return $date->year > 3000 ? 'Nie' : $date->format('d.m.Y');
+                        if ($date->year > 3000) {
+                            return 'Nie';
+                        }
+
+                        return $date->isAfter(today()) ? $date->format('d.m.Y') : 'Leer';
                     })
+                    ->tooltip(fn (Herb $record): ?string => $this->shortfall($record) > 0
+                        ? 'Der Bestand reicht nicht für die offenen Bestellungen.'
+                        : null)
                     ->color(fn (Herb $record) => $this->getStockColor($record))
                     ->sortable(),
 
@@ -66,6 +89,19 @@ class Reorder extends TableWidget
                     ->suffix(' g')
                     ->state(fn (Herb $record) => HerbStats::for($record)->currentStock())
                     ->color(fn (Herb $record) => $this->getStockColor($record))
+                    ->sortable(),
+
+                TextColumn::make('reserved')
+                    ->label('Für Bestellungen')
+                    ->numeric(1, '.', ',')
+                    ->suffix(' g')
+                    ->placeholder('—')
+                    ->color(fn (Herb $record): string => $this->shortfall($record) > 0 ? 'danger' : 'gray')
+                    ->state(fn (Herb $record): ?float => $this->reservationFor($record)->isEmpty() ? null : $this->reservationFor($record)->grams)
+                    ->description(fn (Herb $record): ?string => $this->shortfall($record) > 0
+                        ? $this->formatGrams($this->shortfall($record)).' fehlen'
+                        : null)
+                    ->tooltip(fn (Herb $record): ?string => $this->reservationTooltip($this->reservationFor($record)))
                     ->sortable(),
 
                 TextColumn::make('averageDailyUsage')
@@ -102,6 +138,40 @@ class Reorder extends TableWidget
             ]);
     }
 
+    /**
+     * Rebuilds the herb stats on demand. While a run (manual or the nightly
+     * one) is in progress the button is swapped for a live progress bar.
+     */
+    protected function regenerateStatsAction(): Action
+    {
+        return Action::make('regenerateStats')
+            ->label('Neu berechnen')
+            ->icon(Heroicon::OutlinedArrowPath)
+            ->color('gray')
+            // Resolved at render time, not when the table is built: the click
+            // that queues the run happens after the table was configured.
+            ->defaultView(fn (): string => HerbStatsRegeneration::isRunning()
+                ? 'filament.widgets.reorder.stats-progress'
+                : Action::BUTTON_VIEW)
+            ->action(function (): void {
+                if (HerbStatsRegeneration::isRunning()) {
+                    return;
+                }
+
+                HerbStatsRegeneration::queue();
+                RegenerateHerbStatistics::dispatch();
+            });
+    }
+
+    /**
+     * Re-render with the fresh stats once the progress bar reports the run finished.
+     */
+    #[On(HerbStatsProgress::FINISHED_EVENT)]
+    public function refreshAfterStatsRegenerated(): void
+    {
+        $this->flushCachedTableRecords();
+    }
+
     public function records(?string $sortColumn, ?string $sortDirection, ?string $search): LengthAwarePaginator
     {
         $q = Herb::query();
@@ -116,14 +186,16 @@ class Reorder extends TableWidget
             $stats = HerbStats::for($herb);
 
             return match ($sortColumn) {
-                'estimatedDepletionDate' => $stats->estimatedDepletionDate()?->timestamp ?? ($sortDirection === 'asc' ? 9999999999 : 0),
+                // Herbs short for open orders all deplete "today"; the bigger shortfall comes first.
+                'estimatedDepletionDate' => ($this->depletionDate($herb)?->timestamp ?? ($sortDirection === 'asc' ? 9999999999 : 0)) - $this->shortfall($herb),
+                'reserved' => $this->reservationFor($herb)->grams,
                 'currentStock' => $stats->currentStock(),
                 'averageDailyUsage' => $stats->averageDailyUsage(),
                 'averageWeeklyUsage' => $stats->averageWeeklyUsage(),
                 'averageMonthlyUsage' => $stats->averageMonthlyUsage(),
                 'totalUsage' => $stats->totalUsage(),
                 'name' => $herb->name,
-                default => $stats->estimatedDepletionDate()?->timestamp // Default sort
+                default => $this->depletionDate($herb)?->timestamp - $this->shortfall($herb) // Default sort
             };
         }, descending: $sortDirection === 'desc');
 
@@ -142,9 +214,61 @@ class Reorder extends TableWidget
         );
     }
 
+    /**
+     * Herbs promised to open orders, loaded once per request and shared by
+     * every column and the sort.
+     *
+     * @var Collection<int, HerbReservation>|null
+     */
+    protected ?Collection $reservations = null;
+
+    protected function reservationFor(Herb $herb): HerbReservation
+    {
+        $this->reservations ??= app(OpenOrderReservations::class)->perHerb();
+
+        return $this->reservations->get($herb->id) ?? new HerbReservation;
+    }
+
+    protected function depletionDate(Herb $herb): ?CarbonImmutable
+    {
+        return HerbStats::for($herb)->depletionDateWith($this->reservationFor($herb)->grams);
+    }
+
+    /**
+     * Grams the open orders need beyond what is in stock; 0 when stock covers them.
+     */
+    protected function shortfall(Herb $herb): float
+    {
+        return max(-HerbStats::for($herb)->availableStock($this->reservationFor($herb)->grams), 0);
+    }
+
+    /**
+     * Same format as the table's numeric gram columns.
+     */
+    protected function formatGrams(float $grams): string
+    {
+        return number_format($grams, 1, '.', ',').' g';
+    }
+
+    protected function reservationTooltip(HerbReservation $reservation): ?string
+    {
+        if ($reservation->isEmpty()) {
+            return null;
+        }
+
+        return collect($reservation->lines)
+            ->map(fn (array $line): string => "{$line['variant']}: {$line['missing']} Stk. → ".$this->formatGrams($line['grams']))
+            ->prepend('Verkauft, aber noch nicht abgefüllt:')
+            ->implode("\n");
+    }
+
     protected function getStockColor(Herb $herb): string
     {
-        $currentStock = HerbStats::for($herb)->currentStock();
+        $currentStock = HerbStats::for($herb)->availableStock($this->reservationFor($herb)->grams);
+
+        if ($currentStock <= 0 && ! $this->reservationFor($herb)->isEmpty()) {
+            return 'danger';
+        }
 
         // Calculate Average Daily Usage (using the same logic as your threshold)
         $avgDaily = HerbStats::for($herb)->averageDailyUsage();

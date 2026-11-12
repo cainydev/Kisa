@@ -10,7 +10,7 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
-#[Description('Analysis: which herbs need reordering, i.e. herbs whose estimated stock will be depleted within the given number of days (default 30). Ordered most-urgent first.')]
+#[Description('Analysis: which herbs need reordering, i.e. herbs whose estimated stock will be depleted within the given number of days (default 30). Herbs already promised to open orders that are not bottled yet are deducted from stock first. Ordered most-urgent first.')]
 class HerbsToReorderTool extends Tool
 {
     public function handle(Request $request): Response
@@ -35,8 +35,11 @@ class HerbsToReorderTool extends Tool
             $when = $r['depletion']->format('d.m.Y');
             $days = (int) now()->diffInDays($r['depletion'], false);
             $supplier = $herb->supplier?->shortname ?? '—';
+            $reserved = $r['reserved'] > 0
+                ? ' (davon '.Number::kilos($r['reserved']).' für offene, noch nicht abgefüllte Bestellungen reserviert)'
+                : '';
 
-            return "• {$herb->name} — {$stock}, erschöpft am {$when} (in {$days} Tagen), Lieferant: {$supplier}";
+            return "• {$herb->name} — {$stock}{$reserved}, erschöpft am {$when} (in {$days} Tagen), Lieferant: {$supplier}";
         })->implode("\n");
 
         return Response::text("Herbs to reorder within {$withinDays} days ({$rows->count()}):\n{$lines}");

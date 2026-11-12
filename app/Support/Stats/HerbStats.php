@@ -23,6 +23,7 @@ class HerbStats extends StatsData
         public readonly float $averageWeeklyUsage = 0,
         public readonly float $averageMonthlyUsage = 0,
         public readonly ?CarbonImmutable $depletionDate = null,
+        public readonly ?float $forecastDailyUsage = null,
     ) {}
 
     public static function for(Herb $herb): self
@@ -44,6 +45,7 @@ class HerbStats extends StatsData
             averageWeeklyUsage: (float) ($data['usage_avg_weekly'] ?? 0),
             averageMonthlyUsage: (float) ($data['usage_avg_monthly'] ?? 0),
             depletionDate: self::dateFrom($data['depletion_date'] ?? null),
+            forecastDailyUsage: isset($data['usage_forecast_daily']) ? (float) $data['usage_forecast_daily'] : null,
         );
     }
 
@@ -61,6 +63,7 @@ class HerbStats extends StatsData
             'usage_avg_weekly' => $this->averageWeeklyUsage,
             'usage_avg_monthly' => $this->averageMonthlyUsage,
             'depletion_date' => $this->depletionDate?->toIso8601String(),
+            'usage_forecast_daily' => $this->forecastDailyUsage,
         ];
     }
 
@@ -117,5 +120,50 @@ class HerbStats extends StatsData
     public function estimatedDepletionDate(): ?CarbonImmutable
     {
         return $this->depletionDate;
+    }
+
+    /**
+     * Grams per day the depletion forecast runs on: the last 90 days' average,
+     * or the all-time average when the herb wasn't used recently. Stats
+     * generated before this was stored fall back to the all-time average.
+     */
+    public function forecastDailyUsage(): float
+    {
+        return $this->forecastDailyUsage ?? $this->averageDailyUsage;
+    }
+
+    /**
+     * Stock left once the reserved grams are taken out. Negative when more is
+     * promised than is on the shelf.
+     */
+    public function availableStock(float $reserved = 0): float
+    {
+        return $this->currentStock - $reserved;
+    }
+
+    /**
+     * Depletion date once `$reserved` grams are spoken for: today when the
+     * reservation already eats the whole stock, otherwise the remaining stock
+     * extrapolated at the forecast rate.
+     */
+    public function depletionDateWith(float $reserved): ?CarbonImmutable
+    {
+        if ($reserved <= 0) {
+            return $this->depletionDate;
+        }
+
+        $available = $this->availableStock($reserved);
+
+        if ($available <= 0) {
+            return CarbonImmutable::today();
+        }
+
+        $rate = $this->forecastDailyUsage();
+
+        if ($rate <= 0) {
+            return $this->depletionDate;
+        }
+
+        return CarbonImmutable::now()->addDays($available / $rate);
     }
 }

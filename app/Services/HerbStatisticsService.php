@@ -4,20 +4,35 @@ namespace App\Services;
 
 use App\Models\Herb;
 use App\Support\Stats\HerbStats;
+use App\Support\Stats\HerbStatsRegeneration;
 use App\Support\Stats\HerbStock;
 use App\Support\Stats\TimeSeriesQuery;
 use Carbon\Carbon;
+use Closure;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class HerbStatisticsService extends AbstractStatistics
 {
+    /**
+     * Regenerate every herb, publishing progress so the reorder table can
+     * show how far along the run is.
+     */
     public static function generateAll(): void
     {
-        Herb::chunk(50, fn ($herbs) => static::generate($herbs));
+        HerbStatsRegeneration::start(Herb::count());
+
+        try {
+            Herb::chunk(25, fn ($herbs) => static::generate($herbs, fn () => HerbStatsRegeneration::advance()));
+        } finally {
+            HerbStatsRegeneration::finish();
+        }
     }
 
-    public static function generate(Collection $models): void
+    /**
+     * @param  (Closure(Herb): void)|null  $afterEach  Called once each herb's stats are saved
+     */
+    public static function generate(Collection $models, ?Closure $afterEach = null): void
     {
         $start = static::windowStart();
         $end = now()->startOfDay();
@@ -59,11 +74,16 @@ class HerbStatisticsService extends AbstractStatistics
                 averageWeeklyUsage: (float) ($usageSeries()->lastWeeks(52)->get()->avg() ?? 0),
                 averageMonthlyUsage: (float) ($usageSeries()->lastMonths(12)->get()->avg() ?? 0),
                 depletionDate: static::extrapolateDate($currentStock, $rate)->toImmutable(),
+                forecastDailyUsage: (float) $rate,
             );
 
             $herb->timestamps = false;
             $herb->saveQuietly();
             $herb->timestamps = true;
+
+            if ($afterEach !== null) {
+                $afterEach($herb);
+            }
         }
     }
 
